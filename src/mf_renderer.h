@@ -47,6 +47,13 @@ int main()
 }
 
 */
+#ifdef __cplusplus
+#define mf_inline inline
+#else
+#define mf_inline
+#endif
+
+
 
 // Signature of render functions
 typedef void (func_render_rect)(float x, float y, float width, float height);
@@ -87,7 +94,7 @@ typedef struct
 
 typedef struct
 {
-    mfr__render_commad_type type;
+    enum mfr__render_commad_type type;
     union
     {
         mfr__render_command_rect rect;
@@ -151,7 +158,7 @@ void mfr_reset_offset(mfr_renderer *renderer)
     mfr_set_offset(renderer, 0.0f, 0.0f);
 }
 
-inline
+mf_inline
 mfr__render_command *mfr__get_next_command(mfr_renderer *renderer)
 {
     assert(renderer->memorySize > 0);

@@ -33,6 +33,14 @@ int main()
 
 */
 
+#ifdef __cplusplus
+#define mf_inline inline
+#else
+#include <stdbool.h>
+#define _POSIX_C_SOURCE 199309L
+#define mf_inline
+#endif
+
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
@@ -61,6 +69,7 @@ typedef struct mfp_button_state mfp_button_state;
 typedef struct mfp_platform mfp_platform;
 typedef struct mfp_input mfp_input;
 typedef struct mfp_timer mfp_timer;
+typedef struct mfp_window mfp_window;
 
 void mfp_init(mfp_platform *platform);
 void mfp_destroy(mfp_platform *platform);
@@ -75,54 +84,54 @@ void mfp_window_close(mfp_platform *platform);
 
 struct mfp_button_state
 {
-    bool down = false;
-    bool pressed = false;
-    bool released = false;
+    bool down;
+    bool pressed;
+    bool released;
 };
 
 struct mfp_input
 {
-    bool enableKeyRepeat = true;
-    mfp_button_state keys[256] = {};
+    bool enableKeyRepeat;
+    mfp_button_state keys[256];
 
     // Text input
-    char text[256] = {};
-    u32 textLength = 0; 
+    char text[256];
+    u32 textLength;
 
     // Input
-    float mouseWheelDelta = 0.0f;
+    float mouseWheelDelta;
 
     mfp_button_state mouseLeft;
-    i32 mouseX = 0;
-    i32 mouseY = 0;
+    i32 mouseX;
+    i32 mouseY;
 };
 
 struct mfp_window
 {
-    const char *title = NULL;
-    bool isOpen = false;
-    bool isFullscreen = false;
+    const char *title;
+    bool isOpen;
+    bool isFullscreen;
 
     // NOTE: top down
-    i32 x = 0;
-    i32 y = 0; 
-    u32 width = 1600;
-    u32 height = 900;
+    i32 x;
+    i32 y;
+    u32 width;
+    u32 height;
 };
 
 struct mfp_timer
 {
     // Time
-    u64 time = 0;
-    float deltaSec = 0.0f;
-    u64 deltaMicroSec = 0;
-    u64 deltaMilliSec = 0;
-    u32 fps = 0;
+    u64 time;
+    float deltaSec;
+    u64 deltaMicroSec;
+    u64 deltaMilliSec;
+    u32 fps;
 };
 
 struct mfp_platform
 {
-    void *os = nullptr;
+    void *os;
 
     mfp_input input;
     mfp_window window;
@@ -167,9 +176,9 @@ typedef struct
     int screen;
     Window root;
     Window window;
-    // NOTE visual is also a member of XVisualInfo in this case both members have to be set
-    // a application with OpenGl uses XVisualInfo and a xlib application just uses visual
-    // TODO: just use XVisualInfo
+    //// NOTE visual is also a member of XVisualInfo in this case both members have to be set
+    //// a application with OpenGl uses XVisualInfo and a xlib application just uses visual
+    //// TODO: just use XVisualInfo
     XVisualInfo *vi;
     Visual *visual;
     Colormap colormap;
@@ -178,18 +187,18 @@ typedef struct
     void *graphicHandle;
 } mfp_x11;
 
-inline
+
+mf_inline
 mfp_x11 *mfp__get_x11(mfp_platform *platform)
 {
     return (mfp_x11 *) platform->os; 
 }
 
-inline
 u64 mfp__get_time_micro()
 {
-    timespec time;
-    clock_gettime(CLOCK_MONOTONIC, &time);
-    u64 cycles = time.tv_sec * 1000000 + time.tv_nsec / 1000;
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    u64 cycles = ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
     return cycles;
 }
 

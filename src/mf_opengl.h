@@ -28,7 +28,7 @@ void mfgl_set_color(float r, float g, float b, float a)
     glColor4f(r, g, b, a);
 }
 
-void mfgl_set_color_rgb_255(i32 r, i32 g, i32 b, i32 a)
+void mfgl_set_color_255(i32 r, i32 g, i32 b, i32 a)
 {
     mfgl_set_color(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
 }
