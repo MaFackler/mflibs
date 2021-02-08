@@ -26,9 +26,12 @@ int main()
 
 
     bool running = true;
-    while (running)
+    while (running && platform.window.isOpen)
     {
         mfp_begin(&platform);
+
+        if (platform.input.keys['q'].pressed)
+            running = false;
 
         // clear
         mfr_set_color(&renderer, 1.0f, 0.0f, 0.0f, 1.0f);

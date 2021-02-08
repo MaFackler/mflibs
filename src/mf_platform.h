@@ -17,7 +17,7 @@ int main()
     mfp_window_open(&platform, "Example", 0, 0, 1600, 900);
 
     bool running = true;
-    while (running)
+    while (running && platform.window.isOpen)
     {
         mfp_begin(&platform);
 
@@ -42,8 +42,10 @@ int main()
 #endif
 
 #include <string.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
+#include <assert.h>
 #ifdef __linux__
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -55,15 +57,19 @@ int main()
 //#define GL_GLEXT_PROTOTYPES
 //#define GLX_GLEXT_PROTOTYPES
 #include <GL/gl.h>
+#ifdef __linux__
 #include <GL/glx.h>
 //#include <GL/glu.h>
 //#include <GL/glxext.h>
 //#include <GL/glext.h>
 #endif
+#endif
 
-typedef u_int32_t u32;
-typedef u_int64_t u64;
+typedef uint32_t u32;
+typedef uint64_t u64;
 typedef int32_t i32;
+
+
 
 typedef struct mfp_button_state mfp_button_state;
 typedef struct mfp_platform mfp_platform;
@@ -89,10 +95,12 @@ struct mfp_button_state
     bool released;
 };
 
+#define MFP__AMOUNT_KEYS 256
+
 struct mfp_input
 {
     bool enableKeyRepeat;
-    mfp_button_state keys[256];
+    mfp_button_state keys[MFP__AMOUNT_KEYS];
 
     // Text input
     char text[256];
@@ -548,7 +556,328 @@ void mfp_window_toggle_fullscreen(mfp_platform *platform)
 
 void mfp_destroy(mfp_platform *platform)
 {
+#ifdef MF_PLATFORM_USE_OPENGL
+    mfp_win *os = mfp__get_win(platform);
+    HGLRC *hgl = (HGLRC *) os->graphicHandle;
+    wglDeleteContext(*hgl);
+#endif
 }
+#else
+
+static mfp_platform *g_platform = NULL;
+typedef struct
+{
+    HWND window;
+    HDC dc;
+
+    void *graphicHandle;
+} mfp_win;
+
+mf_inline
+mfp_win *mfp__get_win(mfp_platform *platform)
+{
+    return (mfp_win *) platform->os; 
+}
+
+void mfp_init(mfp_platform *platform)
+{
+    platform->os = malloc(sizeof(mfp_win));
+}
+
+void mfp_begin(mfp_platform *platform)
+{
+    for (size_t i = 0; i < MFP__AMOUNT_KEYS; ++i)
+    {
+        mfp_button_state *state = &platform->input.keys[i];
+        state->pressed = false;
+        state->released = false;
+    }
+
+    mfp_win *os = mfp__get_win(platform);
+    MSG msg;
+    while (PeekMessage(&msg, os->window, 0, 0, PM_REMOVE))
+    {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+}
+
+void mfp_end(mfp_platform *platform)
+{
+#ifdef MF_PLATFORM_USE_OPENGL
+    mfp_win *os = mfp__get_win(platform);
+    SwapBuffers(os->dc);
+#endif
+}
+
+void mfp_destroy(mfp_platform *platform)
+{
+    mfp_win *os = mfp__get_win(platform);
+    DestroyWindow(os->window);
+    DeleteObject(os->dc);
+}
+
+void mfp_window_toggle_fullscreen(mfp_platform *platform)
+{
+}
+
+mf_inline
+void mfp__get_client_rect(HWND window, i32 *x, i32 *y, u32 *width, u32 *height)
+{
+    RECT clientRect;
+    GetClientRect(window, &clientRect);
+
+    *x = clientRect.left;
+    *y = clientRect.top;
+    *width = clientRect.right - clientRect.left;
+    *height = clientRect.bottom - clientRect.top;
+}
+
+mf_inline
+void mfp__set_mouse_pos(mfp_platform *platform, LPARAM lParam)
+{
+    i32 x = LOWORD(lParam);
+    i32 y = platform->window.height - HIWORD(lParam);
+    platform->input.mouseX = x;
+    platform->input.mouseY = y;
+}
+
+void mfp__dispatch_key_to_input(mfp_input *input, mfp_button_state *state, bool down)
+{
+    state->pressed = !state->down && down;
+    state->released = state->down && !down;
+    if (input->enableKeyRepeat && state->down && down)
+    {
+        // NOTE: this will generate keyrepeate
+        state->pressed = true;
+    }
+    state->down = down;
+}
+
+void mfp__dispatch_windows_key(mfp_input *input, u32 keycode, bool down)
+{
+    i32 keyIndex = keycode;
+    char buf[1024] = {};
+    OutputDebugString(buf);
+    // NOTE: hack that you dont have to query keys with capital chars
+    if (keyIndex >= 'a' && keyIndex <= 'z')
+        return;
+    if (keyIndex >= 'A' && keyIndex <= 'Z')
+    {
+        i32 upperLowerOffset = 32;
+        if (!input->keys[MF_KEY_SHIFT].down)
+        {
+            keyIndex += upperLowerOffset;
+        }
+        else
+        {
+            // NOTE: if upper case also dispatch lower case press
+            mfp_button_state *state = &input->keys[keyIndex + upperLowerOffset];
+            mfp__dispatch_key_to_input(input, state, down);
+        }
+    }
+    else if (keyIndex == VK_BACK)
+        keyIndex = MF_KEY_BACKSPACE;
+    else if (keyIndex == VK_TAB)
+        keyIndex = MF_KEY_TAB;
+    else if (keyIndex == VK_RETURN)
+        keyIndex = MF_KEY_RETURN;
+    else if (keyIndex == VK_SHIFT)
+        keyIndex = MF_KEY_SHIFT; 
+    else if (keyIndex == VK_CONTROL)
+        keyIndex = MF_KEY_CTRL; 
+    else if (keyIndex == VK_MENU)
+        keyIndex = MF_KEY_ALT; 
+    else if (keyIndex == VK_CAPITAL)
+        keyIndex = MF_KEY_CAPS; 
+    else if (keyIndex == VK_LWIN)
+        keyIndex = MF_KEY_SUPER; 
+    else if (keyIndex == VK_UP)
+        keyIndex = MF_KEY_UP; 
+    else if (keyIndex == VK_DOWN)
+        keyIndex = MF_KEY_DOWN; 
+    else if (keyIndex == VK_LEFT)
+        keyIndex = MF_KEY_LEFT; 
+    else if (keyIndex == VK_RIGHT)
+        keyIndex = MF_KEY_RIGHT; 
+    else if (keyIndex == VK_ESCAPE)
+        keyIndex = MF_KEY_ESCAPE; 
+
+    mfp_button_state *state = &input->keys[keyIndex];
+    mfp__dispatch_key_to_input(input, state, down);
+}
+
+LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    LRESULT res = 0;
+    //Platform *platform = (Platform *) GetWindowLongPtr(wnd, GWLP_USERDATA);
+    assert(g_platform != NULL);
+    mfp_win *os = mfp__get_win(g_platform);
+    switch (message)
+    {
+        case WM_SIZE:
+        {
+            break;
+        }
+        case WM_LBUTTONDOWN:
+        {
+            mfp__set_mouse_pos(g_platform, lParam);
+            g_platform->input.mouseLeft.pressed = true;
+            break;
+        }
+        case WM_MOUSEMOVE:
+        {
+            mfp__set_mouse_pos(g_platform, lParam);
+        }
+        case WM_MOUSEWHEEL:
+        {
+            i32 keys = GET_KEYSTATE_WPARAM(wParam);
+            i32 delta = GET_WHEEL_DELTA_WPARAM(wParam);
+            g_platform->input.mouseWheelDelta = delta;
+            break;
+        }
+        case WM_CLOSE:
+        case WM_QUIT:
+        {
+            g_platform->window.isOpen = false;
+            break;
+        }
+        case WM_DESTROY:
+        {
+            // platform->quit = true;
+            break;
+        }
+        case WM_SYSKEYDOWN:
+        case WM_KEYDOWN:
+        {
+            // TODO: if the _WinProc loop is slow the amount of repeats will be more than one
+            // so the application misses some key repeats but maybe this is okay
+            //u32 amount = lParam & 0x0FFFF;
+            mfp__dispatch_windows_key(&g_platform->input, wParam, true);
+            break;
+        }
+        case WM_SYSKEYUP:
+        case WM_KEYUP:
+        {
+            mfp__dispatch_windows_key(&g_platform->input, wParam, false);
+            break;
+        }
+        case WM_EXITSIZEMOVE:
+        {
+            i32 x, y;
+            u32 width, height;
+            mfp__get_client_rect(os->window, &x, &y, &width, &height);
+            mfp_window *window = &g_platform->window;
+            if (x != window->x ||
+                y != window->y ||
+                width != window->width ||
+                height != window->height)
+            {
+                window->x = x;
+                window->y = y;
+                window->width = width;
+                window->height = height;
+            }
+        }
+        case WM_PAINT:
+        {
+            PAINTSTRUCT Paint;
+            HDC dc = BeginPaint(wnd, &Paint);
+            EndPaint(wnd, &Paint);
+            // res = DefWindowProcA(wnd, message, wParam, lParam);
+            break;
+        }
+        case WM_CHAR:
+        {
+            WCHAR utfChar = (WCHAR) wParam;
+            char asciiChar;
+            i32 length = WideCharToMultiByte(CP_ACP, 0, &utfChar, 1, &asciiChar, 1, 0, 0);
+            mfp_input *input = &g_platform->input;
+            if (length == 1 && asciiChar >= ' ')
+            {
+                input->text[input->textLength++] = asciiChar;
+                input->text[input->textLength] = 0;
+            }
+        }
+
+        default:
+            res = DefWindowProcA(wnd, message, wParam, lParam);
+    }
+    return res;
+}
+
+void mfp__init_opengl(mfp_platform *platform)
+{
+    mfp_win *os = mfp__get_win(platform);
+    os->graphicHandle = malloc(sizeof(HGLRC));
+    HGLRC *hgl = (HGLRC *) os->graphicHandle;
+    *hgl = wglCreateContext(os->dc);
+    i32 res = wglMakeCurrent(os->dc, *hgl);
+    assert(res > 0);
+}
+
+void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i32 width, i32 height)
+{
+    WNDCLASS wc = {};
+
+    wc.style = CS_HREDRAW | CS_VREDRAW;
+    wc.lpfnWndProc = mfp__window_proc;
+    wc.lpszClassName = "Platform";
+    wc.hCursor = LoadCursor(0, IDC_ARROW);
+    RegisterClass(&wc);
+
+    // TODO: this is crap
+    g_platform = platform;
+
+
+    mfp_win *os = mfp__get_win(platform);
+    mfp_window *window = &platform->window;
+
+    RECT sizeToRequest = {};
+    sizeToRequest.left = 0;
+    sizeToRequest.right = width;
+    sizeToRequest.top = 0;
+    sizeToRequest.bottom = height;
+    DWORD style = (WS_OVERLAPPEDWINDOW | WS_VISIBLE) & ~WS_THICKFRAME;
+    AdjustWindowRect(&sizeToRequest, style, false);
+    os->window = CreateWindowA(wc.lpszClassName,
+                               window->title,
+                               style,
+                               0, 0,
+                               sizeToRequest.right - sizeToRequest.left,
+                               sizeToRequest.bottom - sizeToRequest.top,
+                               0, 0, 0, 0);
+    assert(os->window);
+    os->dc = GetDC(os->window);
+
+    PIXELFORMATDESCRIPTOR desiredPixelFormat = {};
+    desiredPixelFormat.nSize = sizeof(desiredPixelFormat);
+    desiredPixelFormat.nVersion = 1;
+    desiredPixelFormat.dwFlags = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER;
+    desiredPixelFormat.cColorBits = 32;
+    desiredPixelFormat.cAlphaBits = 8;
+    desiredPixelFormat.iLayerType = PFD_MAIN_PLANE;
+
+    // TODO: pixelformat always needed??
+    i32 pixelFormatIndex = ChoosePixelFormat(os->dc, &desiredPixelFormat);
+    PIXELFORMATDESCRIPTOR suggestedPixelFormat;
+    DescribePixelFormat(os->dc, pixelFormatIndex, sizeof(suggestedPixelFormat), &suggestedPixelFormat);
+    SetPixelFormat(os->dc, pixelFormatIndex, &suggestedPixelFormat);
+
+    // TODO: client rect
+
+    mfp__get_client_rect(os->window, &window->x, &window->y, &window->width, &window->height);
+    window->isOpen = true;
+#ifdef MF_PLATFORM_USE_OPENGL
+    mfp__init_opengl(platform);
+#endif
+}
+
+void mfp_window_close(mfp_platform *platform)
+{
+}
+
+
 #endif
 
 #endif // MF_PLATFORM_IMPLEMENTATION
