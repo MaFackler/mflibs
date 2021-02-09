@@ -556,12 +556,8 @@ void mfp_window_toggle_fullscreen(mfp_platform *platform)
 
 void mfp_destroy(mfp_platform *platform)
 {
-#ifdef MF_PLATFORM_USE_OPENGL
-    mfp_win *os = mfp__get_win(platform);
-    HGLRC *hgl = (HGLRC *) os->graphicHandle;
-    wglDeleteContext(*hgl);
-#endif
 }
+
 #else
 
 static mfp_platform *g_platform = NULL;
@@ -613,6 +609,10 @@ void mfp_end(mfp_platform *platform)
 void mfp_destroy(mfp_platform *platform)
 {
     mfp_win *os = mfp__get_win(platform);
+#ifdef MF_PLATFORM_USE_OPENGL
+    HGLRC *hgl = (HGLRC *) os->graphicHandle;
+    wglDeleteContext(*hgl);
+#endif
     DestroyWindow(os->window);
     DeleteObject(os->dc);
 }
