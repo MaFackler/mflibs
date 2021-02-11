@@ -1,45 +1,35 @@
 #pragma once
 /* USAGE
 
-// Vector
-// ==================================================
-
-mf::Vector<int> vec;
-Push(&vec, 1);
-Push(&vec, 2);
-for (int i: vec)
-{
-    printf("%d\n", i);
-}
-
-for (int i = 0; i < vec.size; ++i)
-{
-    printf("%d\n", vec.data[i]);
-    printf("%d\n", vec[i]);
-}
-Destroy(&vec);
-
 // StretchyBuffer
 // ==================================================
 
 int *arr = NULL;
-MF_StretchyPush(arr, 1);
-MF_StretchyPush(arr, 2);
+mf_stretchy_push(arr, 1);
+mf_stretchy_push(arr, 2);
 
-for (int i = 0; i < MF_StretchySize(arr); ++i)
+for (int i = 0; i < mf_stretchy_size(arr); ++i)
 {
     printf("%d\n", arr[i]);
 }
 
-MF_StretchyFor(int*, ele, arr)
+mf_stretchy_for(int*, ele, arr)
 {
     printf("%d\n", *ele);
 }
 
-MF_StretchyClear(arr);
-MF_StretchyDestroy(arr);
+mf_stretchy_clear(arr);
+mf_stretchy_destroy(arr);
 */
 
+
+#ifdef __cplusplus
+#define mf_inline inline
+#else
+#include <stdbool.h>
+#define _POSIX_C_SOURCE 199309L
+#define mf_inline
+#endif
 
 #if defined(WIN32) || defined(_WIN32)
 #define MF_WINDOWS
@@ -70,9 +60,6 @@ typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
-
-namespace mf
-{
 
 
 #define MF_KiloByte(value) (1024 * value)
@@ -108,16 +95,8 @@ namespace mf
 
 
 
-template <class T> void DestorySafe(T **obj)
-{
-    if (*obj)
-    {
-        (*obj)->destroy();
-        (*obj) = NULL;
-    }
-}
 
-void Print(const char *fmt, ...)
+void mf_print(const char *fmt, ...)
 {
     char buffer[1024] = {};
     va_list args; 
@@ -135,81 +114,49 @@ void Print(const char *fmt, ...)
 
 
 // Stretchy buffer
-struct StretchyHeader
+typedef struct
 {
     u32 size;
     u32 capacity;
-};
+} mf__stretchy_header;
 
-#define MF_StretchyFor(t, e, v) \
-	for (t e = v; e < (v) + MF_StretchySize(v); ++e)
-
-
-#define getStretchyHeader(v) ((mf::StretchyHeader *)((char *) v - sizeof(mf::StretchyHeader)))
-#define MF_StretchySize(v) ((v) ? getStretchyHeader(v)->size : 0)
-#define MF_StretchyCapacity(v) ((v) ? getStretchyHeader(v)->capacity : 0)
-#define MF_StretchyFull(v) (MF_StretchySize(v) == MF_StretchyCapacity(v))
-#define MF_StretchyClear(v) ((v) ? (getStretchyHeader(v)->size = 0) : 0)
-#define MF_StretchyDestroy(v) ((v) ? (free(getStretchyHeader(v)), (v) = NULL) : 0)
+#define mf_stretchy_for(t, e, v) \
+	for (t e = v; e < (v) + mf_stretchy_size(v); ++e)
 
 
-#define MF_StretchyPush(v, e) \
-	MF_StretchyFull(v) ? mf::_StretchyGrow((void **) &v, sizeof(*(v))) : 0, \
-	(v)[getStretchyHeader(v)->size++] = (e)
+#define mf__get_stretchy_header(v) ((mf__stretchy_header *)((char *) v - sizeof(mf__stretchy_header)))
+#define mf_stretchy_size(v) ((v) ? mf__get_stretchy_header(v)->size : 0)
+#define mf__stretchy_capacity(v) ((v) ? mf__get_stretchy_header(v)->capacity : 0)
+#define mf__stretchy_full(v) (mf_stretchy_size(v) == mf__stretchy_capacity(v))
+#define mf_stretchy_clear(v) ((v) ? (mf__get_stretchy_header(v)->size = 0) : 0)
+#define mf_stretchy_destroy(v) ((v) ? (free(mf__get_stretchy_header(v)), (v) = NULL) : 0)
 
-inline int _StretchyGrow(void **v, size_t elementSize)
+
+#define mf_stretchy_push(v, e) \
+	mf__stretchy_full(v) ? mf__stretchy_grow((void **) &v, sizeof(*(v))) : 0, \
+	(v)[mf__get_stretchy_header(v)->size++] = (e)
+
+inline int mf__stretchy_grow(void **v, size_t elementSize)
 {
     size_t newCapacity = (MF_StretchySize(*v) + 1) * 2;
-    size_t bytesToAlloc = sizeof(StretchyHeader) + newCapacity * elementSize;
-    StretchyHeader *header;
+    size_t bytesToAlloc = sizeof(mf__stretchy_header) + newCapacity * elementSize;
+    mf__stretchy_header *header;
 
     if (*v)
     {
-        header = (StretchyHeader *) realloc(getStretchyHeader(*v), bytesToAlloc);
+        header = (mf__stretchy_header *) realloc(getStretchyHeader(*v), bytesToAlloc);
     }
     else
     {
-        header = (StretchyHeader *) malloc(bytesToAlloc);
+        header = (mf__stretchy_header *) malloc(bytesToAlloc);
         header->size = 0;
     }
     header->capacity = newCapacity;
-    *v  = (char *) header + sizeof(StretchyHeader);
+    *v  = (char *) header + sizeof(mf__stretchy_header);
 	return 0;
 }
 
-
-// InternString
-
-
-struct InternString
-{
-    size_t size;
-    char *data;
-};
-
-static InternString *internStrings;
-
-char* InternStringCreate(char *start, char *end)
-{
-    u32 size = end - start;
-    MF_StretchyFor(InternString*, string, internStrings)
-    {
-        if (string->size == size && strncmp(string->data, start, size) == 0)
-        {
-            return string->data;
-        }
-    }
-    char *string = (char *) malloc(size + 1);
-    memcpy(string, start, size);
-    string[size] = 0;
-    MF_StretchyPush(internStrings, (InternString{size, string}));
-    return string;
-}
-
-char* InternStringCreate(char *string)
-{
-    return InternStringCreate(string, string + strlen(string));
-}
+#ifdef __cplusplus
 
 template <typename T>
 struct Vector
@@ -302,5 +249,5 @@ void Vector<T>::_grow(size_t size)
     this->capacity = size;
 }
 
-}
+#endif
 

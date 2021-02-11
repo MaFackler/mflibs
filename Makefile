@@ -17,7 +17,7 @@ endif
 
 HEADERS=$(wildcard src/*.h)
 
-all: $(OUTDIR)/example-platform $(OUTDIR)/example-renderer
+all: $(OUTDIR)/example-platform $(OUTDIR)/example-renderer $(OUTDIR)/all-in-c
 
 
 $(OUTDIR)/example-platform: examples/example_platform.cpp $(HEADERS)
@@ -28,8 +28,10 @@ $(OUTDIR)/example-renderer: examples/example_renderer.cpp $(HEADERS)
 
 
 # NOTE: this is just to check that the header files will also compile with c99
-# $(OUTDIR)/all-in-c: examples/all_in_c.c
-# 	gcc $(CFLAGS) -std=c99 $< $(LIBS) -o $@
+$(OUTDIR)/all-in-c: examples/all_in_c.c
+ifneq ($(OS),Windows_NT)
+	gcc $(CFLAGS) -std=c99 $< $(LIBS) -o $@
+endif
 
 clean:
 	# TODO: exclude .gitkeep
