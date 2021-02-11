@@ -1,6 +1,8 @@
 #define MF_PLATFORM_USE_OPENGL
 //// Use implementation also
 #include "mf.h"
+
+#include "mf_test.h"
 #define MF_PLATFORM_IMPLEMENTATION
 #include "mf_platform.h"
 #define MF_RENDERER_IMPLEMENTATION

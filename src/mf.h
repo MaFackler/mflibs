@@ -138,13 +138,13 @@ typedef struct
 
 inline int mf__stretchy_grow(void **v, size_t elementSize)
 {
-    size_t newCapacity = (MF_StretchySize(*v) + 1) * 2;
+    size_t newCapacity = (mf_stretchy_size(*v) + 1) * 2;
     size_t bytesToAlloc = sizeof(mf__stretchy_header) + newCapacity * elementSize;
     mf__stretchy_header *header;
 
     if (*v)
     {
-        header = (mf__stretchy_header *) realloc(getStretchyHeader(*v), bytesToAlloc);
+        header = (mf__stretchy_header *) realloc(mf__get_stretchy_header(*v), bytesToAlloc);
     }
     else
     {
