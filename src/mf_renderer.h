@@ -29,8 +29,8 @@ int main()
     // override rendering functions
     // signatures of rendering functions are described under this example
     // Functions starting with func_*
-    renderer->func_render_set_color = my_set_color
-    renderer->func_render_rect = my_rectangle_renderer
+    renderer->set_color = my_set_color
+    renderer->render_rect = my_rectangle_renderer
     // ...
 
     mfr_init(&renderer, 1024 * 1024 * 1024);

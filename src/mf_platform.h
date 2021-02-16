@@ -37,7 +37,9 @@ int main()
 #define mf_inline inline
 #else
 #include <stdbool.h>
+#ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 199309L
+#endif
 #define mf_inline
 #endif
 
@@ -176,7 +178,9 @@ enum
 #ifdef __linux__
 // LINUX PLATFORM
 
+#ifdef MF_PLATFORM_USE_OPENGL
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, int, const int*);
+#endif
 
 typedef struct
 {
