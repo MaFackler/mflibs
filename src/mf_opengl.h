@@ -16,6 +16,7 @@ void mfgl_set_color_rgb(float r, float g, float b);
 void mfgl_set_color_rgb_255(i32 r, i32 g, i32 b);
 
 void mfgl_viewport_bottom_up(u32 width, u32 height);
+void mfgl_viewport_top_down(u32 width, u32 height);
 
 void mfgl_clear();
 void mfgl_draw_rect(float x, float y, float w, float h);
@@ -55,6 +56,19 @@ void mfgl_viewport_bottom_up(u32 width, u32 height)
     };
     glLoadMatrixf(mat);
 
+}
+
+void mfgl_viewport_top_down(u32 width, u32 height)
+{
+    glMatrixMode(GL_PROJECTION);
+    float mat[] =
+    {
+        2.0f/width, 0, 0, 0,
+        0, -2.0f/height, 0, 0,
+        0, 0, 1, 0,
+        -1, 1, 0, 1,
+    };
+    glLoadMatrixf(mat);
 }
 
 void mfgl_clear()
