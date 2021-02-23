@@ -100,6 +100,14 @@ typedef uint64_t u64;
     MF_FormatStringN(varName, 1024, format, __VA_ARGS__)
 
 
+void mf_sleep_ms(int value)
+{
+#ifdef _WIN32
+    Sleep(value);
+#else
+    usleep(value);
+#endif
+}
 
 
 void mf_print(const char *fmt, ...)
@@ -432,11 +440,11 @@ void mf_directory_close(mf_directory *dir)
 }
 
 // Threads
-typedef void (*ThreadProc)(void *param);
+typedef void (*mf_thread_proc)(void *param);
 
 typedef struct
 {
-    ThreadProc proc;
+    mf_thread_proc proc;
     void *arg;
 } mf_thread_context;
 
@@ -445,7 +453,7 @@ typedef struct
 DWORD _ThreadProc(LPVOID param)
 {
 
-    ThreadContext *threadContext = (ThreadContext *) param;
+    mf_thread_context *threadContext = (mf_thread_context *) param;
     threadContext->proc(threadContext->arg);
 
     return 0;

@@ -89,6 +89,8 @@ void mfp_window_toggle_fullscreen(mfp_platform *platform);
 void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i32 width, i32 height);
 void mfp_window_close(mfp_platform *platform);
 
+void mfp__end(mfp_platform *platform);
+u64 mfp__get_time_micro();
 
 struct mfp_button_state
 {
@@ -174,6 +176,26 @@ enum
 // TODO: whats a good practice so i dont have to redefine this every time?
 #define MFP_Assert(expr) if (!(expr)) {*(int *) 0 = 0; }
 #define MFP_ArrayLength(arr) (sizeof(arr) / sizeof(arr[0]))
+
+inline
+void mfp__end(mfp_platform *platform)
+{
+    // reset input
+    mfp_input *input = &platform->input;
+    input->textLength = 0;
+    input->text[0] = 0;
+    input->mouseLeft.pressed = false;
+
+    // update time
+    mfp_timer *timer = &platform->timer;
+    u64 time = mfp__get_time_micro();
+    timer->deltaMicroSec = time - timer->time;
+    timer->deltaMilliSec = timer->deltaMicroSec / 1000;
+    timer->deltaSec = timer->deltaMilliSec / 1000.0f;
+    timer->time = time;
+    if (timer->deltaMilliSec > 0)
+        timer->fps = 1000 / timer->deltaMilliSec;
+}
 
 #ifdef __linux__
 // LINUX PLATFORM
@@ -521,22 +543,7 @@ void mfp_begin(mfp_platform *platform)
 
 void mfp_end(mfp_platform *platform)
 {
-    // reset input
-    mfp_input *input = &platform->input;
-    input->textLength = 0;
-    input->text[0] = 0;
-    input->mouseLeft.pressed = false;
-
-    // update time
-    mfp_timer *timer = &platform->timer;
-    u64 time = mfp__get_time_micro();
-    timer->deltaMicroSec = time - timer->time;
-    timer->deltaMilliSec = timer->deltaMicroSec / 1000;
-    timer->deltaSec = timer->deltaMilliSec / 1000.0f;
-    timer->time = time;
-    if (timer->deltaMilliSec > 0)
-        timer->fps = 1000 / timer->deltaMilliSec;
-        
+    mfp__end(platform);
 #ifdef MF_PLATFORM_USE_OPENGL
     mfp_x11 *x11 = mfp__get_x11(platform);
     glXSwapBuffers(x11->display, x11->window);
@@ -573,6 +580,24 @@ typedef struct
     void *graphicHandle;
 } mfp_win;
 
+
+u64 mfp__get_time_micro()
+{
+    LARGE_INTEGER counter;
+    // TODO: is QuadPart always 0 at initialization??
+    static LARGE_INTEGER freqency;
+    if (freqency.QuadPart == 0)
+    {
+        QueryPerformanceFrequency(&freqency);
+    }
+    QueryPerformanceCounter(&counter);
+    assert(freqency.QuadPart > 0);
+    u64 res = 0;
+    float in_seconds = (float)counter.QuadPart / (float)freqency.QuadPart;
+    res = in_seconds * 1000 * 1000;
+    return res;
+}
+
 mf_inline
 mfp_win *mfp__get_win(mfp_platform *platform)
 {
@@ -586,6 +611,11 @@ void mfp_init(mfp_platform *platform)
 
 void mfp_begin(mfp_platform *platform)
 {
+
+    if (platform->timer.time == 0)
+    {
+        platform->timer.time = mfp__get_time_micro();
+    }
     for (size_t i = 0; i < MFP__AMOUNT_KEYS; ++i)
     {
         mfp_button_state *state = &platform->input.keys[i];
@@ -604,6 +634,7 @@ void mfp_begin(mfp_platform *platform)
 
 void mfp_end(mfp_platform *platform)
 {
+    mfp__end(platform);
 #ifdef MF_PLATFORM_USE_OPENGL
     mfp_win *os = mfp__get_win(platform);
     SwapBuffers(os->dc);

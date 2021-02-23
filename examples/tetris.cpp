@@ -453,8 +453,9 @@ void GameStateUpdate(mfp_input *input, GameState *state, float deltaSec)
         }
     }
     // Handle input
-    if (input->keys['l'].pressed)
+    if (input->keys['l'].pressed || input->keys[MF_KEY_RIGHT].pressed)
     {
+        // right
         Piece* piece = state->getCurrentPiece();
         if (IsPieceValid(state, state->col + 1, state->row, state->direction))
         {
@@ -462,7 +463,7 @@ void GameStateUpdate(mfp_input *input, GameState *state, float deltaSec)
         }
 
     }
-    else if (input->keys['j'].pressed || input->keys['h'].pressed)
+    else if (input->keys['j'].pressed || input->keys[MF_KEY_LEFT].pressed)
     {
         if (IsPieceValid(state, state->col - 1, state->row, state->direction))
         {
@@ -576,8 +577,10 @@ int main()
         GameStateUpdate(&input, &state, platform.timer.deltaSec);
         GameStateRender(&state, &renderer, window.height);
 
+        mf_sleep_ms(16);
         mfr_flush(&renderer);
         mfp_end(&platform);
+
     }
 
     mfr_destroy(&renderer);

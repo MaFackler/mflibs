@@ -55,7 +55,7 @@ inline
 bool mfm_v2_is_equal(mfm_v2 a, mfm_v2 b)
 {
     bool res = a.x == b.x && a.y == b.y;
-    return mfm_v2_is_equal;
+    return res;
 }
 
 
