@@ -29,8 +29,8 @@ int main()
     // override rendering functions
     // signatures of rendering functions are described under this example
     // Functions starting with func_*
-    renderer->set_color = my_set_color
-    renderer->render_rect = my_rectangle_renderer
+    renderer.set_color = my_set_color
+    renderer.render_rect = my_rectangle_renderer
     // ...
 
     mfr_init(&renderer, 1024 * 1024 * 1024);
@@ -63,6 +63,8 @@ typedef void (func_render_clear)(void);
 
 typedef struct mfr_renderer mfr_renderer;
 void mfr_init(mfr_renderer *renderer, size_t memorySize);
+void mfr_destroy(mfr_renderer *renderer);
+
 void mfr_set_color(mfr_renderer *renderer, float r, float g, float b, float a);
 void mfr_set_offset(mfr_renderer *renderer, float x, float y);
 void mfr_reset_offset(mfr_renderer *renderer);
@@ -134,6 +136,11 @@ void mfr_init(mfr_renderer *renderer, size_t memorySize)
     renderer->a = 1;
     renderer->x = 0;
     renderer->y = 0;
+}
+
+void mfr_destroy(mfr_renderer *renderer)
+{
+    free(renderer->commands);
 }
 
 inline

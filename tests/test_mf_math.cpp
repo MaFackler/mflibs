@@ -10,6 +10,15 @@ TEST("Vector 2 is equal")
     MFT_CHECK(mfm_v2_is_equal(v1, v2));
 }
 
+TEST("Vector 255 to 1")
+{
+    mfm_v3 res = mfm_v3_255_to_1(128, 0, 255);
+
+    MFT_CHECK_FLOAT(res.x, 0.5019f);
+    MFT_CHECK_FLOAT(res.y, 0.0f);
+    MFT_CHECK_FLOAT(res.z, 1.0f);
+}
+
 TEST("Vector 3 add")
 {
     mfm_v3 v1{1.0f, 2.0f, 3.0f};

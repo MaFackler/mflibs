@@ -18,7 +18,7 @@ endif
 HEADERS=$(wildcard src/*.h)
 TESTS=$(wildcard tests/*.cpp)
 
-all: $(OUTDIR)/example-platform $(OUTDIR)/example-renderer $(OUTDIR)/all-in-c $(OUTDIR)/runtests $(OUTDIR)/runtests
+all: $(OUTDIR)/example-platform $(OUTDIR)/example-renderer $(OUTDIR)/all-in-c $(OUTDIR)/runtests $(OUTDIR)/runtests $(OUTDIR)/tetris
 
 
 $(OUTDIR)/example-platform: examples/example_platform.cpp $(HEADERS)
@@ -27,12 +27,17 @@ $(OUTDIR)/example-platform: examples/example_platform.cpp $(HEADERS)
 $(OUTDIR)/example-renderer: examples/example_renderer.cpp $(HEADERS)
 	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
 
+$(OUTDIR)/tetris: examples/tetris.cpp $(HEADERS)
+	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
+
 $(OUTDIR)/runtests: $(HEADERS) $(TESTS)
 	$(CC) $(OUTPUT)$@ $(CFLAGS) tests/tests.cpp
 
 
+
 test: $(OUTDIR)/runtests
 	./$<
+
 
 
 # NOTE: this is just to check that the header files will also compile with c99

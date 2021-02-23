@@ -26,6 +26,8 @@ typedef struct
     float z;
 } mfm_v3;
 
+mfm_v3 mfm_v3_255_to_1(int r, int g, int b);
+
 mfm_v3 mfm_v3_lerp(mfm_v3 a, mfm_v3 b, float t);
 mfm_v3 mfm_v3_add(mfm_v3 a, mfm_v3 b);
 mfm_v3 mfm_v3_sub(mfm_v3 a, mfm_v3 b);
@@ -58,6 +60,16 @@ bool mfm_v2_is_equal(mfm_v2 a, mfm_v2 b)
 
 
 // mfm_v3
+//
+mfm_v3 mfm_v3_255_to_1(int r, int g, int b)
+{
+    mfm_v3 res;
+    res.x = r / 255.0f;
+    res.y = g / 255.0f;
+    res.z = b / 255.0f;
+    return res;
+}
+
 
 inline
 float mfm_v3_lerp(float a, float b, float t)
