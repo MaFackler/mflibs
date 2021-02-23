@@ -6,6 +6,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 #ifndef MFT_AMOUNT_TESTCASES
 #define MFT_AMOUNT_TESTCASES 1024
@@ -177,7 +182,7 @@ void mft__check_float(mft__test_case *testCase, u32 line, float actual, float ex
     char buffer[1024];
     sprintf(&buffer[0], "%f != %f", actual, expected);
     // TODO whats a good precision
-    if (abs(actual - expected) > 0.001f )
+    if (fabs(actual - expected) > 0.001f )
         mft__on_check_error(testCase, line, &buffer[0]);
 }
 
@@ -244,7 +249,7 @@ enum mft__terminal_color
 
 void mft__set_color(enum mft__terminal_color color)
 {
-#ifdef WIN32 
+#ifdef _WIN32 
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleTextAttribute(hConsole, (int)color);
 #else
@@ -295,7 +300,7 @@ i32 mft_run()
     bool collectionFailure = false;
 
     printf("\n=============================================\n");
-    printf("Found %zu TestCases\n", __mft_collection.index);
+    printf("Found %d TestCases\n", __mft_collection.index);
     printf("=============================================\n\n");
 
     for (size_t i = 0; i < __mft_collection.index; ++i)
