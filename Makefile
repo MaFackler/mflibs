@@ -18,7 +18,9 @@ endif
 HEADERS=$(wildcard src/*.h)
 TESTS=$(wildcard tests/*.cpp)
 
-all: $(OUTDIR)/example-platform $(OUTDIR)/example-renderer $(OUTDIR)/all-in-c $(OUTDIR)/runtests $(OUTDIR)/runtests $(OUTDIR)/tetris
+all:  $(OUTDIR)/all-in-c $(OUTDIR)/runtests examples
+
+examples: $(OUTDIR)/example-platform $(OUTDIR)/example-renderer $(OUTDIR)/tetris
 
 
 $(OUTDIR)/example-platform: examples/example_platform.cpp $(HEADERS)
