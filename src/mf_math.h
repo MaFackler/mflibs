@@ -70,9 +70,9 @@ inline
 mfm_v3 mfm_v3_add(mfm_v3 a, mfm_v3 b)
 {
     mfm_v3 res;
-    res.x = a.x - b.x;
-    res.y = a.y - b.y;
-    res.z = a.z - b.z;
+    res.x = a.x + b.x;
+    res.y = a.y + b.y;
+    res.z = a.z + b.z;
     return res;
 }
 
@@ -104,7 +104,6 @@ mfm_v3 mfm_v3_lerp(mfm_v3 a, mfm_v3 b, float t)
 }
 
 
-
 #ifdef __cplusplus
 
 inline
@@ -118,6 +117,26 @@ bool operator!=(mfm_v2 a, mfm_v2 b)
 {
     return !mfm_v2_is_equal(a, b);
 }
+
+// Vector 3
+inline
+mfm_v3 operator+(mfm_v3 a, mfm_v3 b)
+{
+    return mfm_v3_add(a, b);
+}
+
+inline
+mfm_v3 operator-(mfm_v3 a, mfm_v3 b)
+{
+    return mfm_v3_sub(a, b);
+}
+
+inline
+mfm_v3 operator*(mfm_v3 a, float b)
+{
+    return mfm_v3_mul(a, b);
+}
+
 
 #endif
 
