@@ -33,6 +33,9 @@ TEST("STRING")
     buffer[0] = 'a';
     buffer[1] = 'b';
     buffer[2] = 'c';
-    MFT_CHECK_STRN(&buffer[0], "abc", 3);
+    MFT_CHECK_STRINGN(&buffer[0], "abc", 3);
+
+    buffer[3] = 0;
+    MFT_CHECK_STRING(&buffer[0], "abc");
 }
 

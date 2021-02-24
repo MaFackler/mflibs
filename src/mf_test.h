@@ -44,7 +44,7 @@ TEST("STRING")
     buffer[0] = 'a';
     buffer[1] = 'b';
     buffer[2] = 'c';
-    MFT_CHECK_STRN(&buffer[0], "abc", 3);
+    MFT_CHECK_STRINGN(&buffer[0], "abc", 3);
 }
 
 
@@ -95,7 +95,8 @@ static mft__test_collection __mft_collection = {};
 #define MFT_CHECK_FLOAT(a, b) mft__check_float(testCase, __LINE__, a, b)
 #define MFT_CHECK_CHAR(a, b) mft__check_char(testCase, __LINE__, a, b)
 #define MFT_CHECK_INT(a, b) mft__check_int(testCase, __LINE__, a, b)
-#define MFT_CHECK_STRN(a, b, c) mft__check_strn(testCase, __LINE__, a, b, c)
+#define MFT_CHECK_STRINGN(a, b, c) mft__check_strn(testCase, __LINE__, a, b, c)
+#define MFT_CHECK_STRING(a, b) mft__check_strn(testCase, __LINE__, a, b, strlen(a));
 
 
 

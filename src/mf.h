@@ -99,6 +99,47 @@ typedef uint64_t u64;
 #define MF_FormatString(varName, format, ...) \
     MF_FormatStringN(varName, 1024, format, __VA_ARGS__)
 
+#define MF_PATH_SEPARATOR_WINDOWS '\\'
+#define MF_PATH_SEPARATOR_UNIX '/'
+#ifdef MF_WINDOWS
+#define MF_PATH_SEPARATOR MF_PATH_SEPARATOR_WINDOWS
+#else
+#define MF_PATH_SEPARATOR MF_PATH_SEPARATOR_UNIX
+#endif // MF_WINDOWS
+
+
+// general
+void mf_sleep_ms(int value);
+void mf_print(const char *fmt, ...);
+
+// String utilities
+bool mf_string_endswith(char *a, const char *b);
+bool mf_string_is_substring(char *a, const char *b);
+bool mf_string_is_equal(char *a, const char *b);
+u32 mf_string_count_char(char *a, char c);
+
+// Path, File
+char* mf_read_file(const char *path, const char *mode, u32 *size);
+char* mf_path_join_create(const char *a, const char *b, char separator);
+void mf_file_copy(char *src, char *dest);
+bool mf_is_file(const char *filename);
+u64 mf_get_last_write_time(char *filename);
+
+
+typedef struct mf_path_item mf_path_item;
+typedef struct mf_directory mf_directory;
+bool mf_directory_open(mf_directory *dir, const char* name, bool recursive);
+bool mf_directory_next(mf_directory *dir, mf_path_item *item);
+void mf_directory_close(mf_directory *dir);
+bool mf_path_item_is_directory(mf_path_item *item);
+bool mf_path_item_is_file(mf_path_item *item);
+
+// Thread
+typedef struct mf_thread_context mf_thread_context;
+void mf_thread_run(mf_thread_context *tc);
+
+
+#ifdef MF_IMPLEMENTATION
 
 void mf_sleep_ms(int value)
 {
@@ -128,7 +169,7 @@ void mf_print(const char *fmt, ...)
 
 // String utilities
 
-bool mf_string_endswith(char *a, char *b)
+bool mf_string_endswith(char *a, const char *b)
 {
     size_t aSize = strlen(a);
     size_t bSize = strlen(b);
@@ -183,18 +224,6 @@ u32 mf_string_count_char(char *a, char c)
     return res;
 }
 
-u32 mf_string_count_continous_char(char *str, char c)
-{
-    u32 res = 0;
-    while (*str)
-    {
-        char ch = *str++;
-        if (ch != c)
-            break;
-        res++;
-    }
-    return res;
-}
 
 // File io
 
@@ -235,57 +264,15 @@ char* mf_read_file(const char *path, const char *mode, u32 *size)
     return res;
 }
 
-// Path
-#define MF_PATH_SEPARATOR_WINDOWS '\\'
-#define MF_PATH_SEPARATOR_UNIX '/'
-#define MF_PATH_SEPARATOR MF_PATH_SEPARATOR_WINDOWS
 
-char* mf_path_join_create(char *a, char *b, char separator);
-void mf_copy_file(char *src, char *dest);
-bool mf_is_file(char *filename);
-u64 mf_get_last_write_time(char *filename);
-
-enum MF_PathItemType
-{
-    PATH_ITEM_UNKNOWN,
-    PATH_ITEM_FILE,
-    PATH_ITEM_DIRECTORY,
-};
-
-typedef struct
-{
-    char *name;
-    enum MF_PathItemType type;
-} mf_path_item;
-
-bool IsDirectory(mf_path_item *item) { return item->type == PATH_ITEM_DIRECTORY; };
-bool IsFile(mf_path_item *item) { return item->type == PATH_ITEM_FILE; };
-
-typedef struct
-{
-
-#ifdef MF_WINDOWS
-    HANDLE handle;
-    WIN32_FIND_DATAA data;
-    bool firstOne;
-#else
-    DIR *d;
-#endif
-} mf_directory; 
-
-bool mf_directory_open(mf_directory *dir, const char* name, bool recursive);
-bool mf_directory_next(mf_directory *dir, mf_path_item *item);
-void mf_directory_close(mf_directory *dir);
-
-
-char* mf_path_join_create(char *a, char *b, char separator)
+char* mf_path_join_create(const char *a, const char *b, char separator)
 {
     char *res = (char *) MF_Malloc(strlen(a) + strlen(b) + 2);
     sprintf(res, "%s%c%s", a, separator, b);
     return res;
 }
 
-void mf_copy_file(char *src, char *dest)
+void mf_file_copy(char *src, char *dest)
 {
 #ifdef MF_WINDOWS
     i32 res = CopyFile(src, dest, 0);
@@ -314,7 +301,7 @@ void mf_copy_file(char *src, char *dest)
 #endif
 }
 
-bool mf_is_file(char *filename)
+bool mf_is_file(const char *filename)
 {
     bool res = false;
 #ifdef MF_WINDOWS
@@ -364,6 +351,34 @@ u64 mf_get_last_write_time(char *filename)
 #endif
     return res;
 }
+
+enum MF_PathItemType
+{
+    PATH_ITEM_UNKNOWN,
+    PATH_ITEM_FILE,
+    PATH_ITEM_DIRECTORY,
+};
+
+
+struct mf_path_item
+{
+    char *name;
+    enum MF_PathItemType type;
+};
+
+struct mf_directory
+{
+
+#ifdef MF_WINDOWS
+    HANDLE handle;
+    WIN32_FIND_DATAA data;
+    bool firstOne;
+#else
+    DIR *d;
+#endif
+};
+
+
 
 
 bool mf_directory_open(mf_directory *dir, const char *name, bool recursive)
@@ -439,18 +454,30 @@ void mf_directory_close(mf_directory *dir)
 #endif
 }
 
+inline
+bool mf_path_item_is_directory(mf_path_item *item)
+{
+    return item->type == PATH_ITEM_DIRECTORY;
+}
+
+inline
+bool mf_path_item_is_file(mf_path_item *item)
+{
+    return item->type == PATH_ITEM_FILE;
+}
+
 // Threads
 typedef void (*mf_thread_proc)(void *param);
 
-typedef struct
+struct mf_thread_context
 {
     mf_thread_proc proc;
     void *arg;
-} mf_thread_context;
+};
 
 
 #ifdef MF_WINDOWS
-DWORD _ThreadProc(LPVOID param)
+DWORD mf__thread_proc_impl(LPVOID param)
 {
 
     mf_thread_context *threadContext = (mf_thread_context *) param;
@@ -460,24 +487,23 @@ DWORD _ThreadProc(LPVOID param)
 }
 #endif
 
-mf_thread_context* mf_thread_run(mf_thread_context *tc)
+void mf_thread_run(mf_thread_context *tc)
 {
 #ifdef MF_WINDOWS 
     DWORD id = 0;
     HANDLE thread = CreateThread(NULL,
                                  0,
-                                 _ThreadProc,
+                                 mf__thread_proc_impl,
                                  (LPVOID) tc,
                                  0,
                                  &id);
 #endif
 
-    return tc;
-
 }
 
 
 // Stretchy buffer
+
 typedef struct
 {
     u32 size;
@@ -614,5 +640,7 @@ void Vector<T>::_grow(size_t size)
 }
 
 #endif
+
+#endif // MF_IMPLEMENTATION
 
 #endif // MF_H
