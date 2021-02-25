@@ -638,6 +638,23 @@ void Vector<T>::_grow(size_t size)
     this->capacity = size;
 }
 
+template <typename T>
+bool VectorContains(Vector<T> *vec, T ele)
+{
+    bool res = false;
+    for (size_t i = 0; i < vec->size; ++i)
+    {
+        T value = vec->data[i];
+        if (ele == value)
+        {
+            res = true;
+            break;
+        }
+    }
+    return res;
+}
+
+
 #endif
 
 #endif // MF_IMPLEMENTATION

@@ -10,6 +10,20 @@ TEST("Vector 2 is equal")
     MFT_CHECK(mfm_v2_is_equal(v1, v2));
 }
 
+TEST("Vector 2 int add and add assign")
+{
+    mfm_v2i v1{2, 3};
+    mfm_v2i v2{2, 3};
+
+    mfm_v2i res = v1 + v2;
+    MFT_CHECK_INT(res.x, 4);
+    MFT_CHECK_INT(res.y, 6);
+
+    v1 += v2;
+    MFT_CHECK_INT(v1.x, 4);
+    MFT_CHECK_INT(v1.y, 6);
+}
+
 TEST("Vector 255 to 1")
 {
     mfm_v3 res = mfm_v3_255_to_1(128, 0, 255);

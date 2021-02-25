@@ -15,10 +15,13 @@ typedef struct
 {
     int x;
     int y;
+
 } mfm_v2i;
 
 
 bool mfm_v2_is_equal(mfm_v2 a, mfm_v2 b);
+
+mfm_v2i mfm_v2i_add(mfm_v2i a, mfm_v2i b);
 
 typedef struct
 {
@@ -26,6 +29,13 @@ typedef struct
     float y;
     float z;
 } mfm_v3;
+
+typedef struct
+{
+    i32 x;
+    i32 y;
+    i32 z;
+} mfm_v3i;
 
 mfm_v3 mfm_v3_255_to_1(int r, int g, int b);
 
@@ -56,6 +66,14 @@ inline
 bool mfm_v2_is_equal(mfm_v2 a, mfm_v2 b)
 {
     bool res = a.x == b.x && a.y == b.y;
+    return res;
+}
+
+mfm_v2i mfm_v2i_add(mfm_v2i a, mfm_v2i b)
+{
+    mfm_v2i res;
+    res.x = a.x + b.x;
+    res.y = a.y + b.y;
     return res;
 }
 
@@ -119,6 +137,8 @@ mfm_v3 mfm_v3_lerp(mfm_v3 a, mfm_v3 b, float t)
 
 #ifdef __cplusplus
 
+// Vector2
+
 inline
 bool operator==(mfm_v2 a, mfm_v2 b)
 {
@@ -129,6 +149,19 @@ inline
 bool operator!=(mfm_v2 a, mfm_v2 b)
 {
     return !mfm_v2_is_equal(a, b);
+}
+
+inline
+mfm_v2i operator+(mfm_v2i a, mfm_v2i b)
+{
+    return mfm_v2i_add(a, b);
+}
+
+inline
+mfm_v2i& operator+=(mfm_v2i& a, mfm_v2i& b)
+{
+    a = a + b;
+    return a;
 }
 
 // Vector 3
