@@ -11,13 +11,14 @@ typedef struct
 } mfm_v2;
 
 
-bool mfm_v2_is_equal(mfm_v2 a, mfm_v2 b);
-
 typedef struct
 {
     int x;
     int y;
 } mfm_v2i;
+
+
+bool mfm_v2_is_equal(mfm_v2 a, mfm_v2 b);
 
 typedef struct
 {

@@ -230,7 +230,6 @@ u32 mf_string_count_char(char *a, char c)
 char* mf_read_file(const char *path, const char *mode, u32 *size)
 {
     FILE *file = fopen(path, mode);
-    u32 chunkSize = 1048;
     u32 bytesToRead = 0;
     if (strcmp(mode, "r") == 0)
     {
