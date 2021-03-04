@@ -236,6 +236,7 @@ u64 mfp__get_time_micro()
     return cycles;
 }
 
+#ifdef MF_PLATFORM_USE_OPENGL
 void mfp__init_opengl(mfp_platform *platform)
 {
     mfp_x11 *x11 = mfp__get_x11(platform);
@@ -314,6 +315,7 @@ void mfp__init_opengl(mfp_platform *platform)
     // TODO: version??
     //MF_Assert(major == 3);
 }
+#endif
 
 
 void mfp_init(mfp_platform *platform)
