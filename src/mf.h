@@ -138,6 +138,9 @@ bool mf_path_item_is_file(mf_path_item *item);
 typedef struct mf_thread_context mf_thread_context;
 void mf_thread_run(mf_thread_context *tc);
 
+// Random
+u32 mf_random_int(u32 min, u32 max);
+
 
 #ifdef MF_IMPLEMENTATION
 
@@ -498,6 +501,24 @@ void mf_thread_run(mf_thread_context *tc)
                                  &id);
 #endif
 
+}
+
+
+static bool mf__random_inizialized = false;
+void mf__random_initialize()
+{
+    if (!mf__random_inizialized)
+    {
+        srand(time(NULL));
+        mf__random_inizialized = true;
+    }
+}
+
+u32 mf_random_int(u32 min, u32 max)
+{
+    mf__random_initialize();
+    u32 res = rand() % (max + 1 - min) + min;
+    return res;
 }
 
 
