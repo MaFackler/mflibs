@@ -1,14 +1,9 @@
 #ifndef MF_OPENGL_H
 #define MF_OPENGL_H
-#define GL_GLEXT_PROTOTYPES
-#define GLX_GLXEXT_PROTOTYPES
-#include <GL/gl.h>
-#ifdef MF_LINUX
-#include <GL/glx.h>
-#include <GL/glxext.h>
-#include <GL/glext.h>
-#endif
 
+// NOTE: opengl code should be included by platform
+
+typedef struct mfgl_shaders mfgl_shaderes;
 
 void mfgl_set_color(float r, float g, float b, float a);
 void mfgl_set_color_255(i32 r, i32 g, i32 b, i32 a);
@@ -21,8 +16,18 @@ void mfgl_viewport_top_down(u32 width, u32 height);
 void mfgl_clear();
 void mfgl_draw_rect(float x, float y, float w, float h);
 
+void mfgl_shaders_init(mfgl_shaders *shaders, char *vs, char *fs);
+
 
 #ifdef MF_OPENGL_IMPLEMENTATION
+
+struct mfgl_shaders
+{
+    bool success;
+    u32 vs;
+    u32 fs;
+    u32 program;
+};
 
 void mfgl_set_color(float r, float g, float b, float a)
 {
@@ -91,6 +96,60 @@ void mfgl_draw_rect(float x, float y, float w, float h)
         glTexCoord2f(0.0f, 1.0f);
         glVertex2f(x, y + h);
     glEnd();
+}
+
+
+void mfgl_shaders_init(mfgl_shaders *shaders, char *vs, char *fs)
+{
+    shaders->vs = 0;
+    shaders->fs = 0;
+    shaders->program = 0;
+    int success;
+    char info[512];
+
+    // Vertex shader
+    shaders->vs = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(shaders->vs, 1, &vs, NULL);
+    glCompileShader(shaders->vs);
+
+    glGetShaderiv(shaders->vs, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(shaders->vs, 512, NULL, info);
+        printf("%s", info);
+        shaders->vs = 0;
+        return;
+    }
+
+    // Fragment shader
+    shaders->fs = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(shaders->fs, 1, &fs, NULL);
+    glCompileShader(shaders->fs);
+    glGetShaderiv(shaders->fs, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(shaders->fs, 512, NULL, info);
+        printf("%s", info);
+        shaders->fs = 0;
+        return;
+    }
+
+    // Program
+    shaders->program = glCreateProgram();
+    glAttachShader(shaders->program, shaders->vs);
+    glAttachShader(shaders->program, shaders->fs);
+    glLinkProgram(shaders->program);
+
+    glGetShaderiv(shaders->program, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(shaders->program, 512, NULL, info);
+        printf("%s", info);
+        shaders->program = 0;
+        return;
+    }
+
+    shaders->success = success;
 }
 
 

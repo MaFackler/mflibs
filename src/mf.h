@@ -254,7 +254,8 @@ char* mf_read_file(const char *path, const char *mode, u32 *size)
         bytesToRead = ftell(file);
     }
 
-    *size = bytesToRead;
+    if (size)
+        *size = bytesToRead;
     fseek(file, 0, SEEK_SET);
     char *res = (char *) malloc(bytesToRead);
 

@@ -56,14 +56,13 @@ int main()
 #endif
 
 #ifdef MF_PLATFORM_USE_OPENGL
-//#define GL_GLEXT_PROTOTYPES
+#define GL_GLEXT_PROTOTYPES
 //#define GLX_GLEXT_PROTOTYPES
 #include <GL/gl.h>
 #ifdef __linux__
+#include <GL/glu.h>
 #include <GL/glx.h>
-//#include <GL/glu.h>
-//#include <GL/glxext.h>
-//#include <GL/glext.h>
+#include <GL/glext.h>
 #endif
 #endif
 
