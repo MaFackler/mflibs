@@ -343,6 +343,7 @@ void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i3
     platform->window.y = y;
     platform->window.width = width;
     platform->window.height = height;
+    platform->window.title = title;
     XSetWindowAttributes windowAttributes;
     windowAttributes.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask |
         StructureNotifyMask | PointerMotionMask | EnterWindowMask | LeaveWindowMask |
