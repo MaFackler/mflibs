@@ -134,6 +134,34 @@ mfm_v3 mfm_v3_lerp(mfm_v3 a, mfm_v3 b, float t)
     return res;
 }
 
+inline
+mfm_rect mfm_rect_margin_x(mfm_rect r, float value)
+{
+    mfm_rect res = r;
+    res.x += value;
+    res.width -= 2.0f * value;
+    return res;
+}
+
+inline
+mfm_rect mfm_rect_margin_y(mfm_rect r, float value)
+{
+    mfm_rect res = r;
+    res.y += value;
+    res.height -= 2.0f * value;
+    return res;
+}
+
+inline
+mfm_rect mfm_rect_margin(mfm_rect r, float value)
+{
+    mfm_rect res = r;
+    res = mfm_rect_margin_x(res, value);
+    res = mfm_rect_margin_y(res, value);
+    return res;
+}
+
+
 
 #ifdef __cplusplus
 
