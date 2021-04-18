@@ -39,32 +39,59 @@ int main()
 #include <stdbool.h>
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 199309L
-#endif
+#endif // _POSIX_C_SOURCE
 #define mf_inline
-#endif
+#endif // __cplusplus
 
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
 #include <assert.h>
-#ifdef __linux__
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#else // WINDOWS
-#include <windows.h>
-#endif
-
 #ifdef MF_PLATFORM_USE_OPENGL
 #define GL_GLEXT_PROTOTYPES
 //#define GLX_GLEXT_PROTOTYPES
+//
 #include <GL/gl.h>
-#ifdef __linux__
 #include <GL/glu.h>
+#ifdef __linux__
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
 #include <GL/glx.h>
 #include <GL/glext.h>
+#else // WINDOWS
+#include <windows.h>
+
+#define GL_COMPILE_STATUS                 0x8B81
+#define GL_VERTEX_SHADER                  0x8B31
+#define GL_VALIDATE_STATUS                0x8B83
+#define GL_FRAGMENT_SHADER                0x8B30
+#define GL_LINK_STATUS                    0x8B82
+#define WGL_CONTEXT_MAJOR_VERSION_ARB           0x2091
+#define WGL_CONTEXT_MINOR_VERSION_ARB           0x2092
+#define WGL_CONTEXT_PROFILE_MASK_ARB            0x9126
+#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB        0x00000001
+#define WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB 0x00000002
+
+#define GL_FUNC_DEF(rtype, name, ...) \
+    typedef rtype (*name##Proc)(__VA_ARGS__); \
+    static name##Proc name;
+
+GL_FUNC_DEF(HGLRC, wglCreateContextAttribsARB, HDC hDC, HGLRC hShareContext, const int *attribList);
+GL_FUNC_DEF(GLuint, glCreateShader, GLenum type);
+// TODO: why gl char not working
+GL_FUNC_DEF(void, glShaderSource, GLuint shader, GLsizei count, char **string, GLint *length);
+GL_FUNC_DEF(void, glCompileShader, GLuint shader);
+GL_FUNC_DEF(void, glAttachShader, GLuint program, GLuint shader);
+GL_FUNC_DEF(void, glGetShaderiv, GLuint shader, GLenum pname, GLint *params);
+GL_FUNC_DEF(void, glGetShaderInfoLog, GLuint shader, GLsizei bufSIze, GLsizei *length, char *infoLog);
+GL_FUNC_DEF(GLuint, glCreateProgram, void);
+GL_FUNC_DEF(void, glLinkProgram, GLuint program);
+
+
 #endif
-#endif
+
+#endif // MF_PLATFORM_USE_OPENGL
 
 typedef uint32_t u32;
 typedef uint64_t u64;
@@ -846,11 +873,52 @@ LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM 
 void mfp__init_opengl(mfp_platform *platform)
 {
     mfp_win *os = mfp__get_win(platform);
+    PIXELFORMATDESCRIPTOR pf = {};
+    pf.nSize = sizeof(pf);
+    pf.nVersion = 1;
+    pf.dwFlags = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER;
+    pf.cColorBits = 24;
+    pf.cAlphaBits = 8;
+    int suggestedIndex = ChoosePixelFormat(os->dc, &pf);
+    PIXELFORMATDESCRIPTOR spf;
+    DescribePixelFormat(os->dc, suggestedIndex, sizeof(spf), &spf);
+    SetPixelFormat(os->dc, suggestedIndex, &spf);
+
     os->graphicHandle = malloc(sizeof(HGLRC));
     HGLRC *hgl = (HGLRC *) os->graphicHandle;
-    *hgl = wglCreateContext(os->dc);
-    i32 res = wglMakeCurrent(os->dc, *hgl);
-    assert(res > 0);
+    HGLRC basicContext = wglCreateContext(os->dc);
+    if (wglMakeCurrent(os->dc, basicContext))
+    {
+#define GL_FUNC_LOAD(name)\
+    name = (name##Proc) wglGetProcAddress(#name);
+        wglCreateContextAttribsARB = (wglCreateContextAttribsARBProc) wglGetProcAddress("wglCreateContextAttribsARB");
+        //GL_FUNC_LOAD(wglCreateContextAttribsARB);
+        GL_FUNC_LOAD(glCreateShader);
+        GL_FUNC_LOAD(glShaderSource);
+        GL_FUNC_LOAD(glCompileShader);
+        GL_FUNC_LOAD(glAttachShader);
+        GL_FUNC_LOAD(glGetShaderiv);
+        GL_FUNC_LOAD(glGetShaderInfoLog);
+        GL_FUNC_LOAD(glLinkProgram);
+        GLint attribs[] =
+        {
+            WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
+            WGL_CONTEXT_MINOR_VERSION_ARB, 3,
+            WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
+            0
+        };
+        HGLRC modernContext = wglCreateContextAttribsARB(os->dc, 0, &attribs[0]);
+        if (modernContext)
+        {
+            wglMakeCurrent(os->dc, modernContext);
+            wglDeleteContext(basicContext);
+            *hgl = modernContext;
+        }
+        else
+        {
+            *hgl = basicContext;
+        }
+    }
 }
 
 void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i32 width, i32 height)

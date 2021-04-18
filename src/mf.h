@@ -508,11 +508,14 @@ void mf_thread_run(mf_thread_context *tc)
 static bool mf__random_inizialized = false;
 void mf__random_initialize()
 {
+#ifdef MF_WINDOWS
+#else
     if (!mf__random_inizialized)
     {
         srand(time(NULL));
         mf__random_inizialized = true;
     }
+#endif
 }
 
 u32 mf_random_int(u32 min, u32 max)
