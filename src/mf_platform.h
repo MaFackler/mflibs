@@ -167,9 +167,16 @@ struct mfp_timer
     u32 fps;
 };
 
+enum mfp_MessageType
+{
+    MFP_MESSAGE_WINDOW_SIZE,
+};
+
+typedef void (*mfp_MessageCallbackFunc)(mfp_MessageType);
 struct mfp_platform
 {
     void *os;
+    mfp_MessageCallbackFunc callback;
 
     mfp_input input;
     mfp_window window;
@@ -220,7 +227,7 @@ void mfp__end(mfp_platform *platform)
     timer->deltaSec = timer->deltaMilliSec / 1000.0f;
     timer->time = time;
     if (timer->deltaMilliSec > 0)
-        timer->fps = 1000 / timer->deltaMilliSec;
+        timer->fps = (u32) (1000 / timer->deltaMilliSec);
 }
 
 #ifdef __linux__
@@ -623,7 +630,7 @@ u64 mfp__get_time_micro()
     assert(freqency.QuadPart > 0);
     u64 res = 0;
     float in_seconds = (float)counter.QuadPart / (float)freqency.QuadPart;
-    res = in_seconds * 1000 * 1000;
+    res = (u64)(in_seconds * 1000 * 1000);
     return res;
 }
 
@@ -683,6 +690,8 @@ void mfp_destroy(mfp_platform *platform)
 
 void mfp_window_toggle_fullscreen(mfp_platform *platform)
 {
+    void *dummy = platform;
+    MF_Assert(dummy);
 }
 
 mf_inline
@@ -781,6 +790,16 @@ LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM 
     {
         case WM_SIZE:
         {
+            if (g_platform->callback)
+            {
+                mfp_window *window = &g_platform->window;
+                mfp__get_client_rect(os->window,
+                                     &window->x,
+                                     &window->y,
+                                     &window->width,
+                                     &window->height);
+                g_platform->callback(MFP_MESSAGE_WINDOW_SIZE);
+            }
             break;
         }
         case WM_LBUTTONDOWN:
@@ -795,20 +814,16 @@ LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM 
         }
         case WM_MOUSEWHEEL:
         {
-            i32 keys = GET_KEYSTATE_WPARAM(wParam);
+            //i32 keys = GET_KEYSTATE_WPARAM(wParam);
             i32 delta = GET_WHEEL_DELTA_WPARAM(wParam);
-            g_platform->input.mouseWheelDelta = delta;
+            g_platform->input.mouseWheelDelta = (float) delta;
             break;
         }
         case WM_CLOSE:
+        case WM_DESTROY:
         case WM_QUIT:
         {
             g_platform->window.isOpen = false;
-            break;
-        }
-        case WM_DESTROY:
-        {
-            // platform->quit = true;
             break;
         }
         case WM_SYSKEYDOWN:
@@ -817,13 +832,13 @@ LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM 
             // TODO: if the _WinProc loop is slow the amount of repeats will be more than one
             // so the application misses some key repeats but maybe this is okay
             //u32 amount = lParam & 0x0FFFF;
-            mfp__dispatch_windows_key(&g_platform->input, wParam, true);
+            mfp__dispatch_windows_key(&g_platform->input, (u32) wParam, true);
             break;
         }
         case WM_SYSKEYUP:
         case WM_KEYUP:
         {
-            mfp__dispatch_windows_key(&g_platform->input, wParam, false);
+            mfp__dispatch_windows_key(&g_platform->input, (u32) wParam, false);
             break;
         }
         case WM_EXITSIZEMOVE:
@@ -845,10 +860,10 @@ LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM 
         }
         case WM_PAINT:
         {
-            PAINTSTRUCT Paint;
-            HDC dc = BeginPaint(wnd, &Paint);
-            EndPaint(wnd, &Paint);
-            // res = DefWindowProcA(wnd, message, wParam, lParam);
+            //PAINTSTRUCT Paint;
+            //HDC dc = BeginPaint(wnd, &Paint);
+            //EndPaint(wnd, &Paint);
+            res = DefWindowProcA(wnd, message, wParam, lParam);
             break;
         }
         case WM_CHAR:
@@ -870,6 +885,7 @@ LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM 
     return res;
 }
 
+#ifdef MF_PLATFORM_USE_OPENGL
 void mfp__init_opengl(mfp_platform *platform)
 {
     mfp_win *os = mfp__get_win(platform);
@@ -920,6 +936,7 @@ void mfp__init_opengl(mfp_platform *platform)
         }
     }
 }
+#endif // MF_PLATFORM_USE_OPENGL
 
 void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i32 width, i32 height)
 {
@@ -937,6 +954,9 @@ void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i3
 
     mfp_win *os = mfp__get_win(platform);
     mfp_window *window = &platform->window;
+    window->x = x;
+    window->y = y;
+    window->title = title;
 
     RECT sizeToRequest = {};
     sizeToRequest.left = 0;
@@ -948,7 +968,7 @@ void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i3
     os->window = CreateWindowA(wc.lpszClassName,
                                window->title,
                                style,
-                               0, 0,
+                               window->x, window->y,
                                sizeToRequest.right - sizeToRequest.left,
                                sizeToRequest.bottom - sizeToRequest.top,
                                0, 0, 0, 0);
@@ -980,6 +1000,7 @@ void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i3
 
 void mfp_window_close(mfp_platform *platform)
 {
+    MF_Assert(platform);
 }
 
 

@@ -34,9 +34,12 @@ mf_stretchy_destroy(arr);
 #endif
 
 #if defined(WIN32) || defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
 #define MF_WINDOWS
 #include <windows.h>
+#define MF_MAIN int WinMain(HINSTANCE __hInstance, HINSTANCE __hPrevInstance, LPSTR __lpCmdLine, int __nShowCmd)
 #else
+#define MF_MAIN int main(int __argc, char **__argv)
 #define MF_LINUX
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -51,6 +54,7 @@ mf_stretchy_destroy(arr);
 #include <dirent.h>
 #endif
 
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -159,7 +163,7 @@ void mf_print(const char *fmt, ...)
     char buffer[1024] = {};
     va_list args; 
     va_start(args, fmt);
-    vsprintf(buffer, fmt, args);
+    vsprintf_s(buffer, fmt, args);
 #ifdef MF_WINDOWS
     OutputDebugString(buffer);
     OutputDebugString("\n");
