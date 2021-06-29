@@ -6,6 +6,7 @@
 typedef struct mfgl_shaders mfgl_shaderes;
 
 void mfgl_set_color(float r, float g, float b, float a);
+void mfgl_set_color_i32(i32 value);
 void mfgl_set_color_255(i32 r, i32 g, i32 b, i32 a);
 void mfgl_set_color_rgb(float r, float g, float b);
 void mfgl_set_color_rgb_255(i32 r, i32 g, i32 b);
@@ -32,6 +33,14 @@ struct mfgl_shaders
 void mfgl_set_color(float r, float g, float b, float a)
 {
     glColor4f(r, g, b, a);
+}
+
+void mfgl_set_color_i32(i32 value)
+{
+    float r = (value >> 16 & 0xFF) / 255.0f;
+    float g = (value >> 8 & 0xFF) / 255.0f;
+    float b = (value >> 0 & 0xFF) / 255.0f;
+    mfgl_set_color_rgb(r, g, b);
 }
 
 void mfgl_set_color_255(i32 r, i32 g, i32 b, i32 a)
