@@ -95,6 +95,7 @@ static mft__test_collection __mft_collection = {};
 #define MFT_CHECK_FLOAT(a, b) mft__check_float(testCase, __LINE__, a, b)
 #define MFT_CHECK_CHAR(a, b) mft__check_char(testCase, __LINE__, a, b)
 #define MFT_CHECK_INT(a, b) mft__check_int(testCase, __LINE__, a, b)
+#define MFT_CHECK_SIZET(a, b) mft__check_sizet(testCase, __LINE__, a, b)
 #define MFT_CHECK_STRINGN(a, b, c) mft__check_strn(testCase, __LINE__, a, b, c)
 #define MFT_CHECK_STRING(a, b) mft__check_strn(testCase, __LINE__, a, b, strlen(a));
 
@@ -198,6 +199,12 @@ inline void mft__check_int(mft__test_case *testCase, u32 line, i32 actual, i32 e
 {
     if (actual != expected)
         mft__on_check_error(testCase, line, "i32 %d != %d", actual, expected);
+}
+
+inline void mft__check_sizet(mft__test_case *testCase, u32 line, size_t actual, size_t expected)
+{
+    if (actual != expected)
+        mft__on_check_error(testCase, line, "size_t %d != %d", actual, expected);
 }
 
 inline void mft__check_strn(mft__test_case *testCase, u32 line, char *actual, const char *expected, u32 size)
