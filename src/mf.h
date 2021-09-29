@@ -125,9 +125,9 @@ u32 mf_string_count_char(char *a, char c);
 // Path, File
 char* mf_read_file(const char *path, const char *mode, u32 *size);
 char* mf_path_join_create(const char *a, const char *b, char separator);
-void mf_file_copy(char *src, char *dest);
+void mf_file_copy(const char *src, const char *dest);
 bool mf_is_file(const char *filename);
-u64 mf_get_last_write_time(char *filename);
+u64 mf_get_last_write_time(const char *filename);
 
 
 typedef struct mf_path_item mf_path_item;
@@ -279,7 +279,7 @@ char* mf_path_join_create(const char *a, const char *b, char separator)
     return res;
 }
 
-void mf_file_copy(char *src, char *dest)
+void mf_file_copy(const char *src, const char *dest)
 {
 #ifdef MF_WINDOWS
     i32 res = CopyFile(src, dest, 0);
@@ -340,7 +340,7 @@ bool mf_is_file(const char *filename)
     return res;
 }
 
-u64 mf_get_last_write_time(char *filename)
+u64 mf_get_last_write_time(const char *filename)
 {
     u64 res = 0;
 #ifdef MF_WINDOWS
