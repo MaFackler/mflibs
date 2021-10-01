@@ -109,7 +109,7 @@ void mfp_init(mfp_platform *platform);
 void mfp_destroy(mfp_platform *platform);
 
 void mfp_begin(mfp_platform *platform);
-void mfp_end(mfp_platform *platform);
+void mfp_end(mfp_platform *platform, bool swapBuffers);
 
 void mfp_window_toggle_fullscreen(mfp_platform *platform);
 void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i32 width, i32 height);
@@ -577,12 +577,14 @@ void mfp_begin(mfp_platform *platform)
 
 }
 
-void mfp_end(mfp_platform *platform)
+void mfp_end(mfp_platform *platform, bool swapBuffers=true)
 {
     mfp__end(platform);
 #ifdef MF_PLATFORM_USE_OPENGL
-    mfp_x11 *x11 = mfp__get_x11(platform);
-    glXSwapBuffers(x11->display, x11->window);
+    if (swapBuffers) {
+        mfp_x11 *x11 = mfp__get_x11(platform);
+        glXSwapBuffers(x11->display, x11->window);
+    }
 #endif
 }
 
@@ -668,12 +670,14 @@ void mfp_begin(mfp_platform *platform)
     }
 }
 
-void mfp_end(mfp_platform *platform)
+void mfp_end(mfp_platform *platform, bool swapBuffers=true)
 {
     mfp__end(platform);
 #ifdef MF_PLATFORM_USE_OPENGL
-    mfp_win *os = mfp__get_win(platform);
-    SwapBuffers(os->dc);
+    if (swapBuffers) {
+        mfp_win *os = mfp__get_win(platform);
+        SwapBuffers(os->dc);
+    }
 #endif
 }
 
