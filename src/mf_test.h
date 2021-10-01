@@ -91,6 +91,8 @@ static mft__test_collection __mft_collection = {};
 
 // TEST CHECKS
 #define MFT_CHECK(condition) mft__check(testCase, __LINE__, condition)
+#define MFT_CHECK_TRUE(a) MFT_CHECK(a == true);
+#define MFT_CHECK_FALSE(a) MFT_CHECK(a == false);
 #define MFT_CHECK_PTR(a, b) mft__check_ptr(testCase, __LINE__, a, b)
 #define MFT_CHECK_FLOAT(a, b) mft__check_float(testCase, __LINE__, a, b)
 #define MFT_CHECK_CHAR(a, b) mft__check_char(testCase, __LINE__, a, b)
