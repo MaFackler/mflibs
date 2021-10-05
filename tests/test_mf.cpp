@@ -21,21 +21,21 @@ TEST("Stretchy buffer")
 
 TEST("mf_string_endswith")
 {
-    const char *my_base_string = "hello";
-    MFT_CHECK(!mf_string_endswith((char *) my_base_string, "ll"));
-    MFT_CHECK(mf_string_endswith((char *) my_base_string, "llo"));
+    mf_cstr my_base_string = "hello";
+    MFT_CHECK(!mf_str_endswith(my_base_string, "ll"));
+    MFT_CHECK(mf_str_endswith(my_base_string, "llo"));
 }
 
 TEST("mf_string_is_substring")
 {
-    const char *my_base_string = "hello";
-    MFT_CHECK(!mf_string_is_substring((char *) my_base_string, "hllo"));
-    MFT_CHECK(mf_string_is_substring((char *) my_base_string, "hel"));
+    mf_cstr my_base_string = "hello";
+    MFT_CHECK(!mf_str_is_substr(my_base_string, "hllo"));
+    MFT_CHECK(mf_str_is_substr(my_base_string, "hel"));
 }
 
 TEST("mf_string_is_equal")
 {
-    const char *my_base_string = "hello";
+    mf_cstr my_base_string = "hello";
     MFT_CHECK(!mf_string_is_equal((char *) my_base_string, "hllo"));
     MFT_CHECK(mf_string_is_equal((char *) my_base_string, "hello"));
     MFT_CHECK(!mf_string_is_equal((char *) my_base_string, "helloo"));
@@ -44,10 +44,10 @@ TEST("mf_string_is_equal")
 
 TEST("mf_string_count_char")
 {
-    const char *my_base_string = "hello";
-    MFT_CHECK_INT(mf_string_count_char((char * ) my_base_string, 'l'), 2);
-    MFT_CHECK_INT(mf_string_count_char((char * ) my_base_string, 'e'), 1);
-    MFT_CHECK_INT(mf_string_count_char((char * ) my_base_string, 'o'), 1);
+    mf_cstr my_base_string = "hello";
+    MFT_CHECK_INT(mf_str_count_char(my_base_string, 'l'), 2);
+    MFT_CHECK_INT(mf_str_count_char(my_base_string, 'e'), 1);
+    MFT_CHECK_INT(mf_str_count_char(my_base_string, 'o'), 1);
 }
 
 

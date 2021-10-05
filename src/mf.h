@@ -70,6 +70,8 @@ typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
+typedef char *mf_str;
+typedef const char *mf_cstr;
 
 
 #define MF_KiloByte(value) (1024 * value)
@@ -78,6 +80,7 @@ typedef uint64_t u64;
 #define MF_Realloc(ptr, size) realloc(ptr, size)
 #define MF_Malloc(size) malloc(size)
 #define MF_MallocA(size) _malloca(size)
+#define MF_Free free
 #define MF_Calloc(size) calloc(size, 1);
 
 
@@ -117,10 +120,22 @@ void mf_sleep_ms(int value);
 void mf_print(const char *fmt, ...);
 
 // String utilities
-bool mf_string_endswith(char *a, const char *b);
-bool mf_string_is_substring(char *a, const char *b);
-bool mf_string_is_equal(char *a, const char *b);
-u32 mf_string_count_char(char *a, char c);
+// TODO: rename to mf_str...
+mf_str mf_str_new(size_t n);
+void mf_str_free(mf_str a);
+bool mf_str_endswith(mf_cstr a, mf_cstr b);
+bool mf_str_is_substr(mf_cstr a, mf_cstr b);
+bool mf_str_is_equal(mf_cstr a, mf_cstr b);
+bool mf_str_is_empty(const mf_str a);
+bool mf_str_is_fuzzy(mf_cstr a, mf_cstr b);
+void mf_str_append(mf_str *a, mf_cstr b);
+void mf_str_nappend(mf_str a, int n, ...);
+mf_str mf_str_subdup(mf_str a, size_t start, size_t end);
+mf_str mf_str_subfree(mf_str a, size_t start, size_t end);
+u32 mf_str_count_char(mf_cstr a, char c);
+size_t mf_strlen(mf_cstr a);
+
+mf_str mf_strdup(mf_cstr a);
 
 // Path, File
 char* mf_read_file(const char *path, const char *mode, u32 *size);
@@ -137,6 +152,10 @@ bool mf_directory_next(mf_directory *dir, mf_path_item *item);
 void mf_directory_close(mf_directory *dir);
 bool mf_path_item_is_directory(mf_path_item *item);
 bool mf_path_item_is_file(mf_path_item *item);
+
+const mf_str* mf_readdir(const char *directory) {
+    return NULL;
+}
 
 // Thread
 typedef struct mf_thread_context mf_thread_context;
@@ -176,7 +195,19 @@ void mf_print(const char *fmt, ...)
 
 // String utilities
 
-bool mf_string_endswith(char *a, const char *b)
+mf_str mf_str_new(size_t n)
+{
+    mf_str res = (mf_str) MF_Calloc(n);
+    return res;
+}
+
+void mf_str_free(mf_str a)
+{
+    if (a)
+        MF_Free(a);
+}
+
+bool mf_str_endswith(mf_cstr a, mf_cstr b)
 {
     size_t aSize = strlen(a);
     size_t bSize = strlen(b);
@@ -185,7 +216,7 @@ bool mf_string_endswith(char *a, const char *b)
     return res;
 }
 
-bool mf_string_is_substring(char *a, const char *b)
+bool mf_str_is_substr(mf_cstr a, mf_cstr b)
 {
     bool res = false;
 
@@ -214,13 +245,91 @@ bool mf_string_is_substring(char *a, const char *b)
     return res;
 }
 
+bool mf_str_is_empty(const mf_str a)
+{
+    if (a == NULL)
+        return false;
+    return mf_strlen(a) == 0;
+}
+
+bool mf_str_is_fuzzy(mf_cstr a, mf_cstr b)
+{
+    size_t indexB = 0;
+    bool caseSensitive = false;
+    size_t sizeA = mf_strlen(a);
+    size_t sizeB = mf_strlen(b);
+    if (sizeB == 0)
+        return true;
+    for (size_t indexA = 0; indexA < sizeA; ++indexA) {
+        char ca = a[indexA];
+        char cb = b[indexB];
+
+        caseSensitive = caseSensitive || isupper(cb);
+        if (!caseSensitive) {
+            ca = tolower(ca);
+            cb = tolower(cb);
+        }
+        if (ca == cb) {
+            indexB++;
+            if (indexB == sizeB)
+                break;
+        }
+    }
+    return indexB == sizeB;
+}
+
+void mf_str_append(mf_str *a, mf_cstr b)
+{
+    u32 sizeA = mf_strlen(*a);
+    u32 sizeB = mf_strlen(b);
+    mf_str neww = (mf_str) MF_Realloc(*a, sizeA + sizeB + 1);
+    for (size_t i = 0; i < mf_strlen(b); ++i)
+    {
+        neww[sizeA + i] = b[i];
+    }
+    neww[sizeA + sizeB] = 0;
+    *a = neww;
+}
+
+void mf_str_nappend(mf_str a, int n, ...)
+{
+    va_list ap;
+
+    va_start(ap, a);
+    for (size_t i = 0; i < n; ++i)
+    {
+        mf_cstr value = va_arg(ap, mf_cstr);
+        mf_str_append(&a, value);
+    }
+    va_end(ap);
+}
+
+mf_str mf_str_subdup(mf_str a, size_t start, size_t end)
+{
+    size_t n = end - start;
+    mf_str res = mf_str_new(n + 1);
+    for (size_t i = 0; i < n; ++i)
+    {
+        res[i] = a[start + i];
+    }
+    res[n + 1] = 0;
+    return res;
+}
+
+mf_str mf_str_subfree(mf_str a, size_t start, size_t end)
+{
+    mf_str res = mf_str_subdup(a, start, end);
+    mf_str_free(a);
+    return res;
+}
+
 bool mf_string_is_equal(char *a, const char *b)
 {
     bool res = strcmp(a, b) == 0;
     return res;
 }
 
-u32 mf_string_count_char(char *a, char c)
+u32 mf_str_count_char(mf_cstr a, char c)
 {
     u32 res = 0;
     while(*a)
@@ -228,6 +337,20 @@ u32 mf_string_count_char(char *a, char c)
         if (*a++ == c)
             res++;
     }
+    return res;
+}
+
+size_t mf_strlen(mf_cstr a)
+{
+    size_t res = 0;
+    if (a != NULL)
+        res = strlen(a);
+    return res;
+}
+
+mf_str mf_strdup(mf_cstr a)
+{
+    mf_str res = strdup(a);
     return res;
 }
 
