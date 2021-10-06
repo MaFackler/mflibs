@@ -135,7 +135,12 @@ mf_str mf_str_subfree(mf_str a, size_t start, size_t end);
 u32 mf_str_count_char(mf_cstr a, char c);
 size_t mf_strlen(mf_cstr a);
 
+
 mf_str mf_strdup(mf_cstr a);
+
+// char buffer utilities
+void mf_to_cbuf(char *buf, u32 a);
+void mf_cbuf_rfill(char *buf, size_t len, char c, size_t n);
 
 // Path, File
 char* mf_read_file(const char *path, const char *mode, u32 *size);
@@ -346,6 +351,25 @@ size_t mf_strlen(mf_cstr a)
     if (a != NULL)
         res = strlen(a);
     return res;
+}
+
+void mf_to_cbuf(char *buf, u32 a)
+{
+    itoa(a, buf, 10);
+}
+
+void mf_cbuf_rfill(char *buf, size_t len, char c, size_t n)
+{
+    MF_Assert(len > n);
+    size_t size = mf_strlen(buf);
+    if (size < n)
+    {
+        for (size_t i = 0; i < n - size; ++i)
+        {
+            buf[size + i] = c;
+        }
+        buf[size + n] = '\0';
+    }
 }
 
 mf_str mf_strdup(mf_cstr a)
