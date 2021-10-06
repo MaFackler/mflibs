@@ -133,6 +133,7 @@ void mf_str_nappend(mf_str a, int n, ...);
 mf_str mf_str_subdup(mf_str a, size_t start, size_t end);
 mf_str mf_str_subfree(mf_str a, size_t start, size_t end);
 u32 mf_str_count_char(mf_cstr a, char c);
+u32 mf_str_count_char_break(mf_cstr a, char c);
 size_t mf_strlen(mf_cstr a);
 
 
@@ -341,6 +342,19 @@ u32 mf_str_count_char(mf_cstr a, char c)
     {
         if (*a++ == c)
             res++;
+    }
+    return res;
+}
+
+u32 mf_str_count_char_break(mf_cstr a, char c)
+{
+    u32 res = 0;
+    while (*a)
+    {
+        if (*a++ ==c)
+            res++;
+        else
+            break;
     }
     return res;
 }
