@@ -16,6 +16,7 @@ void mfgl_viewport_top_down(u32 width, u32 height);
 
 void mfgl_clear();
 void mfgl_draw_rect(float x, float y, float w, float h);
+void mfgl_draw_triangle(float a, float b, float c, float d, float e, float f);
 
 void mfgl_shaders_init(mfgl_shaders *shaders, char *vs, char *fs);
 
@@ -104,6 +105,15 @@ void mfgl_draw_rect(float x, float y, float w, float h)
         glVertex2f(x + w, y + h);
         glTexCoord2f(0.0f, 1.0f);
         glVertex2f(x, y + h);
+    glEnd();
+}
+
+void mfgl_draw_triangle(float a, float b, float c, float d, float e, float f)
+{
+    glBegin(GL_TRIANGLES);
+        glVertex2f(a, b);
+        glVertex2f(c, d);
+        glVertex2f(e, f);
     glEnd();
 }
 
