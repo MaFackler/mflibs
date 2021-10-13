@@ -254,7 +254,7 @@ bool mf_str_is_substr(mf_cstr a, mf_cstr b)
 bool mf_str_is_empty(const mf_str a)
 {
     if (a == NULL)
-        return false;
+        return true;
     return mf_strlen(a) == 0;
 }
 
