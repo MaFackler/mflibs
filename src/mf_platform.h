@@ -218,6 +218,7 @@ void mfp__end(mfp_platform *platform)
     input->textLength = 0;
     input->text[0] = 0;
     input->mouseLeft.pressed = false;
+    input->mouseWheelDelta = 0.0f;
 
     // update time
     mfp_timer *timer = &platform->timer;
