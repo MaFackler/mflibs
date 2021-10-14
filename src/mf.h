@@ -121,8 +121,8 @@ void mf_print(const char *fmt, ...);
 
 // String utilities
 // TODO: rename to mf_str...
-mf_str mf_str_new(size_t n);
 void mf_str_free(mf_str a);
+mf_str mf_str_new(mf_cstr fmt, ...);
 bool mf_str_endswith(mf_cstr a, mf_cstr b);
 bool mf_str_is_substr(mf_cstr a, mf_cstr b);
 bool mf_str_is_equal(mf_cstr a, mf_cstr b);
@@ -211,6 +211,19 @@ void mf_str_free(mf_str a)
 {
     if (a)
         MF_Free(a);
+}
+
+mf_str mf_str_new(mf_cstr fmt, ...)
+{
+    va_list args;
+    // TODO: safety???
+    char buffer[1024] = {};
+    va_start(args, fmt);
+    vsprintf_s(buffer, fmt, args);
+    va_end(args);
+
+    mf_str res = mf_strdup(&buffer[0]);
+    return res;
 }
 
 bool mf_str_endswith(mf_cstr a, mf_cstr b)
