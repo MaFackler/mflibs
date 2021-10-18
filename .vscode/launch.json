@@ -24,6 +24,17 @@
             "externalConsole": false,
         },
         {
+            "name": "(Windows) tests",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/runtests",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+        },
+        {
             "name": "(Windows) tetris",
             "type": "cppvsdbg",
             "request": "launch",
@@ -67,5 +78,6 @@
             "environment": [],
             "externalConsole": false,
         },
+
     ]
 }
