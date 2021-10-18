@@ -14,9 +14,9 @@ for (int i = 0; i < mf_stretchy_size(arr); ++i)
     printf("%d\n", arr[i]);
 }
 
-mf_stretchy_for(int*, ele, arr)
+mf_stretchy_for(arr)
 {
-    printf("%d\n", *ele);
+    printf("%d\n", *it);
 }
 
 mf_stretchy_clear(arr);
@@ -131,7 +131,6 @@ bool mf_str_is_fuzzy(mf_cstr a, mf_cstr b);
 void mf_str_append(mf_str *a, mf_cstr b);
 void mf_str_nappend(mf_str a, int n, ...);
 mf_str mf_str_subdup(mf_str a, size_t start, size_t end);
-mf_str mf_str_subfree(mf_str a, size_t start, size_t end);
 u32 mf_str_count_char(mf_cstr a, char c);
 u32 mf_str_count_char_break(mf_cstr a, char c);
 size_t mf_strlen(mf_cstr a);
@@ -332,13 +331,6 @@ mf_str mf_str_subdup(mf_str a, size_t start, size_t end)
         res[i] = a[start + i];
     }
     res[n + 1] = 0;
-    return res;
-}
-
-mf_str mf_str_subfree(mf_str a, size_t start, size_t end)
-{
-    mf_str res = mf_str_subdup(a, start, end);
-    mf_str_free(a);
     return res;
 }
 
@@ -712,21 +704,31 @@ typedef struct
     u32 capacity;
 } mf__stretchy_header;
 
-#define mf_stretchy_for(t, e, v) \
-	for (t e = v; e < (v) + mf_stretchy_size(v); ++e)
 
-
-#define mf__get_stretchy_header(v) ((mf__stretchy_header *)((char *) v - sizeof(mf__stretchy_header)))
+#define mf__get_stretchy_header(v) (((mf__stretchy_header *) (v)) - 1)
 #define mf_stretchy_size(v) ((v) ? mf__get_stretchy_header(v)->size : 0)
 #define mf__stretchy_capacity(v) ((v) ? mf__get_stretchy_header(v)->capacity : 0)
 #define mf__stretchy_full(v) (mf_stretchy_size(v) == mf__stretchy_capacity(v))
 #define mf_stretchy_clear(v) ((v) ? (mf__get_stretchy_header(v)->size = 0) : 0)
 #define mf_stretchy_destroy(v) ((v) ? (free(mf__get_stretchy_header(v)), (v) = NULL) : 0)
+#define mf_stretchy_end(v) v[mf__get_stretchy_header(v)->size]
+#define mf_stretchy_last(v) v[mf__get_stretchy_header(v)->size - 1]
+#define mf_stretchy_safe_index_ptr(v, i) arr != NULL ? &arr[i] : NULL
 
+#define mf__stretchy_check_and_resize(v) \
+	(mf__stretchy_full(v) ? mf__stretchy_grow((void **) &v, sizeof(*(v))) : 0)
+
+#define mf_stretchy_for(v) \
+    for (auto it = &v[0]; mf_stretchy_size(v) > 0 && it != &mf_stretchy_end(v); it++)
+
+// TODO: mf_stretchy_addn
+
+#define mf_stretchy_add(v) \
+    (mf__stretchy_check_and_resize(v), &(v)[mf__get_stretchy_header(v)->size++])
 
 #define mf_stretchy_push(v, e) \
-	mf__stretchy_full(v) ? mf__stretchy_grow((void **) &v, sizeof(*(v))) : 0, \
-	(v)[mf__get_stretchy_header(v)->size++] = (e)
+    *mf_stretchy_add(v) = e
+
 
 inline int mf__stretchy_grow(void **v, size_t elementSize)
 {
@@ -747,6 +749,7 @@ inline int mf__stretchy_grow(void **v, size_t elementSize)
     *v  = (char *) header + sizeof(mf__stretchy_header);
 	return 0;
 }
+
 
 #ifdef __cplusplus
 
