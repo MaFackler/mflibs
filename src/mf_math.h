@@ -45,13 +45,21 @@ mfm_v3 mfm_v3_sub(mfm_v3 a, mfm_v3 b);
 mfm_v3 mfm_v3_mul(mfm_v3 a, float b);
 
 
-typedef struct
+union mfm_rect
 {
-    float x;
-    float y;
-    float width;
-    float height;
-} mfm_rect;
+    struct {
+        float x;
+        float y;
+        float width;
+        float height;
+    };
+    struct {
+        mfm_v2 xy;
+        float __ignore3;
+        float __ignore4;
+    };
+    float e[4];
+};
 
 #ifdef MF_MATH_IMPLEMENTATION
 
@@ -158,6 +166,26 @@ mfm_rect mfm_rect_margin(mfm_rect r, float value)
     mfm_rect res = r;
     res = mfm_rect_margin_x(res, value);
     res = mfm_rect_margin_y(res, value);
+    return res;
+}
+
+inline
+mfm_rect mfm_rect_margin(mfm_rect r, float x, float y)
+{
+    mfm_rect res = r;
+    res = mfm_rect_margin_x(res, x);
+    res = mfm_rect_margin_y(res, y);
+    return res;
+}
+
+inline
+mfm_rect mfm_rect_margin(mfm_rect r, float left, float top, float right, float bottom)
+{
+    mfm_rect res = r;
+    res.x += left;
+    res.y += top;
+    res.width -= (right + left);
+    res.height -= (bottom + top);
     return res;
 }
 
