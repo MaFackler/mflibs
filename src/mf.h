@@ -73,7 +73,6 @@ typedef uint64_t u64;
 typedef char *mf_str;
 typedef const char *mf_cstr;
 
-
 #define MF_KiloByte(value) (1024 * value)
 #define MF_MegaByte(value) (1024 * (MF_KiloByte(value)))
 
@@ -137,6 +136,9 @@ size_t mf_strlen(mf_cstr a);
 
 
 mf_str mf_strdup(mf_cstr a);
+void mf_strcpy(mf_str dest, mf_cstr source);
+#define mf_strcat strcat
+#define mf_strncat strncat
 
 // char buffer utilities
 void mf_to_cbuf(char *buf, u32 a);
@@ -334,7 +336,7 @@ mf_str mf_str_subdup(mf_str a, size_t start, size_t end)
     return res;
 }
 
-bool mf_string_is_equal(char *a, const char *b)
+bool mf_str_is_equal(mf_cstr a, mf_cstr b)
 {
     bool res = strcmp(a, b) == 0;
     return res;
@@ -397,6 +399,11 @@ mf_str mf_strdup(mf_cstr a)
     return res;
 }
 
+inline
+void mf_strcpy(mf_str dest, mf_cstr source)
+{
+    strcpy(dest, source);
+}
 
 // File io
 

@@ -132,6 +132,9 @@ struct mfp_input
     bool enableKeyRepeat;
     mfp_button_state keys[MFP__AMOUNT_KEYS];
 
+    char downKeysBuffer[256];
+    u32 downKeysBufferSize = 0;
+
     // Text input
     char text[256];
     u32 textLength;
@@ -217,6 +220,8 @@ void mfp__end(mfp_platform *platform)
     mfp_input *input = &platform->input;
     input->textLength = 0;
     input->text[0] = 0;
+    input->downKeysBuffer[0] = 0;
+    input->downKeysBufferSize = 0;
     input->mouseLeft.pressed = false;
     input->mouseWheelDelta = 0.0f;
 
@@ -413,7 +418,7 @@ void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i3
 }
 
 
-void mfp__dispatch_key(mfp_input *input, mfp_button_state *state, bool down)
+void mfp__dispatch_key(mfp_input *input, mfp_button_state *state, bool down, )
 {
     state->pressed = !state->down && down;
     state->released = state->down && !down;
@@ -438,6 +443,8 @@ void mfp__dispatch_xkey(mfp_input *input, XKeyEvent *event, bool down)
             input->textLength += amount;
             MFP_Assert(input->textLength < 256);
             input->text[input->textLength] = 0;
+        } else if (state->down) {
+            input->downKeysBuffer[input->downKeysBufferSize++] = sym;
         }
     }
     else
@@ -782,6 +789,9 @@ void mfp__dispatch_windows_key(mfp_input *input, u32 keycode, bool down)
         keyIndex = MF_KEY_ESCAPE; 
 
     mfp_button_state *state = &input->keys[keyIndex];
+    if (down) {
+        input->downKeysBuffer[input->downKeysBufferSize++] = keyIndex;
+    }
     mfp__dispatch_key_to_input(input, state, down);
 }
 
@@ -879,6 +889,9 @@ LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM 
             mfp_input *input = &g_platform->input;
             if (length == 1 && asciiChar >= ' ')
             {
+                if (asciiChar == '\r') {
+                    asciiChar = '\n';
+                }
                 input->text[input->textLength++] = asciiChar;
                 input->text[input->textLength] = 0;
             }
