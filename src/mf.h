@@ -123,6 +123,7 @@ void mf_print(const char *fmt, ...);
 void mf_str_free(mf_str a);
 mf_str mf_str_new(mf_cstr fmt, ...);
 bool mf_str_endswith(mf_cstr a, mf_cstr b);
+bool mf_str_is_substrn(mf_cstr a, mf_cstr b, size_t n);
 bool mf_str_is_substr(mf_cstr a, mf_cstr b);
 bool mf_str_is_equal(mf_cstr a, mf_cstr b);
 bool mf_str_is_empty(const mf_str a);
@@ -236,25 +237,24 @@ bool mf_str_endswith(mf_cstr a, mf_cstr b)
     return res;
 }
 
-bool mf_str_is_substr(mf_cstr a, mf_cstr b)
+bool mf_str_is_substrn(mf_cstr a, mf_cstr b, size_t n)
 {
     bool res = false;
 
     size_t sizeA = strlen(a);
-    size_t sizeB = strlen(b);
 
-    if (sizeB < sizeA)
+    if (n <= sizeA)
     {
-        for (size_t i = 0; i <= sizeA - sizeB; ++i)
+        for (size_t i = 0; i <= sizeA - n; ++i)
         {
             size_t j;
-            for (j = 0; j < sizeB; ++j)
+            for (j = 0; j < n; ++j)
             {
                 if (a[i + j] != b[j])
                     break;
 
             }
-            if (j == sizeB)
+            if (j == n)
             {
                 res = true;
                 break;
@@ -262,6 +262,12 @@ bool mf_str_is_substr(mf_cstr a, mf_cstr b)
 
         }
     }
+    return res;
+}
+
+bool mf_str_is_substr(mf_cstr a, mf_cstr b)
+{
+    bool res = mf_str_is_substrn(a, b, mf_strlen(b));
     return res;
 }
 
