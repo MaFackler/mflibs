@@ -116,7 +116,7 @@ void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i3
 void mfp_window_close(mfp_platform *platform);
 
 void mfp__end(mfp_platform *platform);
-u64 mfp__get_time_micro();
+u64 mfp__get_ticks();
 
 struct mfp_button_state
 {
@@ -163,11 +163,9 @@ struct mfp_window
 struct mfp_timer
 {
     // Time
-    u64 time;
+    i32 ticks;  // TODO: why does this not work if its a i64????
     float deltaSec;
-    u64 deltaMicroSec;
-    u64 deltaMilliSec;
-    u32 fps;
+    float fps;
 };
 
 enum mfp_MessageType
@@ -225,15 +223,18 @@ void mfp__end(mfp_platform *platform)
     input->mouseLeft.pressed = false;
     input->mouseWheelDelta = 0.0f;
 
+    static LARGE_INTEGER frequency;
+    if (frequency.QuadPart == 0) {
+        QueryPerformanceFrequency(&frequency);
+    }
+
     // update time
     mfp_timer *timer = &platform->timer;
-    u64 time = mfp__get_time_micro();
-    timer->deltaMicroSec = time - timer->time;
-    timer->deltaMilliSec = timer->deltaMicroSec / 1000;
-    timer->deltaSec = timer->deltaMilliSec / 1000.0f;
-    timer->time = time;
-    if (timer->deltaMilliSec > 0)
-        timer->fps = (u32) (1000 / timer->deltaMilliSec);
+    i32 ticks = mfp__get_ticks();
+
+    timer->deltaSec = ((float) ticks - (float) timer->ticks) / (float) frequency.QuadPart;
+    timer->ticks = ticks;
+    timer->fps = (1.0f / timer->deltaSec);
 }
 
 #ifdef __linux__
@@ -627,21 +628,11 @@ typedef struct
 } mfp_win;
 
 
-u64 mfp__get_time_micro()
+u64 mfp__get_ticks()
 {
     LARGE_INTEGER counter;
-    // TODO: is QuadPart always 0 at initialization??
-    static LARGE_INTEGER freqency;
-    if (freqency.QuadPart == 0)
-    {
-        QueryPerformanceFrequency(&freqency);
-    }
     QueryPerformanceCounter(&counter);
-    assert(freqency.QuadPart > 0);
-    u64 res = 0;
-    float in_seconds = (float)counter.QuadPart / (float)freqency.QuadPart;
-    res = (u64)(in_seconds * 1000 * 1000);
-    return res;
+    return counter.QuadPart;
 }
 
 mf_inline
@@ -658,9 +649,9 @@ void mfp_init(mfp_platform *platform)
 void mfp_begin(mfp_platform *platform)
 {
 
-    if (platform->timer.time == 0)
+    if (platform->timer.ticks == 0)
     {
-        platform->timer.time = mfp__get_time_micro();
+        platform->timer.ticks = mfp__get_ticks();
     }
     for (size_t i = 0; i < MFP__AMOUNT_KEYS; ++i)
     {
