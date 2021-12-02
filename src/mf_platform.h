@@ -223,18 +223,22 @@ void mfp__end(mfp_platform *platform)
     input->mouseLeft.pressed = false;
     input->mouseWheelDelta = 0.0f;
 
+#ifdef MF_WINDOWS
     static LARGE_INTEGER frequency;
     if (frequency.QuadPart == 0) {
         QueryPerformanceFrequency(&frequency);
     }
+#endif
 
     // update time
     mfp_timer *timer = &platform->timer;
-    i32 ticks = mfp__get_ticks();
+    u64 ticks = mfp__get_ticks();
 
+#ifdef MF_WINDOWS
     timer->deltaSec = ((float) ticks - (float) timer->ticks) / (float) frequency.QuadPart;
     timer->ticks = ticks;
     timer->fps = (1.0f / timer->deltaSec);
+#endif
 }
 
 #ifdef __linux__
@@ -260,6 +264,7 @@ typedef struct
 
     void *graphicHandle;
 } mfp_x11;
+static struct timespec mfp__g_timespec;
 
 
 mf_inline
@@ -371,7 +376,9 @@ void mfp_init(mfp_platform *platform)
     plat->colormap = XDefaultColormap(plat->display, plat->screen);
     
     mfp_timer *timer = &platform->timer;
+#ifdef MF_WINDOWS
     timer->time = mfp__get_time_micro();
+#endif
 
 }
 
@@ -380,6 +387,7 @@ void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i3
 {
     MFP_Assert(!platform->window.isOpen);
     mfp_x11 *x11 = mfp__get_x11(platform);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &mfp__g_timespec);
     platform->window.x = x;
     platform->window.y = y;
     platform->window.width = width;
@@ -419,7 +427,7 @@ void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i3
 }
 
 
-void mfp__dispatch_key(mfp_input *input, mfp_button_state *state, bool down, )
+void mfp__dispatch_key(mfp_input *input, mfp_button_state *state, bool down)
 {
     state->pressed = !state->down && down;
     state->released = state->down && !down;
@@ -506,6 +514,13 @@ void mfp__dispatch_xkey(mfp_input *input, XKeyEvent *event, bool down)
         }
     }
 
+}
+
+u64 mfp__get_ticks() {
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &now);
+    u64 res = ((u64) (now.tv_sec - mfp__g_timespec.tv_sec) * 1000) + ((u64) (now.tv_nsec - mfp__g_timespec.tv_nsec) / 1000000);
+    return res;
 }
 
 void mfp_begin(mfp_platform *platform)

@@ -37,6 +37,7 @@ mf_stretchy_destroy(arr);
 #define WIN32_LEAN_AND_MEAN
 #define MF_WINDOWS
 #include <windows.h>
+#define vsprintf vsprintf_s
 #define MF_MAIN int WinMain(HINSTANCE __hInstance, HINSTANCE __hPrevInstance, LPSTR __lpCmdLine, int __nShowCmd)
 #else
 #define MF_MAIN int main(int __argc, char **__argv)
@@ -70,8 +71,6 @@ typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
-typedef char *mf_str;
-typedef const char *mf_cstr;
 
 #define MF_KiloByte(value) (1024 * value)
 #define MF_MegaByte(value) (1024 * (MF_KiloByte(value)))
@@ -118,32 +117,7 @@ typedef const char *mf_cstr;
 void mf_sleep_ms(int value);
 void mf_print(const char *fmt, ...);
 
-// String utilities
-// TODO: rename to mf_str...
-void mf_str_free(mf_str a);
-mf_str mf_str_new(mf_cstr fmt, ...);
-bool mf_str_endswith(mf_cstr a, mf_cstr b);
-bool mf_str_is_substrn(mf_cstr a, mf_cstr b, size_t n);
-bool mf_str_is_substr(mf_cstr a, mf_cstr b);
-bool mf_str_is_equal(mf_cstr a, mf_cstr b);
-bool mf_str_is_empty(const mf_str a);
-bool mf_str_is_fuzzy(mf_cstr a, mf_cstr b);
-void mf_str_append(mf_str *a, mf_cstr b);
-void mf_str_nappend(mf_str a, int n, ...);
-mf_str mf_str_subdup(mf_str a, size_t start, size_t end);
-u32 mf_str_count_char(mf_cstr a, char c);
-u32 mf_str_count_char_break(mf_cstr a, char c);
-size_t mf_strlen(mf_cstr a);
 
-
-mf_str mf_strdup(mf_cstr a);
-void mf_strcpy(mf_str dest, mf_cstr source);
-#define mf_strcat strcat
-#define mf_strncat strncat
-
-// char buffer utilities
-void mf_to_cbuf(char *buf, u32 a);
-void mf_cbuf_rfill(char *buf, size_t len, char c, size_t n);
 
 // Path, File
 char* mf_read_file(const char *path, const char *mode, u32 *size);
@@ -190,7 +164,7 @@ void mf_print(const char *fmt, ...)
     char buffer[1024] = {};
     va_list args; 
     va_start(args, fmt);
-    vsprintf_s(buffer, fmt, args);
+    vsprintf(buffer, fmt, args);
 #ifdef MF_WINDOWS
     OutputDebugString(buffer);
     OutputDebugString("\n");
@@ -201,215 +175,6 @@ void mf_print(const char *fmt, ...)
     va_end(args);
 }
 
-// String utilities
-
-mf_str mf_str_new(size_t n)
-{
-    mf_str res = (mf_str) MF_Calloc(n);
-    return res;
-}
-
-void mf_str_free(mf_str a)
-{
-    if (a)
-        MF_Free(a);
-}
-
-mf_str mf_str_new(mf_cstr fmt, ...)
-{
-    va_list args;
-    // TODO: safety???
-    char buffer[1024] = {};
-    va_start(args, fmt);
-    vsprintf_s(buffer, fmt, args);
-    va_end(args);
-
-    mf_str res = mf_strdup(&buffer[0]);
-    return res;
-}
-
-bool mf_str_endswith(mf_cstr a, mf_cstr b)
-{
-    size_t aSize = strlen(a);
-    size_t bSize = strlen(b);
-
-    bool res = strncmp(a + aSize - bSize, b, bSize) == 0;
-    return res;
-}
-
-bool mf_str_is_substrn(mf_cstr a, mf_cstr b, size_t n)
-{
-    bool res = false;
-
-    size_t sizeA = strlen(a);
-
-    if (n <= sizeA)
-    {
-        for (size_t i = 0; i <= sizeA - n; ++i)
-        {
-            size_t j;
-            for (j = 0; j < n; ++j)
-            {
-                if (a[i + j] != b[j])
-                    break;
-
-            }
-            if (j == n)
-            {
-                res = true;
-                break;
-            }
-
-        }
-    }
-    return res;
-}
-
-bool mf_str_is_substr(mf_cstr a, mf_cstr b)
-{
-    bool res = mf_str_is_substrn(a, b, mf_strlen(b));
-    return res;
-}
-
-bool mf_str_is_empty(const mf_str a)
-{
-    if (a == NULL)
-        return true;
-    return mf_strlen(a) == 0;
-}
-
-bool mf_str_is_fuzzy(mf_cstr a, mf_cstr b)
-{
-    size_t indexB = 0;
-    bool caseSensitive = false;
-    size_t sizeA = mf_strlen(a);
-    size_t sizeB = mf_strlen(b);
-    if (sizeB == 0)
-        return true;
-    for (size_t indexA = 0; indexA < sizeA; ++indexA) {
-        char ca = a[indexA];
-        char cb = b[indexB];
-
-        caseSensitive = caseSensitive || isupper(cb);
-        if (!caseSensitive) {
-            ca = tolower(ca);
-            cb = tolower(cb);
-        }
-        if (ca == cb) {
-            indexB++;
-            if (indexB == sizeB)
-                break;
-        }
-    }
-    return indexB == sizeB;
-}
-
-void mf_str_append(mf_str *a, mf_cstr b)
-{
-    u32 sizeA = mf_strlen(*a);
-    u32 sizeB = mf_strlen(b);
-    mf_str neww = (mf_str) MF_Realloc(*a, sizeA + sizeB + 1);
-    for (size_t i = 0; i < mf_strlen(b); ++i)
-    {
-        neww[sizeA + i] = b[i];
-    }
-    neww[sizeA + sizeB] = 0;
-    *a = neww;
-}
-
-void mf_str_nappend(mf_str a, int n, ...)
-{
-    va_list ap;
-
-    va_start(ap, a);
-    for (size_t i = 0; i < n; ++i)
-    {
-        mf_cstr value = va_arg(ap, mf_cstr);
-        mf_str_append(&a, value);
-    }
-    va_end(ap);
-}
-
-mf_str mf_str_subdup(mf_str a, size_t start, size_t end)
-{
-    size_t n = end - start;
-    mf_str res = mf_str_new(n + 1);
-    for (size_t i = 0; i < n; ++i)
-    {
-        res[i] = a[start + i];
-    }
-    res[n + 1] = 0;
-    return res;
-}
-
-bool mf_str_is_equal(mf_cstr a, mf_cstr b)
-{
-    bool res = strcmp(a, b) == 0;
-    return res;
-}
-
-u32 mf_str_count_char(mf_cstr a, char c)
-{
-    u32 res = 0;
-    while(*a)
-    {
-        if (*a++ == c)
-            res++;
-    }
-    return res;
-}
-
-u32 mf_str_count_char_break(mf_cstr a, char c)
-{
-    u32 res = 0;
-    while (*a)
-    {
-        if (*a++ ==c)
-            res++;
-        else
-            break;
-    }
-    return res;
-}
-
-size_t mf_strlen(mf_cstr a)
-{
-    size_t res = 0;
-    if (a != NULL)
-        res = strlen(a);
-    return res;
-}
-
-void mf_to_cbuf(char *buf, u32 a)
-{
-    itoa(a, buf, 10);
-}
-
-void mf_cbuf_rfill(char *buf, size_t len, char c, size_t n)
-{
-    MF_Assert(len > n);
-    size_t size = mf_strlen(buf);
-    if (size < n)
-    {
-        for (size_t i = 0; i < n - size; ++i)
-        {
-            buf[size + i] = c;
-        }
-        buf[size + n] = '\0';
-    }
-}
-
-mf_str mf_strdup(mf_cstr a)
-{
-    mf_str res = strdup(a);
-    return res;
-}
-
-inline
-void mf_strcpy(mf_str dest, mf_cstr source)
-{
-    strcpy(dest, source);
-}
 
 // File io
 
