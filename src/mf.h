@@ -1,27 +1,5 @@
 #ifndef MF_H
 #define MF_H
-/* USAGE
-
-// StretchyBuffer
-// ==================================================
-
-int *arr = NULL;
-mf_stretchy_push(arr, 1);
-mf_stretchy_push(arr, 2);
-
-for (int i = 0; i < mf_stretchy_size(arr); ++i)
-{
-    printf("%d\n", arr[i]);
-}
-
-mf_stretchy_for(arr)
-{
-    printf("%d\n", *it);
-}
-
-mf_stretchy_clear(arr);
-mf_stretchy_destroy(arr);
-*/
 
 
 #ifdef __cplusplus
@@ -476,57 +454,6 @@ u32 mf_random_int(u32 min, u32 max)
 
 // Stretchy buffer
 
-typedef struct
-{
-    u32 size;
-    u32 capacity;
-} mf__stretchy_header;
-
-
-#define mf__get_stretchy_header(v) (((mf__stretchy_header *) (v)) - 1)
-#define mf_stretchy_size(v) ((v) ? mf__get_stretchy_header(v)->size : 0)
-#define mf__stretchy_capacity(v) ((v) ? mf__get_stretchy_header(v)->capacity : 0)
-#define mf__stretchy_full(v) (mf_stretchy_size(v) == mf__stretchy_capacity(v))
-#define mf_stretchy_clear(v) ((v) ? (mf__get_stretchy_header(v)->size = 0) : 0)
-#define mf_stretchy_destroy(v) ((v) ? (free(mf__get_stretchy_header(v)), (v) = NULL) : 0)
-#define mf_stretchy_end(v) v[mf__get_stretchy_header(v)->size]
-#define mf_stretchy_last(v) v[mf__get_stretchy_header(v)->size - 1]
-#define mf_stretchy_safe_index_ptr(v, i) arr != NULL ? &arr[i] : NULL
-
-#define mf__stretchy_check_and_resize(v) \
-	(mf__stretchy_full(v) ? mf__stretchy_grow((void **) &v, sizeof(*(v))) : 0)
-
-#define mf_stretchy_for(v) \
-    for (auto it = &v[0]; mf_stretchy_size(v) > 0 && it != &mf_stretchy_end(v); it++)
-
-// TODO: mf_stretchy_addn
-
-#define mf_stretchy_add(v) \
-    (mf__stretchy_check_and_resize(v), &(v)[mf__get_stretchy_header(v)->size++])
-
-#define mf_stretchy_push(v, e) \
-    *mf_stretchy_add(v) = e
-
-
-inline int mf__stretchy_grow(void **v, size_t elementSize)
-{
-    size_t newCapacity = (mf_stretchy_size(*v) + 1) * 2;
-    size_t bytesToAlloc = sizeof(mf__stretchy_header) + newCapacity * elementSize;
-    mf__stretchy_header *header;
-
-    if (*v)
-    {
-        header = (mf__stretchy_header *) realloc(mf__get_stretchy_header(*v), bytesToAlloc);
-    }
-    else
-    {
-        header = (mf__stretchy_header *) malloc(bytesToAlloc);
-        header->size = 0;
-    }
-    header->capacity = newCapacity;
-    *v  = (char *) header + sizeof(mf__stretchy_header);
-	return 0;
-}
 
 
 #ifdef __cplusplus
