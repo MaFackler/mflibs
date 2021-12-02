@@ -10,7 +10,7 @@
     #define mf_str_memfree free
 #endif
 #ifndef mf_str_realloc
-    #define mf_str_realloc
+    #define mf_str_realloc realloc
 #endif
 
 void mf_str_free(char *a);
@@ -134,7 +134,7 @@ bool mf_str_is_fuzzy(const char* a, const char* b) {
 void mf_str_append(char** a, const char* b) {
     u32 sizeA = mf_strlen(*a);
     u32 sizeB = mf_strlen(b);
-    char* neww = (char*) mf_str_realloc(*a, sizeA + sizeB + 1);
+    char* neww = (char *) mf_str_realloc(*a, sizeA + sizeB + 1);
     for (size_t i = 0; i < mf_strlen(b); ++i) {
         neww[sizeA + i] = b[i];
     }
