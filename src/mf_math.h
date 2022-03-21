@@ -32,9 +32,9 @@ typedef struct
 
 typedef struct
 {
-    i32 x;
-    i32 y;
-    i32 z;
+    int x;
+    int y;
+    int z;
 } mfm_v3i;
 
 mfm_v3 mfm_v3_255_to_1(int r, int g, int b);

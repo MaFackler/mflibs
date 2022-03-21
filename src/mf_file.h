@@ -63,7 +63,7 @@ char* mf_path_join_create(const char *a, const char *b, char separator) {
 }
 
 void mf_file_copy(const char *src, const char *dest) {
-#ifdef MF_WINDOWS
+#ifdef WIN32
     int res = CopyFile(src, dest, 0);
     assert(res != 0);
 #else
@@ -91,7 +91,7 @@ void mf_file_copy(const char *src, const char *dest) {
 
 bool mf_is_file(const char *filename) {
     bool res = false;
-#ifdef MF_WINDOWS
+#ifdef WIN32
     WIN32_FIND_DATA data;
     HANDLE handle = FindFirstFile(filename, &data);
     res = handle != INVALID_HANDLE_VALUE;
@@ -118,7 +118,7 @@ bool mf_is_file(const char *filename) {
 
 uint64_t mf_get_last_write_time(const char *filename) {
     uint64_t res = 0;
-#ifdef MF_WINDOWS
+#ifdef WIN32
     WIN32_FILE_ATTRIBUTE_DATA data;
     if (GetFileAttributesEx(filename, GetFileExInfoStandard, &data)) {
         res = data.ftLastWriteTime.dwHighDateTime;
@@ -147,7 +147,7 @@ struct mf_path_item {
 
 struct mf_directory {
 
-#ifdef MF_WINDOWS
+#ifdef WIN32
     HANDLE handle;
     WIN32_FIND_DATAA data;
     bool firstOne;
@@ -161,8 +161,9 @@ struct mf_directory {
 
 bool mf_directory_open(mf_directory *dir, const char *name, bool recursive) {
     bool res = false;
-#ifdef MF_WINDOWS
-    MF_FormatString(buffer, "%s\\*.*", name);
+#ifdef WIN32
+    char buffer[256];
+    sprintf(buffer, "%s\\*.*", name);
     dir->handle = FindFirstFile(buffer, &dir->data);
     res = dir->handle != INVALID_HANDLE_VALUE;
     dir->firstOne = true;
@@ -175,7 +176,7 @@ bool mf_directory_open(mf_directory *dir, const char *name, bool recursive) {
 
 bool mf_directory_next(mf_directory *dir, mf_path_item *item) {
     bool res = false;
-#ifdef MF_WINDOWS
+#ifdef WIN32
     if (dir->firstOne) {
         dir->firstOne = false;
         res = dir->handle != INVALID_HANDLE_VALUE;
@@ -219,7 +220,7 @@ bool mf_directory_next(mf_directory *dir, mf_path_item *item) {
 }
 
 void mf_directory_close(mf_directory *dir) {
-#ifdef MF_WINDOWS
+#ifdef WIN32
     FindClose(dir->handle);
 #else
     closedir(dir->d);

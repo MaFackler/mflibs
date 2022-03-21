@@ -1,5 +1,7 @@
 #define MF_IMPLEMENTATION
 #include <mf.h>
+#define MF_VECTOR_IMPLEMENTATION 
+#include <mf_vector.h>
 #define MF_MATH_IMPLEMENTATION
 #include <mf_math.h>
 #define MF_PLATFORM_USE_OPENGL
@@ -351,7 +353,7 @@ bool IsPieceValid(GameState *state, i32 col, i32 row, u32 direction)
 
 void CheckFullLines(GameState *state)
 {
-    Vector<u32> foundLines = {};
+    u32 *foundLines = {};
     for (size_t y = 0; y < state->numBlocksY; ++y)
     {
         bool rowComplete = true;
@@ -367,17 +369,18 @@ void CheckFullLines(GameState *state)
 
         if (rowComplete)
         {
-            Push(&foundLines, (u32) y);
+            mf_vec_push(foundLines, (u32) y);
         }
     }
 
-    if (foundLines.size > 0)
+    u32 size = mf_vec_size(foundLines);
+    if (size > 0)
     {
         for (i32 i = 0;
-             i < foundLines.size;
+             i < size;
              ++i)
         {
-            u32 lineIndex = foundLines[foundLines.size - 1 - i];
+            u32 lineIndex = foundLines[size - 1 - i];
 
             for (u32 y = lineIndex + i;
                  y > 0;
@@ -398,6 +401,7 @@ void CheckFullLines(GameState *state)
             state->tickTime = MF_Max(state->tickTime, 0.16f);
         }
     }
+    mf_vec_destroy(foundLines);
 }
 
 bool PieceAdvance(GameState *state)

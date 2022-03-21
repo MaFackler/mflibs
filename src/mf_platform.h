@@ -48,6 +48,11 @@ int main()
 #include <stdlib.h>
 #include <time.h>
 #include <assert.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#endif // WIN32
+
 #ifdef MF_PLATFORM_USE_OPENGL
 #define GL_GLEXT_PROTOTYPES
 //#define GLX_GLEXT_PROTOTYPES
@@ -60,7 +65,6 @@ int main()
 #include <GL/glx.h>
 #include <GL/glext.h>
 #else // WINDOWS
-#include <windows.h>
 
 #define GL_COMPILE_STATUS                 0x8B81
 #define GL_VERTEX_SHADER                  0x8B31
@@ -163,7 +167,7 @@ struct mfp_window
 struct mfp_timer
 {
     // Time
-    i32 ticks;  // TODO: why does this not work if its a i64????
+    u64 ticks;
     float deltaSec;
     float fps;
 };
@@ -211,6 +215,7 @@ enum
 #define MFP_Assert(expr) if (!(expr)) {*(int *) 0 = 0; }
 #define MFP_ArrayLength(arr) (sizeof(arr) / sizeof(arr[0]))
 
+#include <stdio.h>
 inline
 void mfp__end(mfp_platform *platform)
 {
@@ -223,7 +228,7 @@ void mfp__end(mfp_platform *platform)
     input->mouseLeft.pressed = false;
     input->mouseWheelDelta = 0.0f;
 
-#ifdef MF_WINDOWS
+#ifdef _WIN32
     static LARGE_INTEGER frequency;
     if (frequency.QuadPart == 0) {
         QueryPerformanceFrequency(&frequency);
@@ -234,7 +239,7 @@ void mfp__end(mfp_platform *platform)
     mfp_timer *timer = &platform->timer;
     u64 ticks = mfp__get_ticks();
 
-#ifdef MF_WINDOWS
+#ifdef _WIN32
     timer->deltaSec = ((float) ticks - (float) timer->ticks) / (float) frequency.QuadPart;
     timer->ticks = ticks;
     timer->fps = (1.0f / timer->deltaSec);
@@ -709,7 +714,7 @@ void mfp_destroy(mfp_platform *platform)
 void mfp_window_toggle_fullscreen(mfp_platform *platform)
 {
     void *dummy = platform;
-    MF_Assert(dummy);
+    assert(dummy);
 }
 
 mf_inline
@@ -1024,7 +1029,7 @@ void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i3
 
 void mfp_window_close(mfp_platform *platform)
 {
-    MF_Assert(platform);
+    assert(platform);
 }
 
 

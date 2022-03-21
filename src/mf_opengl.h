@@ -1,5 +1,6 @@
 #ifndef MF_OPENGL_H
 #define MF_OPENGL_H
+#include <stdio.h>
 
 // NOTE: opengl code should be included by platform
 

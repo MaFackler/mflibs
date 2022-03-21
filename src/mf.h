@@ -3,32 +3,31 @@
 
 
 #ifdef __cplusplus
-#define mf_inline inline
-
+    #define mf_inline inline
 #else
-#include <stdbool.h>
-#define _POSIX_C_SOURCE 199309L
-#define mf_inline
+    #include <stdbool.h>
+    #define _POSIX_C_SOURCE 199309L
+    #define mf_inline
 #endif
 
-#if defined(WIN32) || defined(_WIN32)
-#define WIN32_LEAN_AND_MEAN
-#define MF_WINDOWS
-#include <windows.h>
-#define vsprintf vsprintf_s
-#define MF_MAIN int WinMain(HINSTANCE __hInstance, HINSTANCE __hPrevInstance, LPSTR __lpCmdLine, int __nShowCmd)
+#ifdef _WIN32
+    #define WIN32_LEAN_AND_MEAN
+    #define MF_WINDOWS
+    #include <windows.h>
+    #define MF_MAIN int WinMain(HINSTANCE __hInstance, HINSTANCE __hPrevInstance, LPSTR __lpCmdLine, int __nShowCmd)
 #else
-#define MF_MAIN int main(int __argc, char **__argv)
-#define MF_LINUX
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
+    #define MF_MAIN int main(int __argc, char **__argv)
+    #define MF_LINUX
+    #ifndef _GNU_SOURCE
+        #define _GNU_SOURCE
+    #endif // _GNU_SOURCE
+#endif // _WIN32
+
 #include <fcntl.h>
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
 #include <stdarg.h>
-#endif
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -189,7 +188,6 @@ u32 mf_random_int(u32 min, u32 max)
 // Stretchy buffer
 
 
-#endif
 
 #endif // MF_IMPLEMENTATION
 
