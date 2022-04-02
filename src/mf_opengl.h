@@ -1,6 +1,7 @@
 #ifndef MF_OPENGL_H
 #define MF_OPENGL_H
 #include <stdio.h>
+#include <math.h>
 
 // NOTE: opengl code should be included by platform
 
@@ -17,6 +18,7 @@ void mfgl_viewport_top_down(u32 width, u32 height);
 
 void mfgl_clear();
 void mfgl_draw_rect(float x, float y, float w, float h);
+void mfgl_draw_circle(float x, float y, float radius);
 void mfgl_draw_triangle(float a, float b, float c, float d, float e, float f);
 
 void mfgl_shaders_init(mfgl_shaders *shaders, char *vs, char *fs);
@@ -106,6 +108,19 @@ void mfgl_draw_rect(float x, float y, float w, float h)
         glVertex2f(x + w, y + h);
         glTexCoord2f(0.0f, 1.0f);
         glVertex2f(x, y + h);
+    glEnd();
+}
+
+void mfgl_draw_circle(float x, float y, float radius)
+{
+    glBegin(GL_TRIANGLE_FAN);
+    int triangles = 40;
+    glVertex2f(x, y);
+    for (int i = 0; i <= triangles; ++i)
+    {
+        glVertex2f(x + radius * (cos((i * 2.0f * M_PI) / triangles)),
+                   y + radius * (sin((i * 2.0f * M_PI) / triangles)));
+    }
     glEnd();
 }
 
