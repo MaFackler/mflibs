@@ -17,7 +17,7 @@ endif
 HEADERS=$(wildcard src/*.h)
 TESTS=$(wildcard tests/*.cpp)
 
-all:  $(OUTDIR)/all-in-c $(OUTDIR)/runtests examples
+all:  $(OUTDIR)/runtests examples
 
 examples: $(OUTDIR)/example-platform $(OUTDIR)/example-renderer $(OUTDIR)/tetris
 
@@ -41,6 +41,7 @@ test: $(OUTDIR)/runtests
 
 
 # NOTE: this is just to check that the header files will also compile with c99
+# TODO: c99 support?
 $(OUTDIR)/all-in-c: examples/all_in_c.c
 ifneq ($(OS),Windows_NT)
 	gcc $(CFLAGS) -std=c99 $< $(LIBS) -o $@

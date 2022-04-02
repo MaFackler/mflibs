@@ -168,7 +168,7 @@ struct GameState
     i32 row = 0;
     i32 col = 0;
     u8 direction = 0;
-    float tickTime = 0.5;
+    float tickTime = 0.5f;
     u32 currentPieceIndex = 0;
     Piece *pieces;
     u32 numPieces = 0;

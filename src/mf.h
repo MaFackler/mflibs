@@ -12,12 +12,11 @@
 
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
-    #define MF_WINDOWS
     #include <windows.h>
     #define MF_MAIN int WinMain(HINSTANCE __hInstance, HINSTANCE __hPrevInstance, LPSTR __lpCmdLine, int __nShowCmd)
 #else
+    #include <unistd.h> 
     #define MF_MAIN int main(int __argc, char **__argv)
-    #define MF_LINUX
     #ifndef _GNU_SOURCE
         #define _GNU_SOURCE
     #endif // _GNU_SOURCE
@@ -105,7 +104,7 @@ void mf_sleep_ms(int value)
 #ifdef _WIN32
     Sleep(value);
 #else
-    usleep(value);
+    usleep(value * 1000);
 #endif
 }
 
