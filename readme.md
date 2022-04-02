@@ -32,3 +32,5 @@ Compile and execute tests
 make test
 ```
 
+![Tetris](tetris.png)
+
