@@ -10,6 +10,21 @@ TEST("Vector 2 is equal")
     MFT_CHECK(mfm_v2_is_equal(v1, v2));
 }
 
+TEST("Vector 2 distance")
+{
+    mfm_v2 v1{-7, -4};
+    mfm_v2 v2{17, 6.5};
+    float res = mfm_v2_distance(v1, v2);
+    MFT_CHECK_FLOAT(res, 26.196374);
+}
+
+TEST("Vector 2 normalize and lenght")
+{
+    mfm_v2 v1{1, 2};
+    mfm_v2 res = mfm_v2_normalize(v1);
+    MFT_CHECK_FLOAT(mfm_v2_length(res), 1.0f);
+}
+
 TEST("Vector 2 int add and add assign")
 {
     mfm_v2i v1{2, 3};

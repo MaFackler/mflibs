@@ -1,5 +1,6 @@
 #ifndef MF_MATH_H
 #define MF_MATH_H
+#include <math.h>
 
 
 float mfm_lerp(float a, float b, float t);
@@ -9,6 +10,18 @@ typedef struct
     float x;
     float y;
 } mfm_v2;
+
+
+float mfm_v2_distance(mfm_v2 a, mfm_v2 b);
+float mfm_v2_distance_squared(mfm_v2 a, mfm_v2 b);
+float mfm_v2_length(mfm_v2 a);
+mfm_v2 mfm_v2_normalize(mfm_v2 a);
+mfm_v2 mfm_v2_subtract(mfm_v2 a, mfm_v2 b);
+mfm_v2 mfm_v2_mul(mfm_v2 a, mfm_v2 b);
+mfm_v2 mfm_v2_mul(mfm_v2 a, float b);
+mfm_v2 mfm_v2_div(mfm_v2 a, mfm_v2 b);
+mfm_v2 mfm_v2_div(mfm_v2 a, float b);
+
 
 
 typedef struct
@@ -66,6 +79,75 @@ union mfm_rect
 float mfm_lerp(float a, float b, float t)
 {
     float res = a + (b - a) * t;
+    return res;
+}
+
+float mfm_v2_distance(mfm_v2 a, mfm_v2 b)
+{
+    float res = sqrt(mfm_v2_distance_squared(a, b));
+    return res;
+}
+
+float mfm_v2_distance_squared(mfm_v2 a, mfm_v2 b)
+{
+    float sx = (b.x - a.x) * (b.x - a.x);
+    float sy = (b.y - a.y) * (b.y - a.y);
+    float res = sx + sy;
+    return res;
+}
+
+float mfm_v2_length(mfm_v2 a)
+{
+    float res = sqrt(a.x * a.x + a.y * a.y);
+    return res;
+}
+
+mfm_v2 mfm_v2_normalize(mfm_v2 a)
+{
+    mfm_v2 res = {0};
+    float length = mfm_v2_length(a);
+    res.x = a.x / length;
+    res.y = a.y / length;
+    return res;
+}
+
+mfm_v2 mfm_v2_subtract(mfm_v2 a, mfm_v2 b)
+{
+    mfm_v2 res = {0};
+    res.x = a.x - b.x;
+    res.y = a.y - b.y;
+    return res;
+}
+
+mfm_v2 mfm_v2_mul(mfm_v2 a, mfm_v2 b)
+{
+    mfm_v2 res = {0};
+    res.x = a.x * b.x;
+    res.y = a.x * b.y;
+    return res;
+}
+
+mfm_v2 mfm_v2_mul(mfm_v2 a, float b)
+{
+    mfm_v2 res = {0};
+    res.x = a.x * b;
+    res.y = a.y * b;
+    return res;
+}
+
+mfm_v2 mfm_v2_div(mfm_v2 a, mfm_v2 b)
+{
+    mfm_v2 res = {0};
+    res.x = a.x / b.x;
+    res.y = a.y / b.y;
+    return res;
+}
+
+mfm_v2 mfm_v2_div(mfm_v2 a, float b)
+{
+    mfm_v2 res = {0};
+    res.x = a.x / b;
+    res.y = a.y / b;
     return res;
 }
 
@@ -194,6 +276,36 @@ mfm_rect mfm_rect_margin(mfm_rect r, float left, float top, float right, float b
 #ifdef __cplusplus
 
 // Vector2
+
+inline
+mfm_v2 operator-(mfm_v2 a, mfm_v2 b)
+{
+    return mfm_v2_subtract(a, b);
+}
+
+inline
+mfm_v2 operator*(mfm_v2 a, mfm_v2 b)
+{
+    return mfm_v2_mul(a, b);
+}
+
+inline
+mfm_v2 operator*(mfm_v2 a, float b)
+{
+    return mfm_v2_mul(a, b);
+}
+
+inline
+mfm_v2 operator/(mfm_v2 a, mfm_v2 b)
+{
+    return mfm_v2_div(a, b);
+}
+
+inline
+mfm_v2 operator/(mfm_v2 a, float b)
+{
+    return mfm_v2_div(a, b);
+}
 
 inline
 bool operator==(mfm_v2 a, mfm_v2 b)
