@@ -7,21 +7,38 @@
 
 typedef struct mfgl_shaders mfgl_shaderes;
 
+// glEnable/glDisable wrappers
+void mfgl_texture(bool value);
+void mfgl_blend(bool value);
+
+// Color
 void mfgl_set_color(float r, float g, float b, float a);
 void mfgl_set_color_i32(i32 value);
 void mfgl_set_color_255(i32 r, i32 g, i32 b, i32 a);
 void mfgl_set_color_rgb(float r, float g, float b);
 void mfgl_set_color_rgb_255(i32 r, i32 g, i32 b);
 
+// Viewport
 void mfgl_viewport_bottom_up(u32 width, u32 height);
 void mfgl_viewport_top_down(u32 width, u32 height);
 
+// Drawing
 void mfgl_clear();
 void mfgl_draw_rect(float x, float y, float w, float h);
+void mfgl_draw_rect_with_texture_coords(float x, float y, float w, float h, float s, float t, float sw, float th);
 void mfgl_draw_circle(float x, float y, float radius);
 void mfgl_draw_triangle(float a, float b, float c, float d, float e, float f);
 
+// Shaders
 void mfgl_shaders_init(mfgl_shaders *shaders, char *vs, char *fs);
+
+// Textures
+unsigned int mfgl_create_texture_argb(size_t width, size_t height, u32 *data);
+unsigned int mfgl_create_texture_alpha(size_t width, size_t height, unsigned char *data);
+void mfgl_bind_texture(unsigned int id);
+
+// Error
+void mfgl_error_check();
 
 
 #ifdef MF_OPENGL_IMPLEMENTATION
@@ -33,6 +50,26 @@ struct mfgl_shaders
     u32 fs;
     u32 program;
 };
+
+void mfgl_texture(bool value)
+{
+    if (value)
+        glEnable(GL_TEXTURE_2D);
+    else
+        glDisable(GL_TEXTURE_2D);
+}
+
+void mfgl_blend(bool value)
+{
+    if (value)
+    {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    } else {
+        glDisable(GL_BLEND);
+    }
+}
+
 
 void mfgl_set_color(float r, float g, float b, float a)
 {
@@ -111,6 +148,20 @@ void mfgl_draw_rect(float x, float y, float w, float h)
     glEnd();
 }
 
+void mfgl_draw_rect_with_texture_coords(float x, float y, float w, float h, float s, float t, float sw, float th)
+{
+    glBegin(GL_QUADS);
+        glTexCoord2f(s, t);
+        glVertex2f(x, y);
+        glTexCoord2f(s + sw, t);
+        glVertex2f(x + w, y);
+        glTexCoord2f(s + sw, t + th);
+        glVertex2f(x + w, y + h);
+        glTexCoord2f(s, t + th);
+        glVertex2f(x, y + h);
+    glEnd();
+}
+
 void mfgl_draw_circle(float x, float y, float radius)
 {
     glBegin(GL_TRIANGLE_FAN);
@@ -185,6 +236,58 @@ void mfgl_shaders_init(mfgl_shaders *shaders, char *vs, char *fs)
     }
 
     shaders->success = success;
+}
+
+unsigned int mfgl_create_texture_argb(size_t width, size_t height, u32 *data)
+{
+    unsigned int id;
+    glGenTextures(1, &id);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
+                 width, height, 0, GL_BGRA,
+                 GL_UNSIGNED_BYTE, data);
+    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    return id;
+}
+
+unsigned int mfgl_create_texture_alpha(size_t width, size_t height, unsigned char *data)
+{
+    unsigned int id;
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA,
+                 width, height, 0, GL_ALPHA,
+                 GL_UNSIGNED_BYTE, data);
+    //glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
+    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    return id;
+}
+
+void mfgl_bind_texture(unsigned int id)
+{
+    glBindTexture(GL_TEXTURE_2D, id);
+}
+
+void mfgl_error_check()
+{
+    GLenum code;
+    code = glGetError();
+    if (code != GL_NO_ERROR)
+    {
+        fprintf(stderr, "Opengl error: %d\n", code);
+        exit(1);
+    }
 }
 
 

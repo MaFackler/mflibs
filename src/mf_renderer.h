@@ -59,6 +59,7 @@ int main()
 typedef void (func_render_rect)(float x, float y, float width, float height);
 typedef void (func_render_circle)(float x, float y, float radius);
 typedef void (func_render_set_color)(float r, float g, float b, float a);
+typedef void (func_render_bitmap)(unsigned int bitmap_id, float x, float y, float w, float h);
 typedef void (func_render_clear)(void);
 
 
@@ -72,6 +73,7 @@ void mfr_reset_offset(mfr_renderer *renderer);
 // Push Commands
 void mfr_push_rect(mfr_renderer *renderer, float x, float y, float width, float height);
 void mfr_push_circle(mfr_renderer *renderer, float x, float y, float radius);
+void mfr_push_bitmap(mfr_renderer *renderer, u32 bitmap_id, float x, float y, float w, float h);
 void mfr_push_clear(mfr_renderer *renderer);
 // Flush buffer
 void mfr_flush(mfr_renderer *renderer);
@@ -83,6 +85,7 @@ enum mfr__render_commad_type
     MF__RENDER_COMMAND_TYPE_UNDEFINED,
     MF__RENDER_COMMAND_TYPE_CLEAR,
     MF__RENDER_COMMAND_TYPE_RECT,
+    MF__RENDER_COMMAND_TYPE_BITMAP,
     MF__RENDER_COMMAND_TYPE_CIRCLE,
 };
 
@@ -100,8 +103,15 @@ typedef struct
 
 typedef struct
 {
+    float x, y, w, h;
+    u32 bitmap_id;
+} mfr__render_command_bitmap;
+
+typedef struct
+{
     float r, g, b, a;
 } mfr__render_command_clear;
+
 
 typedef struct
 {
@@ -110,6 +120,7 @@ typedef struct
     {
         mfr__render_command_rect rect;
         mfr__render_command_circle circle;
+        mfr__render_command_bitmap bitmap;
         mfr__render_command_clear clear;
     };
 
@@ -121,6 +132,7 @@ struct mfr_renderer
     func_render_clear* render_clear;
     func_render_rect* render_rect;
     func_render_circle* render_circle;
+    func_render_bitmap* render_bitmap;
 
     // NOTE: color and position offset for push commands
     float r, g, b, a;
@@ -231,6 +243,21 @@ void mfr_push_circle(mfr_renderer *renderer, float x, float y, float radius)
     }
 }
 
+void mfr_push_bitmap(mfr_renderer *renderer, u32 bitmap_id, float x, float y, float w, float h)
+{
+    mfr__render_command *command = mfr__get_next_command(renderer);
+    if (command)
+    {
+        command->type = MF__RENDER_COMMAND_TYPE_BITMAP;
+
+        command->bitmap.x = x;
+        command->bitmap.y = y;
+        command->bitmap.w = w;
+        command->bitmap.h = h;
+        command->bitmap.bitmap_id = bitmap_id;
+    }
+}
+
 void mfr_push_clear(mfr_renderer *renderer)
 {
     mfr__render_command *command = mfr__get_next_command(renderer);
@@ -284,6 +311,16 @@ void mfr_flush(mfr_renderer *renderer)
                 renderer->render_circle(command->circle.x,
                                         command->circle.y,
                                         command->circle.radius);
+            } break;
+            case MF__RENDER_COMMAND_TYPE_BITMAP:
+            {
+                if (renderer->render_bitmap)
+                    renderer->render_bitmap(command->bitmap.bitmap_id,
+                                            command->bitmap.x,
+                                            command->bitmap.y,
+                                            command->bitmap.w,
+                                            command->bitmap.h);
+
             } break;
             default:
                 assert(!"Unhandled command");

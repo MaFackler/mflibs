@@ -10,6 +10,10 @@
 #define MF_MATH_IMPLEMENTATION
 #include "mf_math.h"
 
+#define MF_FONT_IMPLEMENTATION
+#include "mf_font.h"
+
+
 typedef mfm_v2 v2;
 typedef mfm_v3 v3;
 
@@ -35,6 +39,58 @@ v2 calc_acceleration_to(Planet &p1, Planet &p2)
     return res;
 }
 
+void my_draw_text(mffo_font *font, float x, float y, const char *text)
+{
+   // assume orthographic projection with units = screen pixels, origin at top left
+    
+    mfgl_texture(true);
+    mfgl_blend(true);
+
+    glBegin(GL_QUADS);
+    while (*text) {
+        if (*text >= 32 && *text < 128) {
+            stbtt_aligned_quad q;
+            stbtt_GetBakedQuad(font->chardata, 512,512, *text-32, &x,&y,&q,1);//1=opengl & d3d10+,0=d3d9
+            glTexCoord2f(q.s0,q.t0); glVertex2f(q.x0,q.y0);
+            glTexCoord2f(q.s1,q.t0); glVertex2f(q.x1,q.y0);
+            glTexCoord2f(q.s1,q.t1); glVertex2f(q.x1,q.y1);
+            glTexCoord2f(q.s0,q.t1); glVertex2f(q.x0,q.y1);
+        }
+        ++text;
+    }
+    glEnd();
+    mfgl_texture(false); 
+    mfgl_blend(false); 
+}
+
+void my_render_bitmap(unsigned int bitmap_id, float x, float y, float w, float h)
+{
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_TEXTURE_2D);
+    mfgl_bind_texture(bitmap_id);
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex2f(x, y + h);
+    glTexCoord2f(1.0f, 0.0f); glVertex2f(x + w, y + h);
+    glTexCoord2f(1.0f, 1.0f); glVertex2f(x + w, y);
+    glTexCoord2f(0.0f, 1.0f); glVertex2f(x, y);
+    glEnd();
+    mfgl_bind_texture(0);
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_BLEND);
+}
+
+void mfui_button(mffo_font * font)
+{
+    int width = 100;
+    int height = 50;
+    int margin = 15;
+    mfgl_set_color(1.0f, 1.0f, 1.0f, 1.0f);
+    mfgl_draw_rect(0, 0, width, height);
+    mfgl_set_color(0.0f, 0.0f, 0.0f, 1.0f);
+    my_draw_text(font, 0, height - margin, "Button");
+}
+
 int main()
 {
     u32 width = 1600;
@@ -48,8 +104,10 @@ int main()
     renderer.render_rect = mfgl_draw_rect;
     renderer.render_clear = mfgl_clear;
     renderer.render_circle = mfgl_draw_circle;
+    renderer.render_bitmap = my_render_bitmap;
     mfr_init(&renderer, 1024 * 1024 * 1024);
 
+    glEnable(GL_TEXTURE_2D);
     mfgl_viewport_bottom_up(width, height);
 
     Planet planets[2] = {0};
@@ -66,11 +124,34 @@ int main()
     planets[1].velocity = {0, 80.0f};
     planets[1].color = v3{0.3f, 0.3f, 0.3f};
 
+    mffo_font font;
+    mffo_font_alloc(&font, "/usr/share/fonts/ubuntu/Ubuntu-B.ttf");
+    u32 texture_font = mfgl_create_texture_alpha(font.dim, font.dim, font.data);
+    
+    u32 *pixels = (u32 *) malloc(512 * 512 * sizeof(u32));
+    for (size_t y = 0; y < 512; ++y)
+    {
+        for (size_t x = 0; x < 512; ++x)
+        {
+            u32 color = 0xFFFF0000;
+            if (x < 100)
+            {
+                color = 0xFF00FF00;
+            }
+            if (y > 400)
+            {
+                color = 0xFF0000FF;
+            }
+            pixels[y * 512 + x] = color;
+        }
+    }
+    u32 texture_id = mfgl_create_texture_argb(512, 512, (u32 *) font.data);
 
     bool running = true;
     while (running && platform.window.isOpen)
     {
         mfp_begin(&platform);
+        mfgl_viewport_bottom_up(width, height);
 
         // Update
         if (platform.input.keys['q'].pressed)
@@ -105,9 +186,22 @@ int main()
             mfr_push_circle(&renderer, p.pos.x, p.pos.y, p.radius);
         }
 
+        mfr_push_bitmap(&renderer, texture_font, 0, 0, 512, 512);
+
+        
         mfr_flush(&renderer);
 
+        mfgl_viewport_top_down(width, height);
+        mfgl_bind_texture(texture_font);
+        mffo_charrect crect;
+        mffo_font_get_charrect(&font, &crect, 'c');
+        //mfgl_draw_rect(0, 0, 512, 512);
+        mfui_button(&font);
+        my_draw_text(&font, 20, 100, "hello");
+
+
         mfp_end(&platform);
+        mfgl_error_check();
     }
 
     mfp_window_close(&platform);
