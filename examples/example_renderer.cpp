@@ -25,15 +25,20 @@ typedef mfm_v3 v3;
 static const char* SRC_VS = 
 "#version 330 core\n"
 "layout (location = 0) in vec3 pos;\n"
+"layout (location = 1) in vec3 color;\n"
+"out vec3 both_color;\n"
 "void main() {\n"
 "    gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);\n"
+"    both_color = color;\n"
 "}\0";
 
 static const char* SRC_FS = 
 "#version 330 core\n"
-"out vec4 FragColor;"
+"out vec4 FragColor;\n"
+"in vec3 both_color;\n"
 "void main() {\n"
-"    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+"    //FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+"    FragColor = vec4(both_color, 1.0f);\n"
 "}\0";
 
 struct Planet
@@ -150,6 +155,11 @@ int main()
     mfgl_shader_delete(fs);
     mfgl_shader_program_use(program);
     mfgl_error_check();
+
+    u32 location_color = mfgl_shader_uniform_location(program, "color");
+    mfgl_shader_uniform_4f(location_color, 1.0f, 0.0f, 0.0f, 0.0f);
+
+
     
     u32 *pixels = (u32 *) malloc(512 * 512 * sizeof(u32));
     for (size_t y = 0; y < 512; ++y)
@@ -171,14 +181,14 @@ int main()
     u32 texture_id = mfgl_create_texture_argb(512, 512, (u32 *) font.data);
 
 	float vertices[] = {
-		 0.5f,  0.5f, 0.0f,  // top right
-		 0.5f, -0.5f, 0.0f,  // bottom right
-		-0.5f, -0.5f, 0.0f,  // bottom left
-		-0.5f,  0.5f, 0.0f   // top left 
-	};
+		// positions         // colors
+		 0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // bottom right
+		-0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // bottom left
+		 0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // top 
+	};    
+
 	unsigned int indices[] = {  // note that we start from 0!
-		0, 1, 3,   // first triangle
-		1, 2, 3    // second triangle
+		0, 1, 2,   // first triangle
 	};
 
 
@@ -191,7 +201,8 @@ int main()
     mfgl_vertex_array_bind(vao);
     mfgl_element_buffer_bind(ebo);
     mfgl_vertex_buffer_bind(vbo);
-    mfgl_vertex_attrib_link(0, 3);
+    mfgl_vertex_attrib_link(0, 3, 0, 6);
+    mfgl_vertex_attrib_link(1, 3, 3, 6);
 
     mfgl_wireframe(false);
 

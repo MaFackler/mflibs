@@ -35,6 +35,8 @@ unsigned int mfgl_shader_fragment_create(const char *fs);
 unsigned int mfgl_shader_program_create(unsigned int vs, unsigned int fs);
 void mfgl_shader_program_use(unsigned int program);
 void mfgl_shader_delete(unsigned int id);
+unsigned int mfgl_shader_uniform_location(unsigned int shader, const char *name);
+void mfgl_shader_uniform_4f(unsigned int location, float a, float b, float c, float d);
 
 
 // Textures
@@ -45,7 +47,7 @@ void mfgl_bind_texture(unsigned int id);
 // Vertex Buffer
 unsigned int mfgl_vertex_buffer_create();
 void mfgl_vertex_buffer_bind(unsigned int vbo);
-void mfgl_vertex_attrib_link(unsigned int location, size_t n);
+void mfgl_vertex_attrib_link(unsigned int location, size_t size, size_t start, size_t stride);
 void mfgl_vertex_buffer_draw(unsigned int vbo, size_t n);
 
 // Element Buffer
@@ -275,9 +277,19 @@ void mfgl_shader_delete(unsigned int id)
     glDeleteShader(id);
 }
 
-void mfgl_vertex_attrib_link(unsigned int location, size_t n)
+unsigned int mfgl_shader_uniform_location(unsigned int shader, const char *name)
 {
-    glVertexAttribPointer(location, n, GL_FLOAT, GL_FALSE, n * sizeof(float), 0);
+    return glGetUniformLocation(shader, name);
+}
+
+void mfgl_shader_uniform_4f(unsigned int location, float a, float b, float c, float d)
+{
+    glUniform4f(location, a, b, c, d);
+}
+
+void mfgl_vertex_attrib_link(unsigned int location, size_t size, size_t start, size_t stride)
+{
+    glVertexAttribPointer(location, size, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void *) (start * sizeof(float)));
     glEnableVertexAttribArray(location);
 }
 
