@@ -1,3 +1,4 @@
+#include "mf.h"
 #define MF_PLATFORM_USE_OPENGL
 #define MF_PLATFORM_IMPLEMENTATION
 #include "mf_platform.h"
@@ -20,6 +21,20 @@ typedef mfm_v3 v3;
 // F = G * (m1 * m2 / (r * r) )
 //#define G_CONST 0.0000000000674f
 #define G_CONST 10000.0f
+
+static const char* vs = 
+"#version 330 core\n"
+"layout (location = 0) in vec3 pos;\n"
+"void main() {\n"
+"    gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);\n"
+"}\0";
+
+static const char* fs = 
+"#version 330 core\n"
+"out vec4 FragColor;"
+"void main() {\n"
+"    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+"}\0";
 
 struct Planet
 {
@@ -127,6 +142,10 @@ int main()
     mffo_font font;
     mffo_font_alloc(&font, "/usr/share/fonts/ubuntu/Ubuntu-B.ttf");
     u32 texture_font = mfgl_create_texture_alpha(font.dim, font.dim, font.data);
+    mfgl_shaders shaders;
+    mfgl_shaders_init(&shaders, vs, fs);
+    glUseProgram(shaders.program);
+    mfgl_error_check();
     
     u32 *pixels = (u32 *) malloc(512 * 512 * sizeof(u32));
     for (size_t y = 0; y < 512; ++y)
@@ -147,10 +166,36 @@ int main()
     }
     u32 texture_id = mfgl_create_texture_argb(512, 512, (u32 *) font.data);
 
+	float vertices[] = {
+		 0.5f,  0.5f, 0.0f,  // top right
+		 0.5f, -0.5f, 0.0f,  // bottom right
+		-0.5f, -0.5f, 0.0f,  // bottom left
+		-0.5f,  0.5f, 0.0f   // top left 
+	};
+	unsigned int indices[] = {  // note that we start from 0!
+		0, 1, 3,   // first triangle
+		1, 2, 3    // second triangle
+	};
+
+
+
+    u32 vbo = mfgl_vertex_buffer_create(&vertices[0], MF_ArrayLength(vertices));
+    u32 vao = mfgl_vertex_array_create();
+    u32 ebo = mfgl_element_buffer_create(&indices[0], MF_ArrayLength(indices));
+
+
+    mfgl_vertex_array_bind(vao);
+    mfgl_element_buffer_bind(ebo);
+    mfgl_vertex_buffer_bind(vbo);
+    mfgl_vertex_attrib_link(0, 3);
+
+    mfgl_wireframe(false);
+
     bool running = true;
     while (running && platform.window.isOpen)
     {
         mfp_begin(&platform);
+#if 0
         mfgl_viewport_bottom_up(width, height);
 
         // Update
@@ -198,10 +243,18 @@ int main()
         //mfgl_draw_rect(0, 0, 512, 512);
         mfui_button(&font);
         my_draw_text(&font, 20, 100, "hello");
+#endif
+        if (platform.input.keys['q'].pressed)
+            running = false;
+
+        glUseProgram(shaders.program);
+        mfgl_vertex_array_bind(vao);
+        mfgl_clear();
+        //mfgl_vertex_buffer_draw(vbo, 3);
+        mfgl_element_buffer_draw(ebo, 6);
 
 
         mfp_end(&platform);
-        mfgl_error_check();
     }
 
     mfp_window_close(&platform);

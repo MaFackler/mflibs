@@ -10,6 +10,7 @@ typedef struct mfgl_shaders mfgl_shaderes;
 // glEnable/glDisable wrappers
 void mfgl_texture(bool value);
 void mfgl_blend(bool value);
+void mfgl_wireframe(bool value);
 
 // Color
 void mfgl_set_color(float r, float g, float b, float a);
@@ -30,12 +31,30 @@ void mfgl_draw_circle(float x, float y, float radius);
 void mfgl_draw_triangle(float a, float b, float c, float d, float e, float f);
 
 // Shaders
-void mfgl_shaders_init(mfgl_shaders *shaders, char *vs, char *fs);
+void mfgl_shaders_init(mfgl_shaders *shaders, const char *vs, const char *fs);
+
 
 // Textures
 unsigned int mfgl_create_texture_argb(size_t width, size_t height, u32 *data);
 unsigned int mfgl_create_texture_alpha(size_t width, size_t height, unsigned char *data);
 void mfgl_bind_texture(unsigned int id);
+
+// Vertex Buffer
+unsigned int mfgl_vertex_buffer_create();
+void mfgl_vertex_buffer_bind(unsigned int vbo);
+void mfgl_vertex_attrib_link(unsigned int location, size_t n);
+void mfgl_vertex_buffer_draw(unsigned int vbo, size_t n);
+
+// Element Buffer
+unsigned int mfgl_element_buffer_create(unsigned int *indices, size_t n);
+void mfgl_element_buffer_bind(unsigned int ebo);
+void mfgl_element_buffer_draw(unsigned int ebo, size_t n);
+
+// Vertex Array
+unsigned int mfgl_vertex_array_create();
+void mfgl_vertex_array_bind(unsigned int vao);
+
+
 
 // Error
 void mfgl_error_check();
@@ -68,6 +87,15 @@ void mfgl_blend(bool value)
     } else {
         glDisable(GL_BLEND);
     }
+}
+
+void mfgl_wireframe(bool value)
+{
+    if (value)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    else
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
 }
 
 
@@ -185,7 +213,7 @@ void mfgl_draw_triangle(float a, float b, float c, float d, float e, float f)
 }
 
 
-void mfgl_shaders_init(mfgl_shaders *shaders, char *vs, char *fs)
+void mfgl_shaders_init(mfgl_shaders *shaders, const char *vs, const char *fs)
 {
     shaders->vs = 0;
     shaders->fs = 0;
@@ -226,7 +254,7 @@ void mfgl_shaders_init(mfgl_shaders *shaders, char *vs, char *fs)
     glAttachShader(shaders->program, shaders->fs);
     glLinkProgram(shaders->program);
 
-    glGetShaderiv(shaders->program, GL_LINK_STATUS, &success);
+    glGetProgramiv(shaders->program, GL_LINK_STATUS, &success);
     if (!success)
     {
         glGetShaderInfoLog(shaders->program, 512, NULL, info);
@@ -236,6 +264,19 @@ void mfgl_shaders_init(mfgl_shaders *shaders, char *vs, char *fs)
     }
 
     shaders->success = success;
+    // TODO: just delete shader and use program
+    // glDeleteShader(
+}
+
+void mfgl_vertex_attrib_link(unsigned int location, size_t n)
+{
+    glVertexAttribPointer(location, n, GL_FLOAT, GL_FALSE, n * sizeof(float), 0);
+    glEnableVertexAttribArray(location);
+}
+
+void mfgl_vertex_buffer_draw(unsigned int vbo, size_t n)
+{
+    glDrawArrays(GL_TRIANGLES, 0, n);
 }
 
 unsigned int mfgl_create_texture_argb(size_t width, size_t height, u32 *data)
@@ -279,13 +320,67 @@ void mfgl_bind_texture(unsigned int id)
     glBindTexture(GL_TEXTURE_2D, id);
 }
 
+unsigned int mfgl_vertex_buffer_create(float *vertices, size_t n)
+{
+    unsigned int res;
+    glGenBuffers(1, &res);
+    glBindBuffer(GL_ARRAY_BUFFER, res);
+    glBufferData(GL_ARRAY_BUFFER, n * sizeof(float), vertices, GL_STATIC_DRAW);
+    return res;
+}
+
+void mfgl_vertex_buffer_bind(unsigned int vbo)
+{
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+}
+
+unsigned int mfgl_element_buffer_create(unsigned int *indices, size_t n)
+{
+	unsigned int res;
+	glGenBuffers(1, &res);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, n * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+	return res;
+}
+
+void mfgl_element_buffer_bind(unsigned int ebo)
+{
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+}
+
+void mfgl_element_buffer_draw(unsigned int ebo, size_t n)
+{
+    glDrawElements(GL_TRIANGLES, n, GL_UNSIGNED_INT, 0);
+}
+
+unsigned int mfgl_vertex_array_create()
+{
+    unsigned int res;
+    glGenVertexArrays(1, &res);
+    glBindVertexArray(res);
+    return res;
+}
+
+void mfgl_vertex_array_bind(unsigned int vao)
+{
+    glBindVertexArray(vao);
+}
+
 void mfgl_error_check()
 {
     GLenum code;
     code = glGetError();
     if (code != GL_NO_ERROR)
     {
-        fprintf(stderr, "Opengl error: %d\n", code);
+        switch (code)
+        {
+            case 1282:
+                fprintf(stderr, "Opengl invalid operation error: %d\n", code);
+                break;
+            default:
+                fprintf(stderr, "Opengl error: %d\n", code);
+
+        }
         exit(1);
     }
 }
