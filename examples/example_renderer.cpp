@@ -22,14 +22,14 @@ typedef mfm_v3 v3;
 //#define G_CONST 0.0000000000674f
 #define G_CONST 10000.0f
 
-static const char* vs = 
+static const char* SRC_VS = 
 "#version 330 core\n"
 "layout (location = 0) in vec3 pos;\n"
 "void main() {\n"
 "    gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);\n"
 "}\0";
 
-static const char* fs = 
+static const char* SRC_FS = 
 "#version 330 core\n"
 "out vec4 FragColor;"
 "void main() {\n"
@@ -142,9 +142,13 @@ int main()
     mffo_font font;
     mffo_font_alloc(&font, "/usr/share/fonts/ubuntu/Ubuntu-B.ttf");
     u32 texture_font = mfgl_create_texture_alpha(font.dim, font.dim, font.data);
-    mfgl_shaders shaders;
-    mfgl_shaders_init(&shaders, vs, fs);
-    glUseProgram(shaders.program);
+
+    u32 vs = mfgl_shader_vertex_create(SRC_VS);
+    u32 fs = mfgl_shader_fragment_create(SRC_FS);
+    u32 program = mfgl_shader_program_create(vs, fs);
+    mfgl_shader_delete(vs);
+    mfgl_shader_delete(fs);
+    mfgl_shader_program_use(program);
     mfgl_error_check();
     
     u32 *pixels = (u32 *) malloc(512 * 512 * sizeof(u32));
@@ -247,7 +251,7 @@ int main()
         if (platform.input.keys['q'].pressed)
             running = false;
 
-        glUseProgram(shaders.program);
+        mfgl_shader_program_use(program);
         mfgl_vertex_array_bind(vao);
         mfgl_clear();
         //mfgl_vertex_buffer_draw(vbo, 3);

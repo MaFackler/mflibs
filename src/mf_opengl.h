@@ -5,7 +5,6 @@
 
 // NOTE: opengl code should be included by platform
 
-typedef struct mfgl_shaders mfgl_shaderes;
 
 // glEnable/glDisable wrappers
 void mfgl_texture(bool value);
@@ -31,7 +30,11 @@ void mfgl_draw_circle(float x, float y, float radius);
 void mfgl_draw_triangle(float a, float b, float c, float d, float e, float f);
 
 // Shaders
-void mfgl_shaders_init(mfgl_shaders *shaders, const char *vs, const char *fs);
+unsigned int mfgl_shader_vertex_create(const char *vs);
+unsigned int mfgl_shader_fragment_create(const char *fs);
+unsigned int mfgl_shader_program_create(unsigned int vs, unsigned int fs);
+void mfgl_shader_program_use(unsigned int program);
+void mfgl_shader_delete(unsigned int id);
 
 
 // Textures
@@ -61,14 +64,6 @@ void mfgl_error_check();
 
 
 #ifdef MF_OPENGL_IMPLEMENTATION
-
-struct mfgl_shaders
-{
-    bool success;
-    u32 vs;
-    u32 fs;
-    u32 program;
-};
 
 void mfgl_texture(bool value)
 {
@@ -212,60 +207,72 @@ void mfgl_draw_triangle(float a, float b, float c, float d, float e, float f)
     glEnd();
 }
 
-
-void mfgl_shaders_init(mfgl_shaders *shaders, const char *vs, const char *fs)
+unsigned int mfgl_shader_vertex_create(const char *vs)
 {
-    shaders->vs = 0;
-    shaders->fs = 0;
-    shaders->program = 0;
-    int success;
+    unsigned int res;
+    res = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(res, 1, &vs, NULL);
+    glCompileShader(res);
+
+    int success = 0;
     char info[512];
-
-    // Vertex shader
-    shaders->vs = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(shaders->vs, 1, &vs, NULL);
-    glCompileShader(shaders->vs);
-
-    glGetShaderiv(shaders->vs, GL_COMPILE_STATUS, &success);
+    glGetShaderiv(res, GL_COMPILE_STATUS, &success);
     if (!success)
     {
-        glGetShaderInfoLog(shaders->vs, 512, NULL, info);
+        glGetShaderInfoLog(res, 512, NULL, info);
         printf("%s", info);
-        shaders->vs = 0;
-        return;
+        exit(1);
     }
+    return res;
+}
 
+unsigned int mfgl_shader_fragment_create(const char *fs)
+{
+    unsigned int res;
     // Fragment shader
-    shaders->fs = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(shaders->fs, 1, &fs, NULL);
-    glCompileShader(shaders->fs);
-    glGetShaderiv(shaders->fs, GL_COMPILE_STATUS, &success);
+    res = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(res, 1, &fs, NULL);
+    glCompileShader(res);
+    int success = 0;
+    char info[512];
+    glGetShaderiv(res, GL_COMPILE_STATUS, &success);
     if (!success)
     {
-        glGetShaderInfoLog(shaders->fs, 512, NULL, info);
+        glGetShaderInfoLog(res, 512, NULL, info);
         printf("%s", info);
-        shaders->fs = 0;
-        return;
+        exit(1);
     }
+    return res;
+}
 
-    // Program
-    shaders->program = glCreateProgram();
-    glAttachShader(shaders->program, shaders->vs);
-    glAttachShader(shaders->program, shaders->fs);
-    glLinkProgram(shaders->program);
+unsigned int mfgl_shader_program_create(unsigned int vs, unsigned int fs)
+{
+    unsigned int res;
+    res = glCreateProgram();
+    glAttachShader(res, vs);
+    glAttachShader(res, fs);
+    glLinkProgram(res);
 
-    glGetProgramiv(shaders->program, GL_LINK_STATUS, &success);
+    int success = 0;
+    char info[512];
+    glGetProgramiv(res, GL_LINK_STATUS, &success);
     if (!success)
     {
-        glGetShaderInfoLog(shaders->program, 512, NULL, info);
+        glGetShaderInfoLog(res, 512, NULL, info);
         printf("%s", info);
-        shaders->program = 0;
-        return;
+        exit(1);
     }
+    return res;
+}
 
-    shaders->success = success;
-    // TODO: just delete shader and use program
-    // glDeleteShader(
+void mfgl_shader_program_use(unsigned int program)
+{
+    glUseProgram(program);
+}
+
+void mfgl_shader_delete(unsigned int id)
+{
+    glDeleteShader(id);
 }
 
 void mfgl_vertex_attrib_link(unsigned int location, size_t n)
