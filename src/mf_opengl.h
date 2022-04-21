@@ -37,10 +37,11 @@ void mfgl_shader_program_use(unsigned int program);
 void mfgl_shader_delete(unsigned int id);
 unsigned int mfgl_shader_uniform_location(unsigned int shader, const char *name);
 void mfgl_shader_uniform_4f(unsigned int location, float a, float b, float c, float d);
+void mfgl_shader_uniform_1i(unsigned int location, int a);
 
 
 // Textures
-unsigned int mfgl_create_texture_argb(size_t width, size_t height, u32 *data);
+unsigned int mfgl_create_texture_argb(size_t width, size_t height, unsigned char *data);
 unsigned int mfgl_create_texture_alpha(size_t width, size_t height, unsigned char *data);
 void mfgl_bind_texture(unsigned int id);
 
@@ -287,6 +288,11 @@ void mfgl_shader_uniform_4f(unsigned int location, float a, float b, float c, fl
     glUniform4f(location, a, b, c, d);
 }
 
+void mfgl_shader_uniform_1i(unsigned int location, int a)
+{
+    glUniform1i(location, a);
+}
+
 void mfgl_vertex_attrib_link(unsigned int location, size_t size, size_t start, size_t stride)
 {
     glVertexAttribPointer(location, size, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void *) (start * sizeof(float)));
@@ -298,7 +304,7 @@ void mfgl_vertex_buffer_draw(unsigned int vbo, size_t n)
     glDrawArrays(GL_TRIANGLES, 0, n);
 }
 
-unsigned int mfgl_create_texture_argb(size_t width, size_t height, u32 *data)
+unsigned int mfgl_create_texture_argb(size_t width, size_t height, unsigned char *data)
 {
     unsigned int id;
     glGenTextures(1, &id);
@@ -307,11 +313,12 @@ unsigned int mfgl_create_texture_argb(size_t width, size_t height, u32 *data)
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
                  width, height, 0, GL_BGRA,
                  GL_UNSIGNED_BYTE, data);
-    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
     return id;
 }
@@ -324,12 +331,12 @@ unsigned int mfgl_create_texture_alpha(size_t width, size_t height, unsigned cha
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA,
                  width, height, 0, GL_ALPHA,
                  GL_UNSIGNED_BYTE, data);
-    //glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
-    glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
     return id;
 }

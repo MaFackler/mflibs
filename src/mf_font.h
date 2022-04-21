@@ -25,12 +25,24 @@ void mffo_font_alloc(mffo_font *font, const char *filename);
 void mffo_font_alloc(mffo_font *font, const char *filename) {
     const size_t dim = 512;
     unsigned char file_contents[1<<20];
-    font->data = (unsigned char *) malloc(dim * dim);
+    unsigned char alpha_font[dim * dim];
+    font->data = (unsigned char*) malloc(dim * dim * sizeof(unsigned int));
     fread(file_contents, 1, 1<<20, fopen(filename, "rb"));
     stbtt_BakeFontBitmap(file_contents,
                          0, 32.0,
-                         font->data, dim, dim,
+                         alpha_font, dim, dim,
                          _MF_FONT_START_CHAR, _MF_FONT_END_CHAR - _MF_FONT_START_CHAR, font->chardata);
+
+
+    unsigned int *dest = (unsigned int *) font->data;
+    for (size_t i = 0; i < dim * dim; ++i) {
+        char alpha_value = alpha_font[i];
+        unsigned int value = (alpha_value << 24 |
+                              alpha_value << 16 |
+                              alpha_value << 8 |
+                              alpha_value << 0);
+        dest[i] = value;
+    }
     font->dim = dim;
 }
 

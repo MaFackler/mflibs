@@ -26,19 +26,28 @@ static const char* SRC_VS =
 "#version 330 core\n"
 "layout (location = 0) in vec3 pos;\n"
 "layout (location = 1) in vec3 color;\n"
+"layout (location = 2) in vec2 tex_coord;\n"
 "out vec3 both_color;\n"
+"out vec2 both_texCoord;\n"
 "void main() {\n"
 "    gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);\n"
 "    both_color = color;\n"
+"    both_texCoord = tex_coord;\n"
 "}\0";
 
 static const char* SRC_FS = 
 "#version 330 core\n"
 "out vec4 FragColor;\n"
 "in vec3 both_color;\n"
+"in vec2 both_texCoord;\n"
+"uniform sampler2D sampler;\n"
 "void main() {\n"
 "    //FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-"    FragColor = vec4(both_color, 1.0f);\n"
+"    //FragColor = vec4(both_color, 1.0f);\n"
+"    FragColor = texture(sampler, both_texCoord) * vec4(both_color, 1.0);\n"
+"    //FragColor = texture(sampler, both_texCoord);\n"
+"    //FragColor = vec4(texture2D(sampler, both_texCoord.st, 0.0).w * both_color, 1.0);\n"
+"    //FragColor = vec4(both_texCoord.x, both_texCoord.y, 0, 0);\n"
 "}\0";
 
 struct Planet
@@ -63,8 +72,8 @@ void my_draw_text(mffo_font *font, float x, float y, const char *text)
 {
    // assume orthographic projection with units = screen pixels, origin at top left
     
-    mfgl_texture(true);
-    mfgl_blend(true);
+    //mfgl_texture(true);
+    //mfgl_blend(true);
 
     glBegin(GL_QUADS);
     while (*text) {
@@ -79,7 +88,7 @@ void my_draw_text(mffo_font *font, float x, float y, const char *text)
         ++text;
     }
     glEnd();
-    mfgl_texture(false); 
+    //mfgl_texture(false); 
     mfgl_blend(false); 
 }
 
@@ -146,7 +155,7 @@ int main()
 
     mffo_font font;
     mffo_font_alloc(&font, "/usr/share/fonts/ubuntu/Ubuntu-B.ttf");
-    u32 texture_font = mfgl_create_texture_alpha(font.dim, font.dim, font.data);
+    u32 texture_font = mfgl_create_texture_argb(font.dim, font.dim, font.data);
 
     u32 vs = mfgl_shader_vertex_create(SRC_VS);
     u32 fs = mfgl_shader_fragment_create(SRC_FS);
@@ -158,6 +167,8 @@ int main()
 
     u32 location_color = mfgl_shader_uniform_location(program, "color");
     mfgl_shader_uniform_4f(location_color, 1.0f, 0.0f, 0.0f, 0.0f);
+    u32 location_smapler = mfgl_shader_uniform_location(program, "sampler");
+    mfgl_shader_uniform_1i(location_smapler, 0);
 
 
     
@@ -178,13 +189,12 @@ int main()
             pixels[y * 512 + x] = color;
         }
     }
-    u32 texture_id = mfgl_create_texture_argb(512, 512, (u32 *) font.data);
+    u32 texture_id = mfgl_create_texture_argb(512, 512, font.data);
 
 	float vertices[] = {
-		// positions         // colors
-		 0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // bottom right
-		-0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // bottom left
-		 0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // top 
+		 0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+		-0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+		 0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f, 0.5f, 1.0f,
 	};    
 
 	unsigned int indices[] = {  // note that we start from 0!
@@ -201,8 +211,9 @@ int main()
     mfgl_vertex_array_bind(vao);
     mfgl_element_buffer_bind(ebo);
     mfgl_vertex_buffer_bind(vbo);
-    mfgl_vertex_attrib_link(0, 3, 0, 6);
-    mfgl_vertex_attrib_link(1, 3, 3, 6);
+    mfgl_vertex_attrib_link(0, 3, 0, 8);
+    mfgl_vertex_attrib_link(1, 3, 3, 8);
+    mfgl_vertex_attrib_link(2, 2, 6, 8);
 
     mfgl_wireframe(false);
 
@@ -264,11 +275,21 @@ int main()
 
         mfgl_shader_program_use(program);
         mfgl_vertex_array_bind(vao);
+        mfgl_set_color(1.0f, 0.0f, 0.0f, 1.0f);
         mfgl_clear();
+        //glEnable(GL_BLEND);
+        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        mfgl_vertex_array_bind(vao);
+        glActiveTexture(GL_TEXTURE0);
+        mfgl_bind_texture(texture_font);
         //mfgl_vertex_buffer_draw(vbo, 3);
         mfgl_element_buffer_draw(ebo, 6);
+        glDisable(GL_TEXTURE_2D);
+        //glDisable(GL_BLEND);
 
 
+        mfgl_error_check();
         mfp_end(&platform);
     }
 
