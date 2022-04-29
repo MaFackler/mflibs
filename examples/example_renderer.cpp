@@ -58,6 +58,8 @@ static const char* SRC_FS =
 static const char *SRC_VS =
 "#version 330 core\n"
 "layout (location = 0) in vec2 pos;\n"
+"layout (location = 1) in vec3 color;\n"
+"out vec3 color_;\n"
 "void main() {\n"
 "   gl_Position = vec4(pos.x, pos.y, 0, 1.0);\n"
 "}\n";
@@ -65,8 +67,9 @@ static const char *SRC_VS =
 static const char *SRC_FS = 
 "#version 330 core\n"
 "out vec4 FragColor;\n"
+"in vec3 color_;\n"
 "void main() {\n"
-"   FragColor = vec4(1.0, 1.0, 1.0, 1.0f);\n"
+"   FragColor = vec4(color_.r, color_.g, color_.b, 1.0f);\n"
 "}\n";
 
 struct Planet
@@ -235,10 +238,8 @@ int main() {
     //mfgl_vertex_array_bind(vao);
     mfgl_element_buffer_bind(ebo);
     mfgl_vertex_buffer_bind(vbo);
-    mfgl_vertex_attrib_link(0, 2, 0, 2);
-    //mfgl_vertex_attrib_link(0, 3, 0, 8);
-    //mfgl_vertex_attrib_link(1, 3, 3, 8);
-    //mfgl_vertex_attrib_link(2, 2, 6, 8);
+    mfgl_vertex_attrib_link(0, 2, 0, 5); // x,y
+    mfgl_vertex_attrib_link(1, 3, 2, 5); // color r.g.b
 
     //mfgl_wireframe(false);
 
@@ -317,12 +318,15 @@ int main() {
 
         //mfgl_vertex_array_bind(vao);
         //glActiveTexture(GL_TEXTURE0);
-        //mfgl_bind_texture(texture_font);
+        mfgl_bind_texture(texture_font);
         //mfgl_element_buffer_draw(ebo, 6);
 
         for (size_t i = 0; i < ui.vertices_index; ++i) {
-            data[(i * 2) + 0] = ui.vertices[i].x;
-            data[(i * 2) + 1] = ui.vertices[i].y;
+            data[(i * 5) + 0] = ui.vertices[i].x;
+            data[(i * 5) + 1] = ui.vertices[i].y;
+            data[(i * 5) + 2] = ui.vertices[i].r;
+            data[(i * 5) + 3] = ui.vertices[i].g;
+            data[(i * 5) + 4] = ui.vertices[i].b;
         }
         for (size_t i = 0; i < ui.indices_index; ++i) {
             indices[i] = ui.indices[i];
