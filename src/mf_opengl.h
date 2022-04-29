@@ -54,6 +54,7 @@ void mfgl_vertex_buffer_draw(unsigned int vbo, size_t n);
 
 // Element Buffer
 unsigned int mfgl_element_buffer_create(unsigned int *indices, size_t n);
+unsigned int mfgl_element_buffer_dynamic_create(unsigned int *indices, size_t n, unsigned int **map);
 void mfgl_element_buffer_bind(unsigned int ebo);
 void mfgl_element_buffer_draw(unsigned int ebo, size_t n);
 
@@ -377,6 +378,16 @@ unsigned int mfgl_element_buffer_create(unsigned int *indices, size_t n)
 	glGenBuffers(1, &res);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, n * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+	return res;
+}
+
+unsigned int mfgl_element_buffer_dynamic_create(unsigned int *indices, size_t n, unsigned int **map)
+{
+	unsigned int res;
+	glGenBuffers(1, &res);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, n * sizeof(unsigned int), indices, GL_DYNAMIC_DRAW);
+    *map = (unsigned int *) glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	return res;
 }
 

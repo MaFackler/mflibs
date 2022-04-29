@@ -225,13 +225,15 @@ int main() {
 #endif
 
     float *data = NULL;
+    unsigned int *indices = NULL;
     u32 vbo = mfgl_vertex_buffer_dynamic_create(NULL, 512, &data);
     //u32 vbo = mfgl_vertex_buffer_create(&vertices[0], MF_ArrayLength(vertices));
     //u32 vao = mfgl_vertex_array_create();
-    //u32 ebo = mfgl_element_buffer_create(&indices[0], MF_ArrayLength(indices));
+    //u32 ebo = mfgl_element_buffer_create(&ui.indices[0], MF_ArrayLength(ui.indices));
+    u32 ebo = mfgl_element_buffer_dynamic_create(NULL, 512, &indices);
 
     //mfgl_vertex_array_bind(vao);
-    //mfgl_element_buffer_bind(ebo);
+    mfgl_element_buffer_bind(ebo);
     mfgl_vertex_buffer_bind(vbo);
     mfgl_vertex_attrib_link(0, 2, 0, 2);
     //mfgl_vertex_attrib_link(0, 3, 0, 8);
@@ -240,6 +242,7 @@ int main() {
 
     //mfgl_wireframe(false);
 
+    mfgl_error_check();
     bool running = true;
     while (running && platform.window.isOpen)
     {
@@ -317,11 +320,19 @@ int main() {
         //mfgl_bind_texture(texture_font);
         //mfgl_element_buffer_draw(ebo, 6);
 
-        for (size_t i = 0; i < ui.index; ++i) {
+        for (size_t i = 0; i < ui.vertices_index; ++i) {
             data[(i * 2) + 0] = ui.vertices[i].x;
             data[(i * 2) + 1] = ui.vertices[i].y;
         }
-        mfgl_vertex_buffer_draw(vbo, ui.index * 2);
+        for (size_t i = 0; i < ui.indices_index; ++i) {
+            indices[i] = ui.indices[i];
+        }
+
+
+        mfgl_element_buffer_bind(ebo);
+        mfgl_vertex_buffer_bind(vbo);
+        //mfgl_vertex_buffer_draw(vbo, 3);
+        mfgl_element_buffer_draw(ebo, ui.indices_index);
         
         mfg_end(&ui);
         //glDisable(GL_BLEND);
