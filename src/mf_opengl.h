@@ -46,7 +46,8 @@ unsigned int mfgl_create_texture_alpha(size_t width, size_t height, unsigned cha
 void mfgl_bind_texture(unsigned int id);
 
 // Vertex Buffer
-unsigned int mfgl_vertex_buffer_create();
+unsigned int mfgl_vertex_buffer_create(float *vertices, size_t n);
+unsigned int mfgl_vertex_buffer_dynamic_create(float *vertices, size_t n, float **map);
 void mfgl_vertex_buffer_bind(unsigned int vbo);
 void mfgl_vertex_attrib_link(unsigned int location, size_t size, size_t start, size_t stride);
 void mfgl_vertex_buffer_draw(unsigned int vbo, size_t n);
@@ -353,6 +354,16 @@ unsigned int mfgl_vertex_buffer_create(float *vertices, size_t n)
     glBindBuffer(GL_ARRAY_BUFFER, res);
     glBufferData(GL_ARRAY_BUFFER, n * sizeof(float), vertices, GL_STATIC_DRAW);
     return res;
+}
+
+unsigned int mfgl_vertex_buffer_dynamic_create(float *vertices, size_t n, float **map)
+{
+    u32 vbo;
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, n * sizeof(float), vertices, GL_DYNAMIC_DRAW);
+    *map = (float *) glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+    return vbo;
 }
 
 void mfgl_vertex_buffer_bind(unsigned int vbo)

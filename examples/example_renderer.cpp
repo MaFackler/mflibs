@@ -14,6 +14,9 @@
 #define MF_FONT_IMPLEMENTATION
 #include "mf_font.h"
 
+#define MF_GUI_IMPLEMENTATION
+#include "mf_gui.h"
+
 
 typedef mfm_v2 v2;
 typedef mfm_v3 v3;
@@ -22,6 +25,7 @@ typedef mfm_v3 v3;
 //#define G_CONST 0.0000000000674f
 #define G_CONST 10000.0f
 
+#if 0
 static const char* SRC_VS = 
 "#version 330 core\n"
 "layout (location = 0) in vec3 pos;\n"
@@ -49,6 +53,21 @@ static const char* SRC_FS =
 "    //FragColor = vec4(texture2D(sampler, both_texCoord.st, 0.0).w * both_color, 1.0);\n"
 "    //FragColor = vec4(both_texCoord.x, both_texCoord.y, 0, 0);\n"
 "}\0";
+#endif
+
+static const char *SRC_VS =
+"#version 330 core\n"
+"layout (location = 0) in vec2 pos;\n"
+"void main() {\n"
+"   gl_Position = vec4(pos.x, pos.y, 0, 1.0);\n"
+"}\n";
+
+static const char *SRC_FS = 
+"#version 330 core\n"
+"out vec4 FragColor;\n"
+"void main() {\n"
+"   FragColor = vec4(1.0, 1.0, 1.0, 1.0f);\n"
+"}\n";
 
 struct Planet
 {
@@ -120,8 +139,7 @@ void mfui_button(mffo_font * font)
     my_draw_text(font, 0, height - margin, "Button");
 }
 
-int main()
-{
+int main() {
     u32 width = 1600;
     u32 height = 900;
     mfp_platform platform = {};
@@ -165,13 +183,17 @@ int main()
     mfgl_shader_program_use(program);
     mfgl_error_check();
 
+#if 0
     u32 location_color = mfgl_shader_uniform_location(program, "color");
     mfgl_shader_uniform_4f(location_color, 1.0f, 0.0f, 0.0f, 0.0f);
     u32 location_smapler = mfgl_shader_uniform_location(program, "sampler");
     mfgl_shader_uniform_1i(location_smapler, 0);
+#endif
 
-
+    mfg_ui ui;
+    mfg_init(&ui, 1600, 900);
     
+#if 0
     u32 *pixels = (u32 *) malloc(512 * 512 * sizeof(u32));
     for (size_t y = 0; y < 512; ++y)
     {
@@ -200,22 +222,23 @@ int main()
 	unsigned int indices[] = {  // note that we start from 0!
 		0, 1, 2,   // first triangle
 	};
+#endif
 
+    float *data = NULL;
+    u32 vbo = mfgl_vertex_buffer_dynamic_create(NULL, 512, &data);
+    //u32 vbo = mfgl_vertex_buffer_create(&vertices[0], MF_ArrayLength(vertices));
+    //u32 vao = mfgl_vertex_array_create();
+    //u32 ebo = mfgl_element_buffer_create(&indices[0], MF_ArrayLength(indices));
 
-
-    u32 vbo = mfgl_vertex_buffer_create(&vertices[0], MF_ArrayLength(vertices));
-    u32 vao = mfgl_vertex_array_create();
-    u32 ebo = mfgl_element_buffer_create(&indices[0], MF_ArrayLength(indices));
-
-
-    mfgl_vertex_array_bind(vao);
-    mfgl_element_buffer_bind(ebo);
+    //mfgl_vertex_array_bind(vao);
+    //mfgl_element_buffer_bind(ebo);
     mfgl_vertex_buffer_bind(vbo);
-    mfgl_vertex_attrib_link(0, 3, 0, 8);
-    mfgl_vertex_attrib_link(1, 3, 3, 8);
-    mfgl_vertex_attrib_link(2, 2, 6, 8);
+    mfgl_vertex_attrib_link(0, 2, 0, 2);
+    //mfgl_vertex_attrib_link(0, 3, 0, 8);
+    //mfgl_vertex_attrib_link(1, 3, 3, 8);
+    //mfgl_vertex_attrib_link(2, 2, 6, 8);
 
-    mfgl_wireframe(false);
+    //mfgl_wireframe(false);
 
     bool running = true;
     while (running && platform.window.isOpen)
@@ -273,20 +296,36 @@ int main()
         if (platform.input.keys['q'].pressed)
             running = false;
 
+        if (platform.input.keys['s'].pressed)
+            data[0] = 0.0f;
+
+        // UI
+        mfg_begin(&ui);
+
+        mfg_button(&ui, 100, 100);
+        
+
         mfgl_shader_program_use(program);
-        mfgl_vertex_array_bind(vao);
+        //mfgl_vertex_array_bind(vao);
         mfgl_set_color(1.0f, 0.0f, 0.0f, 1.0f);
         mfgl_clear();
         //glEnable(GL_BLEND);
         //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        mfgl_vertex_array_bind(vao);
-        glActiveTexture(GL_TEXTURE0);
-        mfgl_bind_texture(texture_font);
-        //mfgl_vertex_buffer_draw(vbo, 3);
-        mfgl_element_buffer_draw(ebo, 6);
-        glDisable(GL_TEXTURE_2D);
+        //mfgl_vertex_array_bind(vao);
+        //glActiveTexture(GL_TEXTURE0);
+        //mfgl_bind_texture(texture_font);
+        //mfgl_element_buffer_draw(ebo, 6);
+
+        for (size_t i = 0; i < ui.index; ++i) {
+            data[(i * 2) + 0] = ui.vertices[i].x;
+            data[(i * 2) + 1] = ui.vertices[i].y;
+        }
+        mfgl_vertex_buffer_draw(vbo, ui.index * 2);
+        
+        mfg_end(&ui);
         //glDisable(GL_BLEND);
+
 
 
         mfgl_error_check();
