@@ -41,9 +41,9 @@ void mfgl_shader_uniform_1i(unsigned int location, int a);
 
 
 // Textures
-unsigned int mfgl_create_texture_argb(size_t width, size_t height, unsigned char *data);
-unsigned int mfgl_create_texture_alpha(size_t width, size_t height, unsigned char *data);
-void mfgl_bind_texture(unsigned int id);
+unsigned int mfgl_texture_create_argb(size_t width, size_t height, unsigned char *data);
+unsigned int mfgl_texture_create_alpha(size_t width, size_t height, unsigned char *data);
+void mfgl_texture_bind(unsigned int id);
 
 // Vertex Buffer
 unsigned int mfgl_vertex_buffer_create(float *vertices, size_t n);
@@ -306,7 +306,7 @@ void mfgl_vertex_buffer_draw(unsigned int vbo, size_t n)
     glDrawArrays(GL_TRIANGLES, 0, n);
 }
 
-unsigned int mfgl_create_texture_argb(size_t width, size_t height, unsigned char *data)
+unsigned int mfgl_texture_create_argb(size_t width, size_t height, unsigned char *data)
 {
     unsigned int id;
     glGenTextures(1, &id);
@@ -325,7 +325,7 @@ unsigned int mfgl_create_texture_argb(size_t width, size_t height, unsigned char
     return id;
 }
 
-unsigned int mfgl_create_texture_alpha(size_t width, size_t height, unsigned char *data)
+unsigned int mfgl_texture_create_alpha(size_t width, size_t height, unsigned char *data)
 {
     unsigned int id;
     glActiveTexture(GL_TEXTURE0);
@@ -343,7 +343,7 @@ unsigned int mfgl_create_texture_alpha(size_t width, size_t height, unsigned cha
     return id;
 }
 
-void mfgl_bind_texture(unsigned int id)
+void mfgl_texture_bind(unsigned int id)
 {
     glBindTexture(GL_TEXTURE_2D, id);
 }

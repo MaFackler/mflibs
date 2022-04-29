@@ -125,14 +125,14 @@ void my_render_bitmap(unsigned int bitmap_id, float x, float y, float w, float h
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_TEXTURE_2D);
-    mfgl_bind_texture(bitmap_id);
+    mfgl_texture_bind(bitmap_id);
     glBegin(GL_QUADS);
     glTexCoord2f(0.0f, 0.0f); glVertex2f(x, y + h);
     glTexCoord2f(1.0f, 0.0f); glVertex2f(x + w, y + h);
     glTexCoord2f(1.0f, 1.0f); glVertex2f(x + w, y);
     glTexCoord2f(0.0f, 1.0f); glVertex2f(x, y);
     glEnd();
-    mfgl_bind_texture(0);
+    mfgl_texture_bind(0);
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_BLEND);
 }
@@ -182,7 +182,7 @@ int main() {
 
     mffo_font font;
     mffo_font_alloc(&font, "/usr/share/fonts/ubuntu/Ubuntu-B.ttf");
-    u32 texture_font = mfgl_create_texture_argb(font.dim, font.dim, font.data);
+    u32 texture_font = mfgl_texture_create_argb(font.dim, font.dim, font.data);
 
     u32 vs = mfgl_shader_vertex_create(SRC_VS);
     u32 fs = mfgl_shader_fragment_create(SRC_FS);
@@ -326,7 +326,7 @@ int main() {
 
         //mfgl_vertex_array_bind(vao);
         //glActiveTexture(GL_TEXTURE0);
-        mfgl_bind_texture(texture_font);
+        mfgl_texture_bind(texture_font);
         //mfgl_element_buffer_draw(ebo, 6);
 
         memcpy((unsigned char *) data, &ui.vertices[0], sizeof(mfg_vertex) * ui.vertices_index);
