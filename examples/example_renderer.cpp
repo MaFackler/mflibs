@@ -59,17 +59,23 @@ static const char *SRC_VS =
 "#version 330 core\n"
 "layout (location = 0) in vec2 pos;\n"
 "layout (location = 1) in vec3 color;\n"
+"layout (location = 2) in vec2 tex;\n"
 "out vec3 color_;\n"
+"out vec2 tex_;\n"
 "void main() {\n"
 "   gl_Position = vec4(pos.x, pos.y, 0, 1.0);\n"
+"   color_ = color;\n"
+"   tex_ = tex;\n"
 "}\n";
 
 static const char *SRC_FS = 
 "#version 330 core\n"
 "out vec4 FragColor;\n"
 "in vec3 color_;\n"
+"in vec2 tex_;\n"
+"uniform sampler2D sampler;\n"
 "void main() {\n"
-"   FragColor = vec4(color_.r, color_.g, color_.b, 1.0f);\n"
+"   FragColor = texture(sampler, tex_) * vec4(color_.r, color_.g, color_.b, 1.0);\n"
 "}\n";
 
 struct Planet
@@ -189,9 +195,10 @@ int main() {
 #if 0
     u32 location_color = mfgl_shader_uniform_location(program, "color");
     mfgl_shader_uniform_4f(location_color, 1.0f, 0.0f, 0.0f, 0.0f);
-    u32 location_smapler = mfgl_shader_uniform_location(program, "sampler");
-    mfgl_shader_uniform_1i(location_smapler, 0);
 #endif
+
+    //u32 location_smapler = mfgl_shader_uniform_location(program, "sampler");
+    //mfgl_shader_uniform_1i(location_smapler, 0);
 
     mfg_ui ui;
     mfg_init(&ui, 1600, 900);
@@ -238,8 +245,9 @@ int main() {
     //mfgl_vertex_array_bind(vao);
     mfgl_element_buffer_bind(ebo);
     mfgl_vertex_buffer_bind(vbo);
-    mfgl_vertex_attrib_link(0, 2, 0, 5); // x,y
-    mfgl_vertex_attrib_link(1, 3, 2, 5); // color r.g.b
+    mfgl_vertex_attrib_link(0, 2, 0, 7); // x,y
+    mfgl_vertex_attrib_link(1, 3, 2, 7); // color r.g.b
+    mfgl_vertex_attrib_link(2, 2, 5, 7); // u,t
 
     //mfgl_wireframe(false);
 
@@ -306,7 +314,7 @@ int main() {
         // UI
         mfg_begin(&ui);
 
-        mfg_button(&ui, 100, 100);
+        mfg_button(&ui, 100, 100, 512, 512);
         
 
         mfgl_shader_program_use(program);
@@ -321,17 +329,8 @@ int main() {
         mfgl_bind_texture(texture_font);
         //mfgl_element_buffer_draw(ebo, 6);
 
-        for (size_t i = 0; i < ui.vertices_index; ++i) {
-            data[(i * 5) + 0] = ui.vertices[i].x;
-            data[(i * 5) + 1] = ui.vertices[i].y;
-            data[(i * 5) + 2] = ui.vertices[i].r;
-            data[(i * 5) + 3] = ui.vertices[i].g;
-            data[(i * 5) + 4] = ui.vertices[i].b;
-        }
-        for (size_t i = 0; i < ui.indices_index; ++i) {
-            indices[i] = ui.indices[i];
-        }
-
+        memcpy((unsigned char *) data, &ui.vertices[0], sizeof(mfg_vertex) * ui.vertices_index);
+        memcpy((unsigned char *) &indices[0], &ui.indices[0], sizeof(unsigned int) * ui.indices_index);
 
         mfgl_element_buffer_bind(ebo);
         mfgl_vertex_buffer_bind(vbo);

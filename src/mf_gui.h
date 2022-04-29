@@ -4,6 +4,7 @@
 typedef struct {
     float x, y;
     float r, g, b;
+    float u, t;
 } mfg_vertex;
 
 typedef struct {
@@ -46,17 +47,17 @@ void mfg_begin(mfg_ui *ui) {
 void mfg_end(mfg_ui *ui) {
 }
 
-void mfg_button(mfg_ui *ui, float x, float y) {
+void mfg_button(mfg_ui *ui, float x, float y, float w, float h) {
     mfg_rect rect = {0};
     rect.x = _MF_GUI_ORTHO(x, ui->width);
     rect.y = _MF_GUI_ORTHO(y, ui->height);
-    rect.w = 200.0f / (float) ui->width;
-    rect.h = 100.0f / (float) ui->height;
+    rect.w = w / (float) ui->width;
+    rect.h = h / (float) ui->height;
     // TODO: check size
-    ui->vertices[ui->vertices_index + 0] = {rect.x, rect.y};
-    ui->vertices[ui->vertices_index + 1] = {rect.x + rect.w, rect.y};
-    ui->vertices[ui->vertices_index + 2] = {rect.x + rect.w, rect.y + rect.h};
-    ui->vertices[ui->vertices_index + 3] = {rect.x, rect.y + rect.h};
+    ui->vertices[ui->vertices_index + 0] = {rect.x, rect.y, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f};
+    ui->vertices[ui->vertices_index + 1] = {rect.x + rect.w, rect.y, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f };
+    ui->vertices[ui->vertices_index + 2] = {rect.x + rect.w, rect.y + rect.h, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+    ui->vertices[ui->vertices_index + 3] = {rect.x, rect.y + rect.h, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f};
 
     ui->indices[ui->indices_index++] = ui->vertices_index + 0;
     ui->indices[ui->indices_index++] = ui->vertices_index + 1;
