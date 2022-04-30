@@ -31,6 +31,7 @@ void mfg_begin(mfg_ui *ui);
 void mfg_end(mfg_ui *ui);
 
 void mfg_button(mfg_ui *ui);
+void mfg_text(mfg_ui *ui, const char *text);
 
 #ifdef MF_GUI_IMPLEMENTATION
 
@@ -55,7 +56,7 @@ void mfg_button(mfg_ui *ui, float x, float y, float w, float h) {
     rect.h = h / (float) ui->height;
     // TODO: check size
     ui->vertices[ui->vertices_index + 0] = {rect.x, rect.y, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f};
-    ui->vertices[ui->vertices_index + 1] = {rect.x + rect.w, rect.y, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f };
+    ui->vertices[ui->vertices_index + 1] = {rect.x + rect.w, rect.y, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f};
     ui->vertices[ui->vertices_index + 2] = {rect.x + rect.w, rect.y + rect.h, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
     ui->vertices[ui->vertices_index + 3] = {rect.x, rect.y + rect.h, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f};
 
@@ -68,6 +69,9 @@ void mfg_button(mfg_ui *ui, float x, float y, float w, float h) {
     ui->indices[ui->indices_index++] = ui->vertices_index + 3;
 
     ui->vertices_index += 4;
+}
+
+void mfg_text(mfg_ui *ui, const char *text) {
 }
 
 #endif
