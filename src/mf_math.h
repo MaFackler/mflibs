@@ -45,6 +45,14 @@ typedef struct
 
 typedef struct
 {
+    float r;
+    float g;
+    float b;
+    float a;
+} mfm_v4;
+
+typedef struct
+{
     int x;
     int y;
     int z;
