@@ -62,6 +62,7 @@ int main()
 #ifdef __linux__
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include <X11/Xatom.h>
 #include <GL/glx.h>
 #include <GL/glext.h>
 #else // WINDOWS
@@ -633,7 +634,31 @@ void mfp_window_close(mfp_platform *platform)
 
 void mfp_window_toggle_fullscreen(mfp_platform *platform)
 {
-    MFP_Assert(!"TODO");
+    mfp_x11 *x11 = mfp__get_x11(platform);
+#if 0
+    Atom atoms[2] = {0};
+    atoms[0] = XInternAtom(x11->display, "_NET_WM_STATE", false);
+    atoms[1] = XInternAtom(x11->display, "_NET_WM_STATE_FULLSCREEN", false);
+
+    XChangeProperty(x11->display,
+                    x11->window,
+                    atoms[0],
+                    XA_ATOM, 32,
+                    PropModeReplace, (unsigned char *) &atoms[0], 1);
+#endif
+    XEvent e;
+    e.xclient.type = ClientMessage;
+    e.xclient.window = x11->window;
+    e.xclient.message_type = XInternAtom(x11->display, "_NET_WM_STATE", true);
+    e.xclient.format = 32;
+    e.xclient.data.l[0] = 2;
+    e.xclient.data.l[1] = XInternAtom(x11->display, "_NET_WM_STATE_FULLSCREEN", true);
+    e.xclient.data.l[2] = 0;
+    e.xclient.data.l[3] = 1;
+    e.xclient.data.l[4] = 0;
+    XSendEvent(x11->display, x11->root, False, SubstructureRedirectMask | SubstructureNotifyMask, &e);
+    // TODO: reset width and height?
+    //XMoveResizeWindow(x11->display, x11->window, 0, 0, platform->window.width, platform->window.height);
 }
 
 void mfp_destroy(mfp_platform *platform)

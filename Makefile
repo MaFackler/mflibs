@@ -19,7 +19,10 @@ TESTS=$(wildcard tests/*.cpp)
 
 all:  $(OUTDIR)/runtests examples
 
-examples: $(OUTDIR)/example-platform $(OUTDIR)/example-renderer $(OUTDIR)/tetris $(OUTDIR)/debug
+examples: $(OUTDIR)/example-platform $(OUTDIR)/example-renderer $(OUTDIR)/tetris $(OUTDIR)/debug $(OUTDIR)/craft
+
+$(OUTDIR)/craft: examples/craft.cpp $(HEADERS)
+	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
 
 $(OUTDIR)/debug: examples/debug.cpp $(HEADERS)
 	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
