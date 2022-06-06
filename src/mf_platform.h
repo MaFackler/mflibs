@@ -76,6 +76,28 @@ int main()
 #define WGL_CONTEXT_PROFILE_MASK_ARB            0x9126
 #define WGL_CONTEXT_CORE_PROFILE_BIT_ARB        0x00000001
 #define WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB 0x00000002
+#define GL_TEXTURE0                       0x84C0
+#define GL_TEXTURE1                       0x84C1
+#define GL_TEXTURE2                       0x84C2
+#define GL_BGR                            0x80E0
+#define GL_BGRA                           0x80E1
+#define GL_ARRAY_BUFFER                   0x8892
+#define GL_ELEMENT_ARRAY_BUFFER           0x8893
+#define GL_READ_ONLY                      0x88B8
+#define GL_WRITE_ONLY                     0x88B9
+#define GL_READ_WRITE                     0x88BA
+#define GL_BUFFER_ACCESS                  0x88BB
+#define GL_BUFFER_MAPPED                  0x88BC
+#define GL_BUFFER_MAP_POINTER             0x88BD
+#define GL_STREAM_DRAW                    0x88E0
+#define GL_STREAM_READ                    0x88E1
+#define GL_STREAM_COPY                    0x88E2
+#define GL_STATIC_DRAW                    0x88E4
+#define GL_STATIC_READ                    0x88E5
+#define GL_STATIC_COPY                    0x88E6
+#define GL_DYNAMIC_DRAW                   0x88E8
+#define GL_DYNAMIC_READ                   0x88E9
+#define GL_DYNAMIC_COPY                   0x88EA
 
 #define GL_FUNC_DEF(rtype, name, ...) \
     typedef rtype (*name##Proc)(__VA_ARGS__); \
@@ -84,13 +106,32 @@ int main()
 GL_FUNC_DEF(HGLRC, wglCreateContextAttribsARB, HDC hDC, HGLRC hShareContext, const int *attribList);
 GL_FUNC_DEF(GLuint, glCreateShader, GLenum type);
 // TODO: why gl char not working
-GL_FUNC_DEF(void, glShaderSource, GLuint shader, GLsizei count, char **string, GLint *length);
+GL_FUNC_DEF(void, glShaderSource, GLuint shader, GLsizei count, const char **string, GLint *length);
 GL_FUNC_DEF(void, glCompileShader, GLuint shader);
 GL_FUNC_DEF(void, glAttachShader, GLuint program, GLuint shader);
 GL_FUNC_DEF(void, glGetShaderiv, GLuint shader, GLenum pname, GLint *params);
 GL_FUNC_DEF(void, glGetShaderInfoLog, GLuint shader, GLsizei bufSIze, GLsizei *length, char *infoLog);
 GL_FUNC_DEF(GLuint, glCreateProgram, void);
 GL_FUNC_DEF(void, glLinkProgram, GLuint program);
+GL_FUNC_DEF(void, glGetProgramiv, GLuint program, GLenum pname, GLint *params);
+GL_FUNC_DEF(void, glUseProgram, GLuint program);
+GL_FUNC_DEF(void, glDeleteShader, GLuint shader);
+GL_FUNC_DEF(GLint, glGetUniformLocation, GLuint program, const char *name);
+GL_FUNC_DEF(void, glUniform4f, GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
+GL_FUNC_DEF(void, glUniform1i, GLint location, GLint v0);
+GL_FUNC_DEF(void, glVertexAttribPointer, GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void * pointer);
+GL_FUNC_DEF(void, glEnableVertexAttribArray, GLuint index);
+GL_FUNC_DEF(void, glActiveTexture, GLenum texture);
+GL_FUNC_DEF(void, glGenerateMipmap, GLenum target);
+GL_FUNC_DEF(void, glGenBuffers, GLsizei n, GLuint *buffers);
+GL_FUNC_DEF(void, glBindBuffers, GLenum target, GLuint first, GLsizei count, const GLuint *buffers);
+GL_FUNC_DEF(void, glBindBuffer, GLenum target, GLuint buffer);
+GL_FUNC_DEF(void, glBufferData, GLenum target, GLsizei size, const void *data, GLenum usage);
+GL_FUNC_DEF(void*, glMapBuffer, GLenum target, GLenum access);
+GL_FUNC_DEF(void, glGenVertexArrays, GLsizei n, GLuint *arrays);
+GL_FUNC_DEF(void, glBindVertexArray, GLuint array);
+
+
 
 
 #endif

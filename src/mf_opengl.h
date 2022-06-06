@@ -1,7 +1,8 @@
 #ifndef MF_OPENGL_H
 #define MF_OPENGL_H
 #include <stdio.h>
-#include <math.h>
+#define _USE_MATH_DEFINES
+#include <cmath>
 
 // NOTE: opengl code should be included by platform
 
@@ -327,7 +328,7 @@ unsigned int mfgl_texture_create_argb(size_t width, size_t height, unsigned char
 
 unsigned int mfgl_texture_create_alpha(size_t width, size_t height, unsigned char *data)
 {
-    unsigned int id;
+    unsigned int id = 0;
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, id);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA,

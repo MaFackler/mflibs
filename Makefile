@@ -17,7 +17,10 @@ endif
 HEADERS=$(wildcard src/*.h)
 TESTS=$(wildcard tests/*.cpp)
 
-all:  $(OUTDIR)/runtests examples
+all:  build $(OUTDIR)/runtests examples
+
+build:
+	mkdir build
 
 examples: $(OUTDIR)/example-platform $(OUTDIR)/example-renderer $(OUTDIR)/tetris $(OUTDIR)/debug
 
