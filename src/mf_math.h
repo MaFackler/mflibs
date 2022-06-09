@@ -3,6 +3,14 @@
 #include <math.h>
 
 
+inline float mfm_to_rad(float degree) {
+    return degree * (M_PI / 180);
+}
+
+inline float mfm_to_degree(float rad) {
+    return rad * (180 / M_PI);
+}
+
 float mfm_lerp(float a, float b, float t);
 
 typedef struct
@@ -45,6 +53,14 @@ typedef struct
 
 typedef struct
 {
+    float r;
+    float g;
+    float b;
+    float a;
+} mfm_v4;
+
+typedef struct
+{
     int x;
     int y;
     int z;
@@ -52,10 +68,15 @@ typedef struct
 
 mfm_v3 mfm_v3_255_to_1(int r, int g, int b);
 
+float mfm_v3_length(mfm_v3 a);
 mfm_v3 mfm_v3_lerp(mfm_v3 a, mfm_v3 b, float t);
 mfm_v3 mfm_v3_add(mfm_v3 a, mfm_v3 b);
 mfm_v3 mfm_v3_sub(mfm_v3 a, mfm_v3 b);
 mfm_v3 mfm_v3_mul(mfm_v3 a, float b);
+float mfm_v3_dot(mfm_v3 a, mfm_v3 b);
+mfm_v3 mfm_v3_normalize(mfm_v3 a);
+mfm_v3 mfm_v3_cross(mfm_v3 a, mfm_v3 b);
+mfm_v3 mfm_v3_negate(mfm_v3 a);
 
 
 union mfm_rect
@@ -73,6 +94,18 @@ union mfm_rect
     };
     float e[4];
 };
+
+union mfm_m4
+{
+    struct {
+        float m[16];
+    };
+};
+
+inline mfm_m4 mfm_m4_identity();
+inline mfm_m4 mfm_m4_perspective(float fov, float aspect, float near, float far);
+inline mfm_m4 mfm_m4_look_at(mfm_v3 eye, mfm_v3 center, mfm_v3 up);
+
 
 #ifdef MF_MATH_IMPLEMENTATION
 
@@ -180,6 +213,13 @@ mfm_v3 mfm_v3_255_to_1(int r, int g, int b)
 }
 
 
+float mfm_v3_length(mfm_v3 a)
+{
+    float res = 0;
+    res = sqrt((a.x * a.x) + (a.y * a.y) + (a.z * a.z));
+    return res;
+}
+
 inline
 float mfm_v3_lerp(float a, float b, float t)
 {
@@ -214,6 +254,41 @@ mfm_v3 mfm_v3_mul(mfm_v3 a, float b)
     res.x = a.x * b;
     res.y = a.y * b;
     res.z = a.z * b;
+    return res;
+}
+
+float mfm_v3_dot(mfm_v3 a, mfm_v3 b)
+{
+    float res = 0;
+    res = a.x * b.x + a.y * b.y + a.z * b.z;
+    return res;
+}
+
+mfm_v3 mfm_v3_normalize(mfm_v3 a)
+{
+    mfm_v3 res = {};
+    float length = mfm_v3_length(a);
+    res.x = a.x / length;
+    res.y = a.y / length;
+    res.z = a.z / length;
+    return res;
+}
+
+mfm_v3 mfm_v3_cross(mfm_v3 a, mfm_v3 b)
+{
+    mfm_v3 res = {};
+    res.x = a.y * b.z - a.z * b.y;
+    res.y = a.z * b.x - a.x * b.z;
+    res.z = a.x * b.y - a.y * b.x;
+    return res;
+}
+
+mfm_v3 mfm_v3_negate(mfm_v3 a)
+{
+    mfm_v3 res = {};
+    res.x = -a.x;
+    res.y = -a.y;
+    res.z = -a.z;
     return res;
 }
 
@@ -351,6 +426,56 @@ mfm_v3 operator*(mfm_v3 a, float b)
     return mfm_v3_mul(a, b);
 }
 
+mfm_m4 mfm_m4_identity()
+{
+    mfm_m4 res = {};
+    res.m[0 * 4 + 0] = 1.0f;
+    res.m[1 * 4 + 1] = 1.0f;
+    res.m[2 * 4 + 2] = 1.0f;
+    res.m[3 * 4 + 3] = 1.0f;
+    return res;
+}
+
+inline mfm_m4 mfm_m4_perspective(float fov, float aspect, float near, float far)
+{
+    mfm_m4 res = {};
+
+#if 0 
+    // without aspect
+    float s = 1.0f / tanf(fov * (M_PI / 360.0f));
+    res.m[0 * 4 + 0] = s;
+    res.m[1 * 4 + 1] = s;
+
+    res.m[2 * 4 + 2] = -far / (far - near);
+    res.m[2 * 4 + 3] = -1.0f;
+
+    res.m[3 * 4 + 2] = -(far * near) / (far - near);
+#else
+    float c = 1.0f / (tanf(fov * (M_PI / 360.0f)));
+    res.m[0 * 4 + 0] = c / aspect;
+    res.m[1 * 4 + 1] =  c;
+
+    res.m[2 * 4 + 2] = (near + far) / (near - far);
+    res.m[2 * 4 + 3] = -1.0f;
+
+    res.m[2 * 4 + 2] = (2.0f * far * near) / (near - far);
+#endif
+    return res;
+}
+
+inline mfm_m4 mfm_m4_look_at(mfm_v3 eye, mfm_v3 center, mfm_v3 up)
+{
+    mfm_v3 zaxis = mfm_v3_normalize(center - eye);
+    mfm_v3 xaxis = mfm_v3_normalize(mfm_v3_cross(zaxis, up));
+    mfm_v3 yaxis = mfm_v3_cross(xaxis, zaxis);
+
+    mfm_m4 res = {
+        xaxis.x, xaxis.y, xaxis.z, -mfm_v3_dot(xaxis, eye),
+        yaxis.x, yaxis.y, yaxis.z, -mfm_v3_dot(yaxis, eye),
+        zaxis.x, zaxis.y, zaxis.z, -mfm_v3_dot(zaxis, eye),
+    };
+    return res;
+}
 
 #endif
 

@@ -22,7 +22,10 @@ all:  build $(OUTDIR)/runtests examples
 build:
 	mkdir build
 
-examples: $(OUTDIR)/example-platform $(OUTDIR)/example-renderer $(OUTDIR)/tetris $(OUTDIR)/debug
+examples: $(OUTDIR)/example-platform $(OUTDIR)/example-renderer $(OUTDIR)/tetris $(OUTDIR)/debug $(OUTDIR)/craft
+
+$(OUTDIR)/craft: examples/craft.cpp $(HEADERS)
+	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
 
 $(OUTDIR)/debug: examples/debug.cpp $(HEADERS)
 	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
@@ -44,6 +47,10 @@ $(OUTDIR)/runtests: $(HEADERS) $(TESTS)
 test: $(OUTDIR)/runtests
 	./$<
 
+
+.PHONY: run
+run:
+	$(OUTDIR)/craft
 
 
 # NOTE: this is just to check that the header files will also compile with c99

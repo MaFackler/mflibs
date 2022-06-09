@@ -39,6 +39,7 @@ void mfgl_shader_delete(unsigned int id);
 unsigned int mfgl_shader_uniform_location(unsigned int shader, const char *name);
 void mfgl_shader_uniform_4f(unsigned int location, float a, float b, float c, float d);
 void mfgl_shader_uniform_1i(unsigned int location, int a);
+void mfgl_shader_uniform_4fv(unsigned int location, unsigned int count, float *data);
 
 
 // Textures
@@ -294,6 +295,11 @@ void mfgl_shader_uniform_4f(unsigned int location, float a, float b, float c, fl
 void mfgl_shader_uniform_1i(unsigned int location, int a)
 {
     glUniform1i(location, a);
+}
+
+void mfgl_shader_uniform_4fv(unsigned int location, unsigned int count, float *data)
+{
+    glUniformMatrix4fv(location, count, GL_FALSE, data);
 }
 
 void mfgl_vertex_attrib_link(unsigned int location, size_t size, size_t start, size_t stride)
