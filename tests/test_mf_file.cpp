@@ -27,6 +27,7 @@ TEST("mf_is_file") {
     MFT_CHECK(!mf_is_file("src/mfnot.h"));
 }
 
+#if 0
 TEST("mf_directory") {
     mf_directory dir;
     mf_path_item item;
@@ -37,3 +38,4 @@ TEST("mf_directory") {
     }
     MFT_CHECK_INT(counter, 9);
 }
+#endif

@@ -7,6 +7,8 @@
 //#include "test_mf_test.cpp"
 #include "test_mf_math.cpp"
 
+#include "../src/mf_math.h"
+
 int main() {
     mft_run();
 }
