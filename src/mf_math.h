@@ -44,11 +44,18 @@ bool mfm_v2_is_equal(mfm_v2 a, mfm_v2 b);
 
 mfm_v2i mfm_v2i_add(mfm_v2i a, mfm_v2i b);
 
-typedef struct
+typedef union 
 {
-    float x;
-    float y;
-    float z;
+    struct {
+        float x;
+        float y;
+        float z;
+    };
+    struct {
+        float r;
+        float g;
+        float b;
+    };
 } mfm_v3;
 
 typedef struct
@@ -73,6 +80,7 @@ mfm_v3 mfm_v3_lerp(mfm_v3 a, mfm_v3 b, float t);
 mfm_v3 mfm_v3_add(mfm_v3 a, mfm_v3 b);
 mfm_v3 mfm_v3_sub(mfm_v3 a, mfm_v3 b);
 mfm_v3 mfm_v3_mul(mfm_v3 a, float b);
+mfm_v3 mfm_v3_div(mfm_v3 a, float b);
 float mfm_v3_dot(mfm_v3 a, mfm_v3 b);
 mfm_v3 mfm_v3_normalize(mfm_v3 a);
 mfm_v3 mfm_v3_cross(mfm_v3 a, mfm_v3 b);
@@ -257,6 +265,15 @@ mfm_v3 mfm_v3_mul(mfm_v3 a, float b)
     return res;
 }
 
+mfm_v3 mfm_v3_div(mfm_v3 a, float b)
+{
+    mfm_v3 res;
+    res.x = a.x / b;
+    res.y = a.y / b;
+    res.z = a.z / b;
+    return res;
+}
+
 float mfm_v3_dot(mfm_v3 a, mfm_v3 b)
 {
     float res = 0;
@@ -424,6 +441,12 @@ inline
 mfm_v3 operator*(mfm_v3 a, float b)
 {
     return mfm_v3_mul(a, b);
+}
+
+inline
+mfm_v3 operator/(mfm_v3 a, float b)
+{
+    return mfm_v3_div(a, b);
 }
 
 mfm_m4 mfm_m4_identity()
