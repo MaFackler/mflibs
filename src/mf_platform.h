@@ -51,6 +51,10 @@ int main()
 
 #ifdef _WIN32
 #include <windows.h>
+#else
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/Xatom.h>
 #endif // WIN32
 
 #ifdef MF_PLATFORM_USE_OPENGL
@@ -60,9 +64,6 @@ int main()
 #include <GL/gl.h>
 #include <GL/glu.h>
 #ifdef __linux__
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/Xatom.h>
 #include <GL/glx.h>
 #include <GL/glext.h>
 #else // WINDOWS

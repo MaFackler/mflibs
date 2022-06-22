@@ -310,6 +310,7 @@ void mfgl_vertex_attrib_link(unsigned int location, size_t size, size_t start, s
 
 void mfgl_vertex_buffer_draw(unsigned int vbo, size_t n)
 {
+    mfgl_vertex_buffer_bind(vbo);
     glDrawArrays(GL_TRIANGLES, 0, n);
 }
 
@@ -405,6 +406,7 @@ void mfgl_element_buffer_bind(unsigned int ebo)
 
 void mfgl_element_buffer_draw(unsigned int ebo, size_t n)
 {
+    mfgl_element_buffer_bind(ebo);
     glDrawElements(GL_TRIANGLES, n, GL_UNSIGNED_INT, 0);
 }
 

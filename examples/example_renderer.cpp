@@ -75,7 +75,8 @@ static const char *SRC_FS =
 "in vec2 tex_;\n"
 "uniform sampler2D sampler;\n"
 "void main() {\n"
-"   FragColor = texture(sampler, tex_) * vec4(color_.r, color_.g, color_.b, 1.0);\n"
+//"   FragColor = texture(sampler, tex_) * vec4(color_.r, color_.g, color_.b, 1.0);\n"
+"   FragColor = vec4(color_.r, color_.g, color_.b, 1.0);\n"
 "}\n";
 
 struct Planet
@@ -121,7 +122,6 @@ void mfui_button(mffo_font * font)
     mfgl_set_color(1.0f, 1.0f, 1.0f, 1.0f);
     mfgl_draw_rect(0, 0, width, height);
     mfgl_set_color(0.0f, 0.0f, 0.0f, 1.0f);
-    //my_draw_text(font, 0, height - margin, "Button");
 }
 
 int main() {
@@ -160,6 +160,7 @@ int main() {
     mffo_font_alloc(&font, "/usr/share/fonts/ubuntu/Ubuntu-B.ttf");
     u32 texture_font = mfgl_texture_create_argb(font.dim, font.dim, font.data);
 
+#if 0
     u32 vs = mfgl_shader_vertex_create(SRC_VS);
     u32 fs = mfgl_shader_fragment_create(SRC_FS);
     u32 program = mfgl_shader_program_create(vs, fs);
@@ -168,10 +169,8 @@ int main() {
     mfgl_shader_program_use(program);
     mfgl_error_check();
 
-#if 0
     u32 location_color = mfgl_shader_uniform_location(program, "color");
     mfgl_shader_uniform_4f(location_color, 1.0f, 0.0f, 0.0f, 0.0f);
-#endif
 
     //u32 location_smapler = mfgl_shader_uniform_location(program, "sampler");
     //mfgl_shader_uniform_1i(location_smapler, 0);
@@ -179,7 +178,6 @@ int main() {
     mfg_ui ui;
     mfg_init(&ui, 1600, 900);
     
-#if 0
     u32 *pixels = (u32 *) malloc(512 * 512 * sizeof(u32));
     for (size_t y = 0; y < 512; ++y)
     {
@@ -225,14 +223,12 @@ int main() {
     mfgl_vertex_attrib_link(1, 3, 2, 7); // color r.g.b
     mfgl_vertex_attrib_link(2, 2, 5, 7); // u,t
 
-    //mfgl_wireframe(false);
-
     mfgl_error_check();
     bool running = true;
     while (running && platform.window.isOpen)
     {
         mfp_begin(&platform);
-#if 0
+#if 1
         mfgl_viewport_bottom_up(width, height);
 
         // Update
@@ -274,12 +270,11 @@ int main() {
         mfr_flush(&renderer);
 
         mfgl_viewport_top_down(width, height);
-        mfgl_bind_texture(texture_font);
+        mfgl_texture_bind(texture_font);
         mffo_charrect crect;
         mffo_font_get_charrect(&font, &crect, 'c');
         //mfgl_draw_rect(0, 0, 512, 512);
         mfui_button(&font);
-        my_draw_text(&font, 20, 100, "hello");
 #endif
         if (platform.input.keys['q'].pressed)
             running = false;
@@ -287,6 +282,7 @@ int main() {
         if (platform.input.keys['s'].pressed)
             data[0] = 0.0f;
 
+#if 0
         // UI
         mfg_begin(&ui);
 
@@ -316,19 +312,7 @@ int main() {
 
         mffo_charrect charrect;
         mffo_font_get_charrect(&font, &charrect, 'c');
-
-        glEnable(GL_TEXTURE_2D);
-        //glEnable(GL_BLEND);
-        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glActiveTexture(GL_TEXTURE0);
-        mfgl_texture_bind(texture_font);
-        glBegin(GL_QUADS);
-        glVertex2f(0.0f, 0.0f); glTexCoord2f(0.0f, 0.0f);
-        glVertex2f(1.0f, 0.0f); glTexCoord2f(1.0f, 0.0f);
-        glVertex2f(1.0f, 1.0f); glTexCoord2f(1.0f, 1.0f);
-        glVertex2f(0.0f, 1.0f); glTexCoord2f(0.0f, 1.0f);
-        glEnd();
-
+#endif
 
         mfgl_error_check();
         mfp_end(&platform);

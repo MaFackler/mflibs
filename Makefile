@@ -22,7 +22,7 @@ all:  build $(OUTDIR)/runtests examples
 build:
 	mkdir build
 
-examples: $(OUTDIR)/example-platform $(OUTDIR)/example-renderer $(OUTDIR)/tetris $(OUTDIR)/debug $(OUTDIR)/craft
+examples: $(OUTDIR)/example-platform $(OUTDIR)/example-renderer $(OUTDIR)/tetris $(OUTDIR)/debug $(OUTDIR)/craft $(OUTDIR)/gui
 
 $(OUTDIR)/craft: examples/craft.cpp $(HEADERS)
 	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
@@ -38,6 +38,9 @@ $(OUTDIR)/example-renderer: examples/example_renderer.cpp $(HEADERS)
 
 $(OUTDIR)/tetris: examples/tetris.cpp $(HEADERS)
 	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
+
+$(OUTDIR)/gui: examples/gui.cpp $(HEADERS)
+	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) `pkg-config --cflags freetype2` $< $(LIBS) `pkg-config --libs freetype2`
 
 $(OUTDIR)/runtests: $(HEADERS) $(TESTS)
 	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) tests/tests.cpp

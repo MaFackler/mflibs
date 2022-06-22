@@ -436,6 +436,21 @@ mfm_m4 mfm_m4_identity()
     return res;
 }
 
+inline mfm_m4 mfm_m4_ortho(float left, float right, float bottom, float top, float near, float far) {
+	mfm_m4 res = {};
+
+    res.m[0 * 4 + 0] = 2.0f / (right - left);
+    res.m[1 * 4 + 1] = 2.0f / (top - bottom);
+    res.m[2 * 4 + 2] = 2.0f / (near - far);
+    res.m[3 * 4 + 3] = 1.0f;
+
+    res.m[3 * 4 + 0] = (left + right) / (left - right);
+    res.m[3 * 4 + 1] = (bottom + top) / (bottom - top);
+    res.m[3 * 4 + 2] = (far + near) / (near - far);
+
+    return res;
+}
+
 inline mfm_m4 mfm_m4_perspective(float fov, float aspect, float near, float far)
 {
     mfm_m4 res = {};
