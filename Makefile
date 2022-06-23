@@ -2,7 +2,7 @@
 OUTDIR=build
 CC=g++
 CFLAGS=-g -Isrc
-LIBS=-lX11 -lGL
+LIBS=-lX11 -lGL `pkg-config --cflags freetype2` 
 OUTPUT=-o 
 objects=
 
@@ -17,7 +17,8 @@ endif
 HEADERS=$(wildcard src/*.h)
 TESTS=$(wildcard tests/*.cpp)
 
-all:  build $(OUTDIR)/runtests examples
+all: $(OUTDIR)/gui
+# all:  build $(OUTDIR)/runtests examples
 
 build:
 	mkdir build
@@ -40,7 +41,7 @@ $(OUTDIR)/tetris: examples/tetris.cpp $(HEADERS)
 	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
 
 $(OUTDIR)/gui: examples/gui.cpp $(HEADERS)
-	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) `pkg-config --cflags freetype2` $< $(LIBS) `pkg-config --libs freetype2`
+	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS) `pkg-config --libs freetype2`
 
 $(OUTDIR)/ray: examples/ray.cpp $(HEADERS)
 	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $<

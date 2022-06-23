@@ -1,5 +1,3 @@
-#include <ft2build.h>
-#include FT_FREETYPE_H
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -9,6 +7,8 @@
 #include "mf_math.h"
 #define MF_VECTOR_IMPLEMENTATION
 #include "mf_vector.h"
+#define MF_FONT_IMPLEMENTATION
+#include "mf_font.h"
 
 #define MF_PLATFORM_USE_OPENGL
 #define MF_PLATFORM_IMPLEMENTATION
@@ -59,64 +59,21 @@ struct Character {
 
 static Character characters[256] = {0};
 
-void load_chars(FT_Face &face) {
 
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // disable byte-alignment restriction
-
-    for (unsigned char c = 0; c < 128; c++)
-    {
-        // load character glyph 
-        if (FT_Load_Char(face, c, FT_LOAD_RENDER))
-        {
-            continue;
-        }
-        // generate texture
-        unsigned int texture = 0;
-        glGenTextures(1, &texture);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glTexImage2D(
-                     GL_TEXTURE_2D,
-                     0,
-                     GL_RED,
-                     face->glyph->bitmap.width,
-                     face->glyph->bitmap.rows,
-                     0,
-                     GL_RED,
-                     GL_UNSIGNED_BYTE,
-                     face->glyph->bitmap.buffer
-                    );
-        // set texture options
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        // now store character for later use
-        Character character = {
-            texture, 
-            {(u32) face->glyph->bitmap.width, (u32) face->glyph->bitmap.rows},
-            {(u32) face->glyph->bitmap_left, (u32) face->glyph->bitmap_top},
-            (u32) face->glyph->advance.x
-        };
-        characters[c] = character;
-    }
-    mfgl_error_check();
-
-}
-
-void render_text(mf_vec_float *vertices, u32 vbo, u32 ebo, const char *text, float x, float y)
+void render_text(mffo_font *font, u32 *tids, mf_vec_float *vertices, u32 vbo, u32 ebo, const char *text, float x, float y)
 {
     char c = 0;
     mf_vec_clear(*vertices);
     float xc = x;
     float yc = y;
     while ((c = *text++) != 0) {
-        Character *ch = &characters[c];
-        float xmin = xc + ch->bearing.x;
-        float xmax = xmin + ch->size.x;
+        mffo_font_char *ch = &font->characters[c];
+        float xmin = xc + ch->xbearing;
+        float xmax = xmin + ch->width;
         //float ymin = yc + ch->size.y - ch->size.y;
         //float ymin = yc + ch->size.y + ch->bearing.y;
-        float ymin =  - (float) ch->size.y + (float) ch->bearing.y;
-        float ymax = ymin + ch->size.y;
+        float ymin = y - (float) ch->height + (float) ch->ybearing;
+        float ymax = ymin + ch->height;
 
         *mf_vec_add(*vertices) = xmin;
         *mf_vec_add(*vertices) = ymin;
@@ -138,7 +95,7 @@ void render_text(mf_vec_float *vertices, u32 vbo, u32 ebo, const char *text, flo
         *mf_vec_add(*vertices) = 0.0f;
         *mf_vec_add(*vertices) = 0.0f;
 
-        mfgl_texture_bind(ch->texture_id);
+        mfgl_texture_bind(tids[c]);
         mfgl_vertex_buffer_bind(vbo);
         mfgl_error_check();
         glBufferSubData(GL_ARRAY_BUFFER, 0, mf_vec_size(*vertices) * sizeof(float), *vertices);
@@ -149,57 +106,42 @@ void render_text(mf_vec_float *vertices, u32 vbo, u32 ebo, const char *text, flo
         xc += (ch->advance >> 6);
         mf_vec_clear(*vertices);
     }
+}
 
+
+void load_texture(mffo_font_char *c, u32 *tid) {
+    if (c->data == NULL)
+        return;
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glGenTextures(1, tid);
+    glBindTexture(GL_TEXTURE_2D, *tid);
+    glTexImage2D(
+                 GL_TEXTURE_2D,
+                 0,
+                 GL_RED,
+                 c->width,
+                 c->height,
+                 0,
+                 GL_RED,
+                 GL_UNSIGNED_BYTE,
+                 c->data
+                );
+    // set texture options
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
 int main() {
 
-    // Freetype
-    FT_Library ft;
-    if (FT_Init_FreeType(&ft)) {
-        return -1;
-    }
 
-    FT_Face face;
-    if (FT_New_Face(ft, "/usr/share/fonts/TTF/Hack-Bold.ttf", 0, &face)) {
-        return -1;
-    }
-
-    FT_Set_Pixel_Sizes(face, 0, 48);
-    if (FT_Load_Char(face, 'X', FT_LOAD_RENDER)) {
-        return -1;
-    }
-
-
+    mffo_font font = {};
+    mffo_font_init(&font, "/usr/share/fonts/TTF/Hack-Bold.ttf", 48.0f);
 
     mfp_platform platform = {};
     mfp_init(&platform);
-    mfp_window_open(&platform, "Example", 0, 0, 800, 600);
-    //glEnable(GL_TEXTURE_2D);
-    load_chars(face);
-
-#if 0
-    u32 vao = mfgl_vertex_array_create();
-    mfgl_vertex_buffer_bind(vao);
-    float *vertices = NULL;
-
-
-    u32 vbo = 0;
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
-    mfgl_vertex_buffer_bind(vbo);
-    mfgl_vertex_attrib_link(0, 4, 0, 4);
-
-
-    u32 location_text_color = mfgl_shader_uniform_location(program, "textColor");
-    glUniform3f(location_text_color, 1.0f, 0.0f, 0.0f);
-
-	//mfm_m4 projection = mfm_m4_ortho(0.0f, 1600.0f, 0.0f, 900.0f, 0.0f, 100.0f);	
-    auto projection = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f);
-    u32 location_projection = mfgl_shader_uniform_location(program, "projection");
-    mfgl_shader_uniform_4fv(location_projection, 1, (float *) &projection[0]);
-#endif
+    mfp_window_open(&platform, "example", 0, 0, 800, 600);
 
 	u32 vs = mfgl_shader_vertex_create(VS_SRC);
 	u32 fs = mfgl_shader_fragment_create(FS_SRC);
@@ -218,60 +160,6 @@ int main() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 4 * 4, NULL, GL_DYNAMIC_DRAW);
     mf_vec_float vertices = NULL;
 
-#if 0
-    float vertices[] = {
-        0.0f, 0.0f, 0.0f, 0.0f,
-        100.0f, 0.0f, 1.0f, 0.0f,
-        100.0f, 100.0f, 1.0f, 1.0f,
-        0.0f, 100.0f, 0.0f, 1.0f
-    };
-    u32 vbo = mfgl_vertex_buffer_create(vertices, MF_ArrayLength(vertices));
-#endif
-#if 0 
-    u32 indices[] = {
-        0, 1, 2,
-        0, 2, 3,
-    };
-    u32 ebo = mfgl_element_buffer_create(indices, MF_ArrayLength(indices));
-#endif
-#if 0
-    float *vertices = NULL;
-    u32 vbo = mfgl_vertex_buffer_dynamic_create(NULL, 512, &vertices);
-    assert(vertices != NULL);
-    vertices[0] = 0.0f;
-    vertices[1] = 0.0f;
-    vertices[2] = 0.0f;
-    vertices[3] = 0.0f;
-
-    vertices[4] = 100.0f;
-    vertices[5] = 0.0f;
-    vertices[6] = 1.0f;
-    vertices[7] = 0.0f;
-
-    vertices[8] = 100.0f;
-    vertices[9] = 100.0f;
-    vertices[10] = 1.0f;
-    vertices[11] = 1.0f;
-
-    vertices[12] = 0.0f;
-    vertices[13] = 100.0f;
-    vertices[14] = 0.0f;
-    vertices[15] = 1.0f;
-#endif
-
-#if 0
-    unsigned int *indices = NULL;
-    u32 ebo = mfgl_element_buffer_dynamic_create(NULL, 512, &indices);
-    assert(indices != NULL);
-    indices[0] = 0;
-    indices[1] = 1;
-    indices[2] = 2;
-
-    indices[3] = 0;
-    indices[4] = 2;
-    indices[5] = 3;
-#endif
-#if 1
     u32 ebo = 0;
     glGenBuffers(1, &ebo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
@@ -280,30 +168,34 @@ int main() {
         0, 2, 3,
     };
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices, GL_DYNAMIC_DRAW);
-#endif
 
     mfgl_vertex_buffer_bind(vbo);
     mfgl_element_buffer_bind(ebo);
     mfgl_vertex_attrib_link(0, 2, 0, 4);
     mfgl_vertex_attrib_link(1, 2, 2, 4);
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+    mfgl_blend(true);
 
+    u32 textures[256] = {0};
 
-
-    printf("vec size %d\n", mf_vec_size(vertices));
+    for (char i = 0; i < MF_ArrayLength(textures); ++i) {
+        load_texture(&font.characters[i], &textures[i]);
+    }
 
     bool running = true;
     while (running && platform.window.isOpen)
     {
         mfp_begin(&platform);
+
+        if (platform.input.keys['q'].pressed) {
+            running = false;
+        }
+
         glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         
-        render_text(&vertices, vbo, ebo, "abcdefghijklmnopqrstuvwxyz", 0, 0);
-
-
+        render_text(&font, &textures[0], &vertices, vbo, ebo, "Zeile Eins", 0, -font.descent + font.linegap);
+        render_text(&font, &textures[0], &vertices, vbo, ebo, "Zeile 2", 0, -font.descent);
 
         mfp_end(&platform);
     }

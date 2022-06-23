@@ -157,7 +157,7 @@ int main() {
     planets[1].color = v3{0.3f, 0.3f, 0.3f};
 
     mffo_font font;
-    mffo_font_alloc(&font, "/usr/share/fonts/ubuntu/Ubuntu-B.ttf");
+    mffo_font_alloc(&font, "/usr/share/fonts/ubuntu/Ubuntu-B.ttf", 48.0f);
     u32 texture_font = mfgl_texture_create_argb(font.dim, font.dim, font.data);
 
 #if 0
