@@ -7,6 +7,8 @@
 #include "mf.h"
 #define MF_MATH_IMPLEMENTATION
 #include "mf_math.h"
+#define MF_VECTOR_IMPLEMENTATION
+#include "mf_vector.h"
 
 #define MF_PLATFORM_USE_OPENGL
 #define MF_PLATFORM_IMPLEMENTATION
@@ -203,7 +205,13 @@ int main() {
     mfgl_shader_uniform_4fv(location_projection, 1, (float *) &projection.m[0]);
 
     //u32 vao = mfgl_vertex_array_create();
-#if 1
+    u32 vbo;
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 4 * 4, NULL, GL_DYNAMIC_DRAW);
+    mf_vec_float vertices = NULL;
+
+#if 0
     float vertices[] = {
         0.0f, 0.0f, 0.0f, 0.0f,
         100.0f, 0.0f, 1.0f, 0.0f,
@@ -276,6 +284,40 @@ int main() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
+    float xmin = characters['d'].bearing.x;
+    float xmax = xmin + characters['d'].size.x;
+    float ymin = characters['d'].size.y - characters['d'].size.y;
+    float ymax = ymin + characters['d'].size.y;
+
+    *mf_vec_add(vertices) = xmin;
+    *mf_vec_add(vertices) = ymin;
+    *mf_vec_add(vertices) = 0.0f;
+    *mf_vec_add(vertices) = 1.0f;
+
+    //*mf_vec_add(vertices) = 100.0f;
+    *mf_vec_add(vertices) = xmax;
+    *mf_vec_add(vertices) = ymin;
+    *mf_vec_add(vertices) = 1.0f;
+    *mf_vec_add(vertices) = 1.0f;
+
+    *mf_vec_add(vertices) = xmax;
+    *mf_vec_add(vertices) = ymax;
+    *mf_vec_add(vertices) = 1.0f;
+    *mf_vec_add(vertices) = 0.0f;
+
+    *mf_vec_add(vertices) = xmin;
+    *mf_vec_add(vertices) = ymax;
+    *mf_vec_add(vertices) = 0.0f;
+    *mf_vec_add(vertices) = 0.0f;
+
+    mf_vec_for(vertices) {
+    //for (int i = 0; i < 16; ++i) {
+        printf("%f\n", *it);
+    }
+
+
+    printf("vec size %d\n", mf_vec_size(vertices));
+
     bool running = true;
     while (running && platform.window.isOpen)
     {
@@ -284,8 +326,11 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT);
         
         mfgl_vertex_buffer_bind(vbo);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, mf_vec_size(vertices) * sizeof(float), vertices);
+        //glBindBuffer(GL_ARRAY_BUFFER, 0);
         mfgl_element_buffer_bind(ebo);
         mfgl_element_buffer_draw(ebo, 6); 
+
 
         mfp_end(&platform);
         mfgl_error_check();

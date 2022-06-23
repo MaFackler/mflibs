@@ -23,7 +23,7 @@ mf_vec_destroy(arr);
 */
 
 typedef int* mf_vec_int;
-typedef int* mf_vec_float;
+typedef float* mf_vec_float;
 
 #ifdef MF_VECTOR_IMPLEMENTATION
 
