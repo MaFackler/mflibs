@@ -73,7 +73,6 @@ void load_chars(FT_Face &face) {
         // generate texture
         unsigned int texture = 0;
         glGenTextures(1, &texture);
-        mfgl_error_check();
         glBindTexture(GL_TEXTURE_2D, texture);
         glTexImage2D(
                      GL_TEXTURE_2D,
@@ -104,45 +103,53 @@ void load_chars(FT_Face &face) {
 
 }
 
-void render_text(const char *text, float x, float y, float scale, u32 vao, u32 vbo)
+void render_text(mf_vec_float *vertices, u32 vbo, u32 ebo, const char *text, float x, float y)
 {
-
-    glBindVertexArray(vao);
-    glActiveTexture(GL_TEXTURE0);
-
-    // iterate through all characters
     char c = 0;
-    while ((c = *text++) != '\0') {
-        Character ch = characters[c];
+    mf_vec_clear(*vertices);
+    float xc = x;
+    float yc = y;
+    while ((c = *text++) != 0) {
+        Character *ch = &characters[c];
+        float xmin = xc + ch->bearing.x;
+        float xmax = xmin + ch->size.x;
+        //float ymin = yc + ch->size.y - ch->size.y;
+        //float ymin = yc + ch->size.y + ch->bearing.y;
+        float ymin =  - (float) ch->size.y + (float) ch->bearing.y;
+        float ymax = ymin + ch->size.y;
 
-        float xpos = x + ch.bearing.x * scale;
-        float ypos = y - (ch.size.y - ch.bearing.y) * scale;
+        *mf_vec_add(*vertices) = xmin;
+        *mf_vec_add(*vertices) = ymin;
+        *mf_vec_add(*vertices) = 0.0f;
+        *mf_vec_add(*vertices) = 1.0f;
 
-        float w = ch.size.x * scale;
-        float h = ch.size.y * scale;
-        // update VBO for each character
-        float vertices[6][4] = {
-            { xpos,     ypos + h,   0.0f, 0.0f },            
-            { xpos,     ypos,       0.0f, 1.0f },
-            { xpos + w, ypos,       1.0f, 1.0f },
+        *mf_vec_add(*vertices) = xmax;
+        *mf_vec_add(*vertices) = ymin;
+        *mf_vec_add(*vertices) = 1.0f;
+        *mf_vec_add(*vertices) = 1.0f;
 
-            { xpos,     ypos + h,   0.0f, 0.0f },
-            { xpos + w, ypos,       1.0f, 1.0f },
-            { xpos + w, ypos + h,   1.0f, 0.0f }           
-        };
-        // render glyph texture over quad
-        glBindTexture(GL_TEXTURE_2D, ch.texture_id);
-        // update content of VBO memory
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); 
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        // render quad
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        // now advance cursors for next glyph (note that advance is number of 1/64 pixels)
-        x += (ch.advance >> 6) * scale; // bitshift by 6 to get value in pixels (2^6 = 64)
+        *mf_vec_add(*vertices) = xmax;
+        *mf_vec_add(*vertices) = ymax;
+        *mf_vec_add(*vertices) = 1.0f;
+        *mf_vec_add(*vertices) = 0.0f;
+
+        *mf_vec_add(*vertices) = xmin;
+        *mf_vec_add(*vertices) = ymax;
+        *mf_vec_add(*vertices) = 0.0f;
+        *mf_vec_add(*vertices) = 0.0f;
+
+        mfgl_texture_bind(ch->texture_id);
+        mfgl_vertex_buffer_bind(vbo);
+        mfgl_error_check();
+        glBufferSubData(GL_ARRAY_BUFFER, 0, mf_vec_size(*vertices) * sizeof(float), *vertices);
+        //glBindBuffer(GL_ARRAY_BUFFER, 0);
+        mfgl_element_buffer_bind(ebo);
+        mfgl_element_buffer_draw(ebo, 6); 
+
+        xc += (ch->advance >> 6);
+        mf_vec_clear(*vertices);
     }
-    glBindVertexArray(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
+
 }
 
 int main() {
@@ -154,7 +161,7 @@ int main() {
     }
 
     FT_Face face;
-    if (FT_New_Face(ft, "/usr/share/fonts/TTF/FiraSans-Bold.ttf", 0, &face)) {
+    if (FT_New_Face(ft, "/usr/share/fonts/TTF/Hack-Bold.ttf", 0, &face)) {
         return -1;
     }
 
@@ -280,40 +287,9 @@ int main() {
     mfgl_vertex_attrib_link(0, 2, 0, 4);
     mfgl_vertex_attrib_link(1, 2, 2, 4);
 
-    mfgl_texture_bind(characters['d'].texture_id);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
-    float xmin = characters['d'].bearing.x;
-    float xmax = xmin + characters['d'].size.x;
-    float ymin = characters['d'].size.y - characters['d'].size.y;
-    float ymax = ymin + characters['d'].size.y;
-
-    *mf_vec_add(vertices) = xmin;
-    *mf_vec_add(vertices) = ymin;
-    *mf_vec_add(vertices) = 0.0f;
-    *mf_vec_add(vertices) = 1.0f;
-
-    //*mf_vec_add(vertices) = 100.0f;
-    *mf_vec_add(vertices) = xmax;
-    *mf_vec_add(vertices) = ymin;
-    *mf_vec_add(vertices) = 1.0f;
-    *mf_vec_add(vertices) = 1.0f;
-
-    *mf_vec_add(vertices) = xmax;
-    *mf_vec_add(vertices) = ymax;
-    *mf_vec_add(vertices) = 1.0f;
-    *mf_vec_add(vertices) = 0.0f;
-
-    *mf_vec_add(vertices) = xmin;
-    *mf_vec_add(vertices) = ymax;
-    *mf_vec_add(vertices) = 0.0f;
-    *mf_vec_add(vertices) = 0.0f;
-
-    mf_vec_for(vertices) {
-    //for (int i = 0; i < 16; ++i) {
-        printf("%f\n", *it);
-    }
 
 
     printf("vec size %d\n", mf_vec_size(vertices));
@@ -325,15 +301,11 @@ int main() {
         glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         
-        mfgl_vertex_buffer_bind(vbo);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, mf_vec_size(vertices) * sizeof(float), vertices);
-        //glBindBuffer(GL_ARRAY_BUFFER, 0);
-        mfgl_element_buffer_bind(ebo);
-        mfgl_element_buffer_draw(ebo, 6); 
+        render_text(&vertices, vbo, ebo, "abcdefghijklmnopqrstuvwxyz", 0, 0);
+
 
 
         mfp_end(&platform);
-        mfgl_error_check();
     }
 
     mfp_window_close(&platform);
