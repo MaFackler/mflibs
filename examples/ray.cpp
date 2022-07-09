@@ -8,6 +8,7 @@
 
 typedef mfm_v3<double> v3;
 
+
 double T_MAX = std::numeric_limits<double>::infinity();
 
 struct camera {
@@ -115,9 +116,9 @@ void print_color(v3 c) {
 #else
 void write_color(v3 c, int samples_per_pixel) {
     double scale = 1.0f / samples_per_pixel;
-    c.r *= scale;
-    c.g *= scale;
-    c.b *= scale;
+    c.r = sqrt(scale * c.r);
+    c.g = sqrt(scale * c.g);
+    c.b = sqrt(scale * c.b);
     i32 out_r = (int) (255.999 * mf_clamp(c.r, 0.0, 0.999));
     i32 out_g = (int) (255.999 * mf_clamp(c.g, 0.0, 0.999));
     i32 out_b = (int) (255.999 * mf_clamp(c.b, 0.0, 0.999));
@@ -126,13 +127,38 @@ void write_color(v3 c, int samples_per_pixel) {
 #endif
 
 
+inline double random_double() {
+    return mf_random_double(0.0, 1.0);
+}
+
+v3 v3_random() {
+    v3 res = v3{random_double(), random_double(), random_double()};
+    return res;
+}
+
+v3 v3_random_min_max(double min, double max) {
+    v3 res = v3{mf_random_double(min, max), mf_random_double(min, max), mf_random_double(min, max)};
+    return res;
+}
+
+v3 random_in_unit_sphere() {
+    while (true) {
+        v3 p = v3_random_min_max(-1, 1);
+        if (mfm_v3_length_squared(p) >= 1) continue;
+        return p;
+    }
+}
+
 inline
-v3 ray_color(ray r, hittable *word) {
+v3 ray_color(ray r, hittable *word, int depth) {
     hit_record record = {0};
+    if (depth <= 0)
+        return v3{0};
     mf_vec_for (word->spheres) {
         bool hit = sphere_hit(it, r, 0, T_MAX, &record);
         if (hit) {
-            return v3{record.normal.x + 1, record.normal.y + 1, record.normal.z + 1} * 0.5;
+            v3 target = record.point + record.normal + random_in_unit_sphere();
+            return ray_color(ray{record.point, target - record.point}, word, depth - 1) * 0.5;
         }
     }
     v3 unit_direction = mfm_v3_normalize(r.direction);
@@ -140,16 +166,12 @@ v3 ray_color(ray r, hittable *word) {
     return v3{1.0f, 1.0f, 1.0f} * (1.0f-t) + v3{0.5, 0.7f, 1.0f} * t;
 }
 
-inline double random_double() {
-    return mf_random_double(0.0, 1.0);
-}
-
-
 int main() {
     const float aspect_ratio = 16.0f / 9.0f;
-    const u32 image_width = 1600;
+    const u32 image_width = 400;
     const u32 image_height = image_width / aspect_ratio;
     const int samples_per_pixel = 100;
+    const int max_depth = 50;
 
 
     float viewport_height = 2.0f;
@@ -173,7 +195,7 @@ int main() {
                 double u = ((double) x + random_double()) / (double) (image_width - 1);
                 double v = ((double) y + random_double()) / (double) (image_height - 1);
                 ray r = camera_get_ray(&cam, u, v);
-                color = color + ray_color(r, &word);
+                color = color + ray_color(r, &word, max_depth);
             }
             write_color(color, samples_per_pixel);
         }
