@@ -109,28 +109,28 @@ void render_text(mffo_font *font, u32 *tids, mf_vec_float *vertices, u32 vbo, u3
 }
 
 
-void load_texture(mffo_font_char *c, u32 *tid) {
-    if (c->data == NULL)
-        return;
+u32 load_texture(mffo_font *font) {
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glGenTextures(1, tid);
-    glBindTexture(GL_TEXTURE_2D, *tid);
+    u32 res = 0;
+    glGenTextures(1, &res);
+    glBindTexture(GL_TEXTURE_2D, res);
     glTexImage2D(
                  GL_TEXTURE_2D,
                  0,
                  GL_RED,
-                 c->width,
-                 c->height,
+                 512,
+                 512,
                  0,
                  GL_RED,
                  GL_UNSIGNED_BYTE,
-                 c->data
+                 font->data
                 );
     // set texture options
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    return res;
 }
 
 int main() {
@@ -176,11 +176,35 @@ int main() {
 
     mfgl_blend(true);
 
-    u32 textures[256] = {0};
+    u32 tid = load_texture(&font);
+    MF_Assert(tid != 0);
 
-    for (char i = 0; i < MF_ArrayLength(textures); ++i) {
-        load_texture(&font.characters[i], &textures[i]);
-    }
+    float xmin = 0.0f;
+    float ymin = 0.0f;
+    float xmax = 800.0f;
+    float ymax = 600.0f;
+
+
+    char c = 'c';
+    *mf_vec_add(vertices) = xmin;
+    *mf_vec_add(vertices) = ymin;
+    *mf_vec_add(vertices) = font.characters[c].u0;
+    *mf_vec_add(vertices) = font.characters[c].v1;
+
+    *mf_vec_add(vertices) = xmax;
+    *mf_vec_add(vertices) = ymin;
+    *mf_vec_add(vertices) = font.characters[c].u1;
+    *mf_vec_add(vertices) = font.characters[c].v1;
+
+    *mf_vec_add(vertices) = xmax;
+    *mf_vec_add(vertices) = ymax;
+    *mf_vec_add(vertices) = font.characters[c].u1;
+    *mf_vec_add(vertices) = font.characters[c].v0;
+
+    *mf_vec_add(vertices) = xmin;
+    *mf_vec_add(vertices) = ymax;
+    *mf_vec_add(vertices) = font.characters[c].u0;
+    *mf_vec_add(vertices) = font.characters[c].v0;
 
     bool running = true;
     while (running && platform.window.isOpen)
@@ -191,11 +215,20 @@ int main() {
             running = false;
         }
 
+
         glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        mfgl_texture_bind(tid);
+        mfgl_error_check();
+        mfgl_vertex_buffer_bind(vbo);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, mf_vec_size(vertices) * sizeof(float), vertices);
+        //glBindBuffer(GL_ARRAY_BUFFER, 0);
+        mfgl_element_buffer_bind(ebo);
+        mfgl_element_buffer_draw(ebo, 6); 
         
-        render_text(&font, &textures[0], &vertices, vbo, ebo, "Zeile Eins", 0, -font.descent + font.linegap);
-        render_text(&font, &textures[0], &vertices, vbo, ebo, "Zeile 2", 0, -font.descent);
+        //render_text(&font, &textures[0], &vertices, vbo, ebo, "Zeile Eins", 0, -font.descent + font.linegap);
+        //render_text(&font, &textures[0], &vertices, vbo, ebo, "Zeile 2", 0, -font.descent);
 
         mfp_end(&platform);
     }
