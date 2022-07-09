@@ -68,23 +68,56 @@ struct camera {
     v3 lower_left_corner;
     v3 horizontal;
     v3 vertical;
+    v3 u, v, w;
+    double lens_radius;
 };
 
-void camera_init(camera *c, v3 lookfrom, v3 lookat, v3 vup, double vfov, double aspect_ratio) {
+inline double random_double() {
+    return mf_random_double(0.0, 1.0);
+}
+
+v3 v3_random() {
+    v3 res = v3{random_double(), random_double(), random_double()};
+    return res;
+}
+
+v3 v3_random_min_max(double min, double max) {
+    v3 res = v3{mf_random_double(min, max), mf_random_double(min, max), mf_random_double(min, max)};
+    return res;
+}
+
+v3 random_in_unit_sphere() {
+    while (true) {
+        v3 p = v3_random_min_max(-1, 1);
+        if (mfm_v3_length_squared(p) >= 1) continue;
+        return p;
+    }
+}
+
+v3 random_in_unit_disk() {
+    while (true) {
+        v3 p = v3{mf_random_double(-1, 1), mf_random_double(-1, 1), 0};
+        if (mfm_v3_length_squared(p) >= 1) continue;
+        return p;
+    }
+}
+
+void camera_init(camera *c, v3 lookfrom, v3 lookat, v3 vup, double vfov, double aspect_ratio, double aperture, double focus_dist) {
 
     double theta = mfm_to_rad(vfov);
     double h = tan(theta/2);
     double viewport_height = 2.0 * h;
     double viewport_width = aspect_ratio * viewport_height;
 
-    v3 w = mfm_v3_normalize(lookfrom - lookat);
-    v3 u = mfm_v3_normalize(mfm_v3_cross(vup, w));
-    v3 v = mfm_v3_cross(w, u);
+    c->w = mfm_v3_normalize(lookfrom - lookat);
+    c->u = mfm_v3_normalize(mfm_v3_cross(vup, c->w));
+    c->v = mfm_v3_cross(c->w, c->u);
 
     c->origin = lookfrom;
-    c->horizontal = viewport_width * u;
-    c->vertical = viewport_height * v;
-    c->lower_left_corner = c->origin - c->horizontal / 2.0 - c->vertical / 2.0 - w;
+    c->horizontal = focus_dist * viewport_width * c->u;
+    c->vertical = focus_dist * viewport_height * c->v;
+    c->lower_left_corner = c->origin - c->horizontal / 2.0 - c->vertical / 2.0 - focus_dist * c->w;
+    c->lens_radius = aperture / 2;
 }
 
 struct ray {
@@ -92,9 +125,11 @@ struct ray {
    v3 direction;
 };
 
-ray camera_get_ray(camera *c, double u, double v) {
-    ray r = {c->origin, c->lower_left_corner + c->horizontal * u + c->vertical * v - c->origin};
-    return r;
+ray camera_get_ray(camera *c, double s, double t) {
+    //ray r = {c->origin, c->lower_left_corner + c->horizontal * u + c->vertical * v - c->origin};
+    v3 rd = c->lens_radius * random_in_unit_disk();
+    v3 offset = c->u * rd.x + c->v * rd.y;
+    return {c->origin + offset, c->lower_left_corner + s * c->horizontal + t * c->vertical - c->origin - offset};
 }
 
 
@@ -221,27 +256,6 @@ void write_color(v3 c, int samples_per_pixel) {
 #endif
 
 
-inline double random_double() {
-    return mf_random_double(0.0, 1.0);
-}
-
-v3 v3_random() {
-    v3 res = v3{random_double(), random_double(), random_double()};
-    return res;
-}
-
-v3 v3_random_min_max(double min, double max) {
-    v3 res = v3{mf_random_double(min, max), mf_random_double(min, max), mf_random_double(min, max)};
-    return res;
-}
-
-v3 random_in_unit_sphere() {
-    while (true) {
-        v3 p = v3_random_min_max(-1, 1);
-        if (mfm_v3_length_squared(p) >= 1) continue;
-        return p;
-    }
-}
 
 v3 reflect(v3 a, v3 b) {
     return a - b * mfm_v3_dot(a, b) * 2.0;
@@ -365,7 +379,12 @@ int main() {
 #endif
 
     camera cam = {0};
-    camera_init(&cam, v3{-2, 2, 1}, v3{0, 0, -1}, v3{0, 1, 0}, 20.0, aspect_ratio); 
+    v3 lookfrom{3, 3, 2};
+    v3 lookat{0, 0, -1};
+    v3 vup{0, 1, 0};
+    double dist_to_focus = mfm_v3_length(lookfrom - lookat);
+    double aperture = 2.0;
+    camera_init(&cam, lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus);
 
     printf("P3\n%d %d\n255\n", image_width, image_height);
     for (i32 y = image_height - 1; y >= 0; --y) {
