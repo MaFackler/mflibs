@@ -87,31 +87,35 @@ typedef struct
 } mfm_v3i;
 
 
-template<typename T>
+template <typename T>
 mfm_v3<T> mfm_v3_255_to_1(int r, int g, int b);
 
-template<typename T>
+template <typename T>
 float mfm_v3_length(mfm_v3<T> a);
-template<typename T>
+template <typename T>
 float mfm_v3_length_squared(mfm_v3<T> a);
-template<typename T>
+template <typename T>
 mfm_v3<T> mfm_v3_lerp(mfm_v3<T> a, mfm_v3<T> b, float t);
-template<typename T>
+template <typename T>
 mfm_v3<T> mfm_v3_add(mfm_v3<T> a, mfm_v3<T> b);
-template<typename T>
+template <typename T>
 mfm_v3<T> mfm_v3_sub(mfm_v3<T> a, mfm_v3<T> b);
-template<typename T>
+template <typename T>
 mfm_v3<T> mfm_v3_mul(mfm_v3<T> a, float b);
-template<typename T>
+template <typename T>
+mfm_v3<T> mfm_v3_mul(mfm_v3<T> a, mfm_v3<T> b);
+template <typename T>
 mfm_v3<T> mfm_v3_div(mfm_v3<T> a, float b);
-template<typename T>
+template <typename T>
 float mfm_v3_dot(mfm_v3<T> a, mfm_v3<T> b);
-template<typename T>
+template <typename T>
 mfm_v3<T> mfm_v3_normalize(mfm_v3<T> a);
-template<typename T>
+template <typename T>
 mfm_v3<T> mfm_v3_cross(mfm_v3<T> a, mfm_v3<T> b);
-template<typename T>
+template <typename T>
 mfm_v3<T> mfm_v3_negate(mfm_v3<T> a);
+template <typename T>
+bool mfm_v3_near_zero(mfm_v3<T> a);
 
 
 union mfm_rect
@@ -303,6 +307,16 @@ mfm_v3<T> mfm_v3_mul(mfm_v3<T> a, float b)
 }
 
 template <typename T>
+mfm_v3<T> mfm_v3_mul(mfm_v3<T> a, mfm_v3<T> b)
+{
+    mfm_v3<T> res;
+    res.x = a.x * b.x;
+    res.y = a.y * b.y;
+    res.z = a.z * b.z;
+    return res;
+}
+
+template <typename T>
 mfm_v3<T> mfm_v3_div(mfm_v3<T> a, float b)
 {
     mfm_v3<T> res;
@@ -349,6 +363,13 @@ mfm_v3<T> mfm_v3_negate(mfm_v3<T> a)
     res.y = -a.y;
     res.z = -a.z;
     return res;
+}
+
+template <typename T>
+bool mfm_v3_near_zero(mfm_v3<T> a)
+{
+    const double s = 1e-8;
+    return ((fabs(a.x) < s) && (fabs(a.y) < s) && (fabs(a.z) < s));
 }
 
 template <typename T>
@@ -485,6 +506,13 @@ mfm_v3<T> operator-(mfm_v3<T> a, mfm_v3<T> b)
 template <typename T>
 inline
 mfm_v3<T> operator*(mfm_v3<T> a, float b)
+{
+    return mfm_v3_mul(a, b);
+}
+
+template <typename T>
+inline
+mfm_v3<T> operator*(mfm_v3<T> a, mfm_v3<T> b)
 {
     return mfm_v3_mul(a, b);
 }

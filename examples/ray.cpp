@@ -11,6 +11,16 @@ typedef mfm_v3<double> v3;
 
 double T_MAX = std::numeric_limits<double>::infinity();
 
+enum MaterialType {
+    MATERIAL_TYPE_LAMBERTIAN,
+    MATERIAL_TYPE_METAL,
+};
+
+struct material {
+    MaterialType type;
+    v3 color;
+};
+
 struct camera {
     v3 origin;
     v3 lower_left_corner;
@@ -41,11 +51,14 @@ v3 ray_at(ray *r, double t) {
     return r->origin + r->direction * t;
 }
 
+typedef u32 material_id;
+
 struct hit_record {
     v3 point;
     v3 normal;
     double t;
     bool front_face;
+    material_id mid;
 };
 
 inline void hit_record_set_face_normal(hit_record *h, ray r, v3 outward_normal) {
@@ -57,11 +70,24 @@ inline void hit_record_set_face_normal(hit_record *h, ray r, v3 outward_normal) 
 struct sphere {
     v3 center;
     double radius;
+    material_id mid;
 };
 
 struct hittable {
+    material *materials = NULL;
     sphere *spheres = NULL;
 };
+
+
+material_id world_add_material(hittable *world, material m) {
+    material_id res = mf_vec_size(world->materials);
+    mf_vec_push(world->materials, m);
+    return res;
+}
+
+void world_add_sphere(hittable *world, v3 origin, double radius, u32 mid) {
+    mf_vec_push(world->spheres, ((sphere){origin, radius, mid}));
+}
 
 bool sphere_hit(sphere *s, ray r, double t_min, double t_max, hit_record *record) {
     v3 oc = r.origin - s->center;
@@ -87,6 +113,7 @@ bool sphere_hit(sphere *s, ray r, double t_min, double t_max, hit_record *record
     record->point = ray_at(&r, record->t);
     v3 outward_normal = (record->point - s->center) / s->radius;
     hit_record_set_face_normal(record, r, outward_normal);
+    record->mid = s->mid;
     return true;
 }
 
@@ -149,16 +176,50 @@ v3 random_in_unit_sphere() {
     }
 }
 
+v3 reflect(v3 a, v3 b) {
+    return a - b * mfm_v3_dot(a, b) * 2.0;
+}
+
+typedef bool (*scatter_func)(ray *r, hit_record *rec, v3 color, v3 *attenuation, ray *scattered);
+
+bool scatter_mirror(ray *r, hit_record *rec, v3 color, v3 *attenuation, ray *scattered) {
+    v3 reflected = reflect(mfm_v3_normalize(r->direction), rec->normal);
+    *scattered = ray{rec->point, reflected};
+    *attenuation = color;
+    return mfm_v3_dot(scattered->direction, rec->normal) > 0;
+}
+
+bool scatter_lambertian(ray *r, hit_record *rec, v3 color, v3 *attenuation, ray *scattered) {
+    v3 scatter_direction = rec->point + rec->normal + random_in_unit_sphere();
+    if (mfm_v3_near_zero(scatter_direction))
+        scatter_direction = rec->normal;
+    *scattered = ray{rec->point, scatter_direction};
+    *attenuation = color;
+    return true;
+}
+
 inline
-v3 ray_color(ray r, hittable *word, int depth) {
+v3 ray_color(ray r, hittable *world, int depth) {
     hit_record record = {0};
     if (depth <= 0)
         return v3{0};
-    mf_vec_for (word->spheres) {
-        bool hit = sphere_hit(it, r, 0, T_MAX, &record);
+    mf_vec_for (world->spheres) {
+        // TODO: order of hit?
+        bool hit = sphere_hit(it, r, 0.0001, T_MAX, &record);
         if (hit) {
-            v3 target = record.point + record.normal + random_in_unit_sphere();
-            return ray_color(ray{record.point, target - record.point}, word, depth - 1) * 0.5;
+            ray scattered = {0};
+            v3 attenuation = {0};
+            material *m = &world->materials[record.mid];
+            scatter_func func = NULL;
+            if (m->type == MATERIAL_TYPE_LAMBERTIAN) {
+                func = scatter_lambertian;
+            } else if (m->type == MATERIAL_TYPE_METAL) {
+                func = scatter_mirror;
+            }
+            if (func && func(&r, &record, m->color, &attenuation, &scattered)) {
+                return attenuation * ray_color(scattered, world, depth - 1);
+            }
+            return v3{0};
         }
     }
     v3 unit_direction = mfm_v3_normalize(r.direction);
@@ -166,22 +227,36 @@ v3 ray_color(ray r, hittable *word, int depth) {
     return v3{1.0f, 1.0f, 1.0f} * (1.0f-t) + v3{0.5, 0.7f, 1.0f} * t;
 }
 
+
+
 int main() {
     const float aspect_ratio = 16.0f / 9.0f;
-    const u32 image_width = 400;
+    const u32 image_width = 800;
     const u32 image_height = image_width / aspect_ratio;
     const int samples_per_pixel = 100;
     const int max_depth = 50;
-
 
     float viewport_height = 2.0f;
     float viewport_width = aspect_ratio * viewport_height;
     float focal_length = 1.0f;
 
+    hittable world = {0};
 
-    hittable word = {0};
-    mf_vec_push(word.spheres, ((sphere){v3{0, 0, -1}, 0.5}));
-    mf_vec_push(word.spheres, ((sphere){v3{0, -100.5, -1}, 100}));
+    material material_ground = {MATERIAL_TYPE_LAMBERTIAN, {0.8, 0.8, 0.0}};
+    material material_center = {MATERIAL_TYPE_LAMBERTIAN, {0.7, 0.3, 0.3}};
+    material material_left = {MATERIAL_TYPE_METAL, {0.8, 0.8, 0.8}};
+    material material_right = {MATERIAL_TYPE_METAL, {0.8, 0.6, 0.2}};
+
+    auto material_ground_id = world_add_material(&world, material_ground);
+    auto material_center_id = world_add_material(&world, material_center);
+    auto material_left_id = world_add_material(&world, material_left);
+    auto material_right_id = world_add_material(&world, material_right);
+
+    world_add_sphere(&world, v3{0, 0, -1}, 0.5, material_center_id);
+    world_add_sphere(&world, v3{-1, 0, -1}, 0.5, material_left_id);
+    world_add_sphere(&world, v3{1, 0, -1}, 0.5, material_right_id);
+    world_add_sphere(&world, v3{0, -100.5, -1}, 100, material_ground_id);
+
     camera cam = {0};
     camera_init(&cam, v3{0.0, 0.0, 0.0}, viewport_width, viewport_height); 
 
@@ -195,7 +270,7 @@ int main() {
                 double u = ((double) x + random_double()) / (double) (image_width - 1);
                 double v = ((double) y + random_double()) / (double) (image_height - 1);
                 ray r = camera_get_ray(&cam, u, v);
-                color = color + ray_color(r, &word, max_depth);
+                color = color + ray_color(r, &world, max_depth);
             }
             write_color(color, samples_per_pixel);
         }
