@@ -1,3 +1,4 @@
+#include <assert.h>
 #define MF_IMPLEMENTATION
 #include <mf.h>
 #define MF_VECTOR_IMPLEMENTATION
@@ -40,6 +41,28 @@ struct material {
     };
 };
 
+material material_create_lambertian(v3 color) {
+    material res = {};
+    res.type = MATERIAL_TYPE_LAMBERTIAN;
+    res.lambertian.color = color;
+    return res;
+}
+
+material material_create_metal(v3 color, double fuzz) {
+    material res = {};
+    res.type = MATERIAL_TYPE_METAL;
+    res.metal.color = color;
+    res.metal.fuzz = fuzz;
+    return res;
+}
+
+material material_create_dialectic(double ir) {
+    material res = {};
+    res.type = MATERIAL_TYPE_DIALECTRIC;
+    res.dialectic.ir = ir;
+    return res;
+}
+
 struct camera {
     v3 origin;
     v3 lower_left_corner;
@@ -80,8 +103,8 @@ struct hit_record {
     material_id mid;
 };
 
-inline void hit_record_set_face_normal(hit_record *h, ray r, v3 outward_normal) {
-    h->front_face = mfm_v3_dot(r.direction, outward_normal) < 0;
+inline void hit_record_set_face_normal(hit_record *h, ray *r, v3 outward_normal) {
+    h->front_face = mfm_v3_dot(r->direction, outward_normal) < 0;
     h->normal = h->front_face ? outward_normal : mfm_v3_negate(outward_normal);
 }
 
@@ -92,26 +115,10 @@ struct sphere {
     material_id mid;
 };
 
-struct hittable {
-    material *materials = NULL;
-    sphere *spheres = NULL;
-};
-
-
-material_id world_add_material(hittable *world, material m) {
-    material_id res = mf_vec_size(world->materials);
-    mf_vec_push(world->materials, m);
-    return res;
-}
-
-void world_add_sphere(hittable *world, v3 origin, double radius, u32 mid) {
-    mf_vec_push(world->spheres, ((sphere){origin, radius, mid}));
-}
-
-bool sphere_hit(sphere *s, ray r, double t_min, double t_max, hit_record *record) {
-    v3 oc = r.origin - s->center;
-    double a = mfm_v3_length_squared(r.direction);
-    double half_b = mfm_v3_dot(oc, r.direction);
+bool sphere_hit(sphere *s, ray *r, double t_min, double t_max, hit_record *record) {
+    v3 oc = r->origin - s->center;
+    double a = mfm_v3_length_squared(r->direction);
+    double half_b = mfm_v3_dot(oc, r->direction);
     double c = mfm_v3_length_squared(oc) - s->radius * s->radius;
     double discriminant = half_b * half_b - a * c;
 
@@ -129,12 +136,44 @@ bool sphere_hit(sphere *s, ray r, double t_min, double t_max, hit_record *record
     }
 
     record->t = root;
-    record->point = ray_at(&r, record->t);
+    record->point = ray_at(r, record->t);
     v3 outward_normal = (record->point - s->center) / s->radius;
     hit_record_set_face_normal(record, r, outward_normal);
     record->mid = s->mid;
     return true;
 }
+
+struct world {
+    material *materials = NULL;
+    sphere *spheres = NULL;
+};
+
+bool world_hit(world *myworld, ray *r, double t_min, double t_max, hit_record *rec) {
+    hit_record temp_rec = {0};
+    bool hit_anything = false;
+    double closest_so_far = t_max;
+
+    mf_vec_for(myworld->spheres) {
+        if (sphere_hit(it, r, t_min, closest_so_far, &temp_rec)) {
+            hit_anything = true;
+            closest_so_far = temp_rec.t;
+            *rec = temp_rec;
+        }
+    }
+    return hit_anything;
+}
+
+
+material_id world_add_material(world *myworld, material m) {
+    material_id res = mf_vec_size(myworld->materials);
+    mf_vec_push(myworld->materials, m);
+    return res;
+}
+
+void world_add_sphere(world *myworld, v3 origin, double radius, u32 mid) {
+    mf_vec_push(myworld->spheres, ((sphere){origin, radius, mid}));
+}
+
 
 void write_color_old(v3 c, int samples_per_pixel) {
     double r = c.r;
@@ -224,6 +263,12 @@ bool scatter_lambertian(ray *r, hit_record *rec, material *m, v3 *attenuation, r
     return true;
 }
 
+double reflectance(double cosine, double ref_idx) {
+    double r0 = (1 - ref_idx) / (1 + ref_idx);
+    r0 = r0 * r0;
+    return r0 + (1 - r0) * pow((1 - cosine), 5);
+}
+
 bool scatter_dialectric(ray *r, hit_record *rec, material *m, v3 *attenuation, ray *scattered) {
     *attenuation = v3{1.0, 1.0, 1.0};
     double refraction_ratio = rec->front_face ? (1.0/m->dialectic.ir) : m->dialectic.ir;
@@ -231,9 +276,9 @@ bool scatter_dialectric(ray *r, hit_record *rec, material *m, v3 *attenuation, r
     double cos_theta = fmin(mfm_v3_dot(mfm_v3_negate(unit_direction), rec->normal), 1.0);
     double sin_theta = sqrt(1.0 - cos_theta * cos_theta);
 
-    bool cannot_refract = refraction_ratio * sin_theta > 1.0f;
+    bool cannot_refract = refraction_ratio * sin_theta > 1.0;
     v3 direction = {};
-    if (cannot_refract)
+    if (cannot_refract || reflectance(cos_theta, refraction_ratio) > random_double())
         direction = reflect(unit_direction, rec->normal);
     else
         direction = refract(unit_direction, rec->normal, refraction_ratio);
@@ -243,30 +288,28 @@ bool scatter_dialectric(ray *r, hit_record *rec, material *m, v3 *attenuation, r
 }
 
 inline
-v3 ray_color(ray r, hittable *world, int depth) {
+v3 ray_color(ray r, world *myworld, int depth) {
     hit_record record = {0};
     if (depth <= 0)
         return v3{0};
-    mf_vec_for (world->spheres) {
-        // TODO: order of hit?
-        bool hit = sphere_hit(it, r, 0.0001, T_MAX, &record);
-        if (hit) {
-            ray scattered = {0};
-            v3 attenuation = {0};
-            material *m = &world->materials[record.mid];
-            scatter_func func = NULL;
-            if (m->type == MATERIAL_TYPE_LAMBERTIAN) {
-                func = scatter_lambertian;
-            } else if (m->type == MATERIAL_TYPE_METAL) {
-                func = scatter_mirror;
-            } else if (m->type == MATERIAL_TYPE_DIALECTRIC) {
-                func = scatter_dialectric;
-            }
-            if (func && func(&r, &record, m, &attenuation, &scattered)) {
-                return attenuation * ray_color(scattered, world, depth - 1);
-            }
-            return v3{0};
+
+    bool hit = world_hit(myworld, &r, 0.0001, T_MAX, &record);
+    if (hit) {
+        ray scattered = {0};
+        v3 attenuation = {0};
+        material *m = &myworld->materials[record.mid];
+        scatter_func func = NULL;
+        if (m->type == MATERIAL_TYPE_LAMBERTIAN) {
+            func = scatter_lambertian;
+        } else if (m->type == MATERIAL_TYPE_METAL) {
+            func = scatter_mirror;
+        } else if (m->type == MATERIAL_TYPE_DIALECTRIC) {
+            func = scatter_dialectric;
         }
+        if (func && func(&r, &record, m, &attenuation, &scattered)) {
+            return attenuation * ray_color(scattered, myworld, depth - 1);
+        }
+        return v3{0};
     }
     v3 unit_direction = mfm_v3_normalize(r.direction);
     double t = 0.5 * (unit_direction.y + 1.0f);
@@ -279,31 +322,29 @@ int main() {
     const float aspect_ratio = 16.0f / 9.0f;
     const u32 image_width = 800;
     const u32 image_height = image_width / aspect_ratio;
-    const int samples_per_pixel = 10;
+    const int samples_per_pixel = 100;
     const int max_depth = 50;
 
     float viewport_height = 2.0f;
     float viewport_width = aspect_ratio * viewport_height;
     float focal_length = 1.0f;
 
-    hittable world = {0};
+    world myworld = {0};
+    material material_ground = material_create_lambertian({0.8, 0.8, 0.0});
+    material material_center = material_create_lambertian({0.1, 0.2, 0.5});
+    material material_left = material_create_dialectic(1.5);
+    material material_right = material_create_metal({0.8, 0.6, 0.2}, 0.0);
 
-    material material_ground = {MATERIAL_TYPE_LAMBERTIAN, {0.8, 0.8, 0.0}};
-    material material_center = {MATERIAL_TYPE_LAMBERTIAN, {0.1, 0.2, 0.5}};
-    material material_left = {MATERIAL_TYPE_DIALECTRIC};
-    material_left.dialectic.ir = 1.5;
-    material material_right = {MATERIAL_TYPE_METAL, {0.8, 0.6, 0.2}};
-    material_right.metal.fuzz = 1.0;
+    auto material_ground_id = world_add_material(&myworld, material_ground);
+    auto material_center_id = world_add_material(&myworld, material_center);
+    auto material_left_id = world_add_material(&myworld, material_left);
+    auto material_right_id = world_add_material(&myworld, material_right);
 
-    auto material_ground_id = world_add_material(&world, material_ground);
-    auto material_center_id = world_add_material(&world, material_center);
-    auto material_left_id = world_add_material(&world, material_left);
-    auto material_right_id = world_add_material(&world, material_right);
-
-    world_add_sphere(&world, v3{0, 0, -1}, 0.5, material_center_id);
-    world_add_sphere(&world, v3{-1, 0, -1}, 0.5, material_left_id);
-    world_add_sphere(&world, v3{1, 0, -1}, 0.5, material_right_id);
-    world_add_sphere(&world, v3{0, -100.5, -1}, 100, material_ground_id);
+    world_add_sphere(&myworld, v3{0, -100.5, -1}, 100, material_ground_id);
+    world_add_sphere(&myworld, v3{0, 0, -1}, 0.5, material_center_id);
+    world_add_sphere(&myworld, v3{-1, 0, -1}, -0.4, material_left_id);
+    world_add_sphere(&myworld, v3{-1, 0, -1}, 0.5, material_left_id);
+    world_add_sphere(&myworld, v3{1, 0, -1}, 0.5, material_right_id);
 
     camera cam = {0};
     camera_init(&cam, v3{0.0, 0.0, 0.0}, viewport_width, viewport_height); 
@@ -318,7 +359,7 @@ int main() {
                 double u = ((double) x + random_double()) / (double) (image_width - 1);
                 double v = ((double) y + random_double()) / (double) (image_height - 1);
                 ray r = camera_get_ray(&cam, u, v);
-                color = color + ray_color(r, &world, max_depth);
+                color = color + ray_color(r, &myworld, max_depth);
             }
             write_color(color, samples_per_pixel);
         }
