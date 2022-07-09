@@ -23,14 +23,14 @@ void print_color(v3 c) {
 
 double hit_sphere(v3 center, float radius, ray r) {
     v3 oc = r.origin - center;
-    float a = mfm_v3_dot(r.direction, r.direction);
-    float b = 2.0f * mfm_v3_dot(oc, r.direction);
-    float c = mfm_v3_dot(oc, oc) - radius * radius;
-    double discriminant = b * b - 4 * a * c;
+    float a = mfm_v3_length_squared(r.direction);
+    float half_b = mfm_v3_dot(oc, r.direction);
+    float c = mfm_v3_length_squared(oc) - radius * radius;
+    double discriminant = half_b * half_b - a * c;
     if (discriminant < 0) {
         return -1;
     } else {
-        return (- b - sqrt(discriminant)) / (2.0*a);
+        return (- half_b - sqrt(discriminant)) / a;
     }
 }
 

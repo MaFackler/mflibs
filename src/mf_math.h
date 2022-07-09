@@ -76,6 +76,7 @@ typedef struct
 mfm_v3 mfm_v3_255_to_1(int r, int g, int b);
 
 float mfm_v3_length(mfm_v3 a);
+float mfm_v3_length_squared(mfm_v3 a);
 mfm_v3 mfm_v3_lerp(mfm_v3 a, mfm_v3 b, float t);
 mfm_v3 mfm_v3_add(mfm_v3 a, mfm_v3 b);
 mfm_v3 mfm_v3_sub(mfm_v3 a, mfm_v3 b);
@@ -224,7 +225,12 @@ mfm_v3 mfm_v3_255_to_1(int r, int g, int b)
 float mfm_v3_length(mfm_v3 a)
 {
     float res = 0;
-    res = sqrt((a.x * a.x) + (a.y * a.y) + (a.z * a.z));
+    res = sqrt(mfm_v3_length_squared(a));
+    return res;
+}
+
+float mfm_v3_length_squared(mfm_v3 a) {
+    float res = (a.x * a.x) + (a.y * a.y) + (a.z * a.z);
     return res;
 }
 
