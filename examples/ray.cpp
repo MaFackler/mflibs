@@ -14,6 +14,7 @@ double T_MAX = std::numeric_limits<double>::infinity();
 enum MaterialType {
     MATERIAL_TYPE_LAMBERTIAN,
     MATERIAL_TYPE_METAL,
+    MATERIAL_TYPE_DIALECTRIC,
 };
 
 
@@ -26,11 +27,16 @@ struct material_metal {
     double fuzz;
 };
 
+struct material_dialectic {
+    double ir;
+};
+
 struct material {
     MaterialType type;
     union {
         material_lambertian lambertian;
         material_metal metal;
+        material_dialectic dialectic;
     };
 };
 
@@ -193,6 +199,13 @@ v3 reflect(v3 a, v3 b) {
     return a - b * mfm_v3_dot(a, b) * 2.0;
 }
 
+v3 refract(v3 a, v3 b, double etai_over_etat) {
+    double cos_thata = fmin(mfm_v3_dot(mfm_v3_negate(a), b), 1.0f);
+    v3 r_out_perp = etai_over_etat * (a + cos_thata * b);
+    v3 r_out_parallel = -sqrt(fabs(1.0f - mfm_v3_length_squared(r_out_perp))) * b;
+    return r_out_perp + r_out_parallel;
+}
+
 typedef bool (*scatter_func)(ray *r, hit_record *rec, material *m, v3 *attenuation, ray *scattered);
 
 bool scatter_mirror(ray *r, hit_record *rec, material *m, v3 *attenuation, ray *scattered) {
@@ -208,6 +221,24 @@ bool scatter_lambertian(ray *r, hit_record *rec, material *m, v3 *attenuation, r
         scatter_direction = rec->normal;
     *scattered = ray{rec->point, scatter_direction};
     *attenuation = m->lambertian.color;
+    return true;
+}
+
+bool scatter_dialectric(ray *r, hit_record *rec, material *m, v3 *attenuation, ray *scattered) {
+    *attenuation = v3{1.0, 1.0, 1.0};
+    double refraction_ratio = rec->front_face ? (1.0/m->dialectic.ir) : m->dialectic.ir;
+    v3 unit_direction = mfm_v3_normalize(r->direction);
+    double cos_theta = fmin(mfm_v3_dot(mfm_v3_negate(unit_direction), rec->normal), 1.0);
+    double sin_theta = sqrt(1.0 - cos_theta * cos_theta);
+
+    bool cannot_refract = refraction_ratio * sin_theta > 1.0f;
+    v3 direction = {};
+    if (cannot_refract)
+        direction = reflect(unit_direction, rec->normal);
+    else
+        direction = refract(unit_direction, rec->normal, refraction_ratio);
+
+    *scattered = ray{rec->point, direction};
     return true;
 }
 
@@ -228,6 +259,8 @@ v3 ray_color(ray r, hittable *world, int depth) {
                 func = scatter_lambertian;
             } else if (m->type == MATERIAL_TYPE_METAL) {
                 func = scatter_mirror;
+            } else if (m->type == MATERIAL_TYPE_DIALECTRIC) {
+                func = scatter_dialectric;
             }
             if (func && func(&r, &record, m, &attenuation, &scattered)) {
                 return attenuation * ray_color(scattered, world, depth - 1);
@@ -246,7 +279,7 @@ int main() {
     const float aspect_ratio = 16.0f / 9.0f;
     const u32 image_width = 800;
     const u32 image_height = image_width / aspect_ratio;
-    const int samples_per_pixel = 100;
+    const int samples_per_pixel = 10;
     const int max_depth = 50;
 
     float viewport_height = 2.0f;
@@ -256,9 +289,9 @@ int main() {
     hittable world = {0};
 
     material material_ground = {MATERIAL_TYPE_LAMBERTIAN, {0.8, 0.8, 0.0}};
-    material material_center = {MATERIAL_TYPE_LAMBERTIAN, {0.7, 0.3, 0.3}};
-    material material_left = {MATERIAL_TYPE_METAL, {0.8, 0.8, 0.8}};
-    material_left.metal.fuzz = 0.3;
+    material material_center = {MATERIAL_TYPE_LAMBERTIAN, {0.1, 0.2, 0.5}};
+    material material_left = {MATERIAL_TYPE_DIALECTRIC};
+    material_left.dialectic.ir = 1.5;
     material material_right = {MATERIAL_TYPE_METAL, {0.8, 0.6, 0.2}};
     material_right.metal.fuzz = 1.0;
 

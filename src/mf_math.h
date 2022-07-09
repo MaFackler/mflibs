@@ -512,6 +512,27 @@ mfm_v3<T> operator*(mfm_v3<T> a, float b)
 
 template <typename T>
 inline
+mfm_v3<T> operator*(float b, mfm_v3<T> a)
+{
+    return mfm_v3_mul(a, b);
+}
+
+template <typename T>
+inline
+mfm_v3<T> operator*(mfm_v3<T> a, double b)
+{
+    return mfm_v3_mul(a, b);
+}
+
+template <typename T>
+inline
+mfm_v3<T> operator*(double b, mfm_v3<T> a)
+{
+    return mfm_v3_mul(a, b);
+}
+
+template <typename T>
+inline
 mfm_v3<T> operator*(mfm_v3<T> a, mfm_v3<T> b)
 {
     return mfm_v3_mul(a, b);
@@ -519,7 +540,7 @@ mfm_v3<T> operator*(mfm_v3<T> a, mfm_v3<T> b)
 
 template <typename T>
 inline
-mfm_v3<T> operator/(mfm_v3<T> a, float b)
+mfm_v3<T> operator/(mfm_v3<T> a, T b)
 {
     return mfm_v3_div(a, b);
 }
