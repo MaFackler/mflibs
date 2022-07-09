@@ -16,9 +16,22 @@ enum MaterialType {
     MATERIAL_TYPE_METAL,
 };
 
+
+struct material_lambertian {
+    v3 color;
+};
+
+struct material_metal {
+    v3 color;
+    double fuzz;
+};
+
 struct material {
     MaterialType type;
-    v3 color;
+    union {
+        material_lambertian lambertian;
+        material_metal metal;
+    };
 };
 
 struct camera {
@@ -180,21 +193,21 @@ v3 reflect(v3 a, v3 b) {
     return a - b * mfm_v3_dot(a, b) * 2.0;
 }
 
-typedef bool (*scatter_func)(ray *r, hit_record *rec, v3 color, v3 *attenuation, ray *scattered);
+typedef bool (*scatter_func)(ray *r, hit_record *rec, material *m, v3 *attenuation, ray *scattered);
 
-bool scatter_mirror(ray *r, hit_record *rec, v3 color, v3 *attenuation, ray *scattered) {
+bool scatter_mirror(ray *r, hit_record *rec, material *m, v3 *attenuation, ray *scattered) {
     v3 reflected = reflect(mfm_v3_normalize(r->direction), rec->normal);
-    *scattered = ray{rec->point, reflected};
-    *attenuation = color;
+    *scattered = ray{rec->point, reflected + (random_in_unit_sphere() * m->metal.fuzz)};
+    *attenuation = m->metal.color;
     return mfm_v3_dot(scattered->direction, rec->normal) > 0;
 }
 
-bool scatter_lambertian(ray *r, hit_record *rec, v3 color, v3 *attenuation, ray *scattered) {
+bool scatter_lambertian(ray *r, hit_record *rec, material *m, v3 *attenuation, ray *scattered) {
     v3 scatter_direction = rec->point + rec->normal + random_in_unit_sphere();
     if (mfm_v3_near_zero(scatter_direction))
         scatter_direction = rec->normal;
     *scattered = ray{rec->point, scatter_direction};
-    *attenuation = color;
+    *attenuation = m->lambertian.color;
     return true;
 }
 
@@ -216,7 +229,7 @@ v3 ray_color(ray r, hittable *world, int depth) {
             } else if (m->type == MATERIAL_TYPE_METAL) {
                 func = scatter_mirror;
             }
-            if (func && func(&r, &record, m->color, &attenuation, &scattered)) {
+            if (func && func(&r, &record, m, &attenuation, &scattered)) {
                 return attenuation * ray_color(scattered, world, depth - 1);
             }
             return v3{0};
@@ -245,7 +258,9 @@ int main() {
     material material_ground = {MATERIAL_TYPE_LAMBERTIAN, {0.8, 0.8, 0.0}};
     material material_center = {MATERIAL_TYPE_LAMBERTIAN, {0.7, 0.3, 0.3}};
     material material_left = {MATERIAL_TYPE_METAL, {0.8, 0.8, 0.8}};
+    material_left.metal.fuzz = 0.3;
     material material_right = {MATERIAL_TYPE_METAL, {0.8, 0.6, 0.2}};
+    material_right.metal.fuzz = 1.0;
 
     auto material_ground_id = world_add_material(&world, material_ground);
     auto material_center_id = world_add_material(&world, material_center);
