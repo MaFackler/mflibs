@@ -70,12 +70,21 @@ struct camera {
     v3 vertical;
 };
 
-void camera_init(camera *c, v3 origin, double width, double height) {
-    double focal_length = 1.0;
-    c->origin = origin;
-    c->horizontal = v3{width, 0.0, 0.0};
-    c->vertical = v3{0.0, height, 0.0};
-    c->lower_left_corner = origin - c->horizontal / 2.0 - c->vertical / 2.0 - v3{0, 0, focal_length};
+void camera_init(camera *c, v3 lookfrom, v3 lookat, v3 vup, double vfov, double aspect_ratio) {
+
+    double theta = mfm_to_rad(vfov);
+    double h = tan(theta/2);
+    double viewport_height = 2.0 * h;
+    double viewport_width = aspect_ratio * viewport_height;
+
+    v3 w = mfm_v3_normalize(lookfrom - lookat);
+    v3 u = mfm_v3_normalize(mfm_v3_cross(vup, w));
+    v3 v = mfm_v3_cross(w, u);
+
+    c->origin = lookfrom;
+    c->horizontal = viewport_width * u;
+    c->vertical = viewport_height * v;
+    c->lower_left_corner = c->origin - c->horizontal / 2.0 - c->vertical / 2.0 - w;
 }
 
 struct ray {
@@ -322,14 +331,12 @@ int main() {
     const float aspect_ratio = 16.0f / 9.0f;
     const u32 image_width = 800;
     const u32 image_height = image_width / aspect_ratio;
-    const int samples_per_pixel = 100;
+    const int samples_per_pixel = 10;
     const int max_depth = 50;
 
-    float viewport_height = 2.0f;
-    float viewport_width = aspect_ratio * viewport_height;
-    float focal_length = 1.0f;
 
     world myworld = {0};
+#if 1
     material material_ground = material_create_lambertian({0.8, 0.8, 0.0});
     material material_center = material_create_lambertian({0.1, 0.2, 0.5});
     material material_left = material_create_dialectic(1.5);
@@ -345,9 +352,20 @@ int main() {
     world_add_sphere(&myworld, v3{-1, 0, -1}, -0.4, material_left_id);
     world_add_sphere(&myworld, v3{-1, 0, -1}, 0.5, material_left_id);
     world_add_sphere(&myworld, v3{1, 0, -1}, 0.5, material_right_id);
+#else
+    material material_left = material_create_lambertian({0, 0, 1});
+    material material_right = material_create_lambertian({1, 0, 0});
+
+    auto material_left_id = world_add_material(&myworld, material_left);
+    auto material_right_id = world_add_material(&myworld, material_right);
+
+    double r = cos(M_PI/4);
+    world_add_sphere(&myworld, v3{-r, 0, -1}, r, material_left_id);
+    world_add_sphere(&myworld, v3{r, 0, -1}, r, material_right_id);
+#endif
 
     camera cam = {0};
-    camera_init(&cam, v3{0.0, 0.0, 0.0}, viewport_width, viewport_height); 
+    camera_init(&cam, v3{-2, 2, 1}, v3{0, 0, -1}, v3{0, 1, 0}, 20.0, aspect_ratio); 
 
     printf("P3\n%d %d\n255\n", image_width, image_height);
     for (i32 y = image_height - 1; y >= 0; --y) {
