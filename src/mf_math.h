@@ -11,6 +11,18 @@ inline float mfm_to_degree(float rad) {
     return rad * (180 / M_PI);
 }
 
+template <typename T>
+inline T mf_clamp(T x, T min, T max) {
+    double res = x;
+    if (x < min) {
+        res = min;
+    }
+    if (x > max) {
+        res = max;
+    }
+    return res;
+}
+
 float mfm_lerp(float a, float b, float t);
 
 typedef struct
@@ -44,19 +56,20 @@ bool mfm_v2_is_equal(mfm_v2 a, mfm_v2 b);
 
 mfm_v2i mfm_v2i_add(mfm_v2i a, mfm_v2i b);
 
-typedef union 
+template <typename T>
+union mfm_v3
 {
     struct {
-        float x;
-        float y;
-        float z;
+        T x;
+        T y;
+        T z;
     };
     struct {
-        float r;
-        float g;
-        float b;
+        T r;
+        T g;
+        T b;
     };
-} mfm_v3;
+};
 
 typedef struct
 {
@@ -73,19 +86,32 @@ typedef struct
     int z;
 } mfm_v3i;
 
-mfm_v3 mfm_v3_255_to_1(int r, int g, int b);
 
-float mfm_v3_length(mfm_v3 a);
-float mfm_v3_length_squared(mfm_v3 a);
-mfm_v3 mfm_v3_lerp(mfm_v3 a, mfm_v3 b, float t);
-mfm_v3 mfm_v3_add(mfm_v3 a, mfm_v3 b);
-mfm_v3 mfm_v3_sub(mfm_v3 a, mfm_v3 b);
-mfm_v3 mfm_v3_mul(mfm_v3 a, float b);
-mfm_v3 mfm_v3_div(mfm_v3 a, float b);
-float mfm_v3_dot(mfm_v3 a, mfm_v3 b);
-mfm_v3 mfm_v3_normalize(mfm_v3 a);
-mfm_v3 mfm_v3_cross(mfm_v3 a, mfm_v3 b);
-mfm_v3 mfm_v3_negate(mfm_v3 a);
+template<typename T>
+mfm_v3<T> mfm_v3_255_to_1(int r, int g, int b);
+
+template<typename T>
+float mfm_v3_length(mfm_v3<T> a);
+template<typename T>
+float mfm_v3_length_squared(mfm_v3<T> a);
+template<typename T>
+mfm_v3<T> mfm_v3_lerp(mfm_v3<T> a, mfm_v3<T> b, float t);
+template<typename T>
+mfm_v3<T> mfm_v3_add(mfm_v3<T> a, mfm_v3<T> b);
+template<typename T>
+mfm_v3<T> mfm_v3_sub(mfm_v3<T> a, mfm_v3<T> b);
+template<typename T>
+mfm_v3<T> mfm_v3_mul(mfm_v3<T> a, float b);
+template<typename T>
+mfm_v3<T> mfm_v3_div(mfm_v3<T> a, float b);
+template<typename T>
+float mfm_v3_dot(mfm_v3<T> a, mfm_v3<T> b);
+template<typename T>
+mfm_v3<T> mfm_v3_normalize(mfm_v3<T> a);
+template<typename T>
+mfm_v3<T> mfm_v3_cross(mfm_v3<T> a, mfm_v3<T> b);
+template<typename T>
+mfm_v3<T> mfm_v3_negate(mfm_v3<T> a);
 
 
 union mfm_rect
@@ -113,7 +139,8 @@ union mfm_m4
 
 inline mfm_m4 mfm_m4_identity();
 inline mfm_m4 mfm_m4_perspective(float fov, float aspect, float near, float far);
-inline mfm_m4 mfm_m4_look_at(mfm_v3 eye, mfm_v3 center, mfm_v3 up);
+template <typename T>
+inline mfm_m4 mfm_m4_look_at(mfm_v3<T> eye, mfm_v3<T> center, mfm_v3<T> up);
 
 
 #ifdef MF_MATH_IMPLEMENTATION
@@ -211,29 +238,30 @@ mfm_v2i mfm_v2i_add(mfm_v2i a, mfm_v2i b)
 
 
 // mfm_v3
-//
-mfm_v3 mfm_v3_255_to_1(int r, int g, int b)
-{
-    mfm_v3 res;
+
+template <typename T>
+mfm_v3<T> mfm_v3_255_to_1(int r, int g, int b) {
+    mfm_v3<T> res;
     res.x = r / 255.0f;
     res.y = g / 255.0f;
     res.z = b / 255.0f;
     return res;
 }
 
-
-float mfm_v3_length(mfm_v3 a)
-{
+template <typename T>
+float mfm_v3_length(mfm_v3<T> a) {
     float res = 0;
     res = sqrt(mfm_v3_length_squared(a));
     return res;
 }
 
-float mfm_v3_length_squared(mfm_v3 a) {
+template <typename T>
+float mfm_v3_length_squared(mfm_v3<T> a) {
     float res = (a.x * a.x) + (a.y * a.y) + (a.z * a.z);
     return res;
 }
 
+template <typename T>
 inline
 float mfm_v3_lerp(float a, float b, float t)
 {
@@ -241,55 +269,61 @@ float mfm_v3_lerp(float a, float b, float t)
     return res;
 }
 
+template <typename T>
 inline
-mfm_v3 mfm_v3_add(mfm_v3 a, mfm_v3 b)
+mfm_v3<T> mfm_v3_add(mfm_v3<T> a, mfm_v3<T> b)
 {
-    mfm_v3 res;
+    mfm_v3<T> res;
     res.x = a.x + b.x;
     res.y = a.y + b.y;
     res.z = a.z + b.z;
     return res;
 }
 
+template <typename T>
 inline
-mfm_v3 mfm_v3_sub(mfm_v3 a, mfm_v3 b)
+mfm_v3<T> mfm_v3_sub(mfm_v3<T> a, mfm_v3<T> b)
 {
-    mfm_v3 res;
+    mfm_v3<T> res;
     res.x = a.x - b.x;
     res.y = a.y - b.y;
     res.z = a.z - b.z;
     return res;
 }
 
+template <typename T>
 inline
-mfm_v3 mfm_v3_mul(mfm_v3 a, float b)
+mfm_v3<T> mfm_v3_mul(mfm_v3<T> a, float b)
 {
-    mfm_v3 res;
+    mfm_v3<T> res;
     res.x = a.x * b;
     res.y = a.y * b;
     res.z = a.z * b;
     return res;
 }
 
-mfm_v3 mfm_v3_div(mfm_v3 a, float b)
+template <typename T>
+mfm_v3<T> mfm_v3_div(mfm_v3<T> a, float b)
 {
-    mfm_v3 res;
+    mfm_v3<T> res;
     res.x = a.x / b;
     res.y = a.y / b;
     res.z = a.z / b;
     return res;
 }
 
-float mfm_v3_dot(mfm_v3 a, mfm_v3 b)
+template <typename T>
+float mfm_v3_dot(mfm_v3<T> a, mfm_v3<T> b)
 {
     float res = 0;
     res = a.x * b.x + a.y * b.y + a.z * b.z;
     return res;
 }
 
-mfm_v3 mfm_v3_normalize(mfm_v3 a)
+template <typename T>
+mfm_v3<T> mfm_v3_normalize(mfm_v3<T> a)
 {
-    mfm_v3 res = {};
+    mfm_v3<T> res = {};
     float length = mfm_v3_length(a);
     res.x = a.x / length;
     res.y = a.y / length;
@@ -297,28 +331,31 @@ mfm_v3 mfm_v3_normalize(mfm_v3 a)
     return res;
 }
 
-mfm_v3 mfm_v3_cross(mfm_v3 a, mfm_v3 b)
+template <typename T>
+mfm_v3<T> mfm_v3_cross(mfm_v3<T> a, mfm_v3<T> b)
 {
-    mfm_v3 res = {};
+    mfm_v3<T> res = {};
     res.x = a.y * b.z - a.z * b.y;
     res.y = a.z * b.x - a.x * b.z;
     res.z = a.x * b.y - a.y * b.x;
     return res;
 }
 
-mfm_v3 mfm_v3_negate(mfm_v3 a)
+template <typename T>
+mfm_v3<T> mfm_v3_negate(mfm_v3<T> a)
 {
-    mfm_v3 res = {};
+    mfm_v3<T> res = {};
     res.x = -a.x;
     res.y = -a.y;
     res.z = -a.z;
     return res;
 }
 
+template <typename T>
 inline
-mfm_v3 mfm_v3_lerp(mfm_v3 a, mfm_v3 b, float t)
+mfm_v3<T> mfm_v3_lerp(mfm_v3<T> a, mfm_v3<T> b, float t)
 {
-    mfm_v3 res = mfm_v3_add(a, mfm_v3_mul(mfm_v3_sub(b, a), t));
+    mfm_v3<T> res = mfm_v3_add(a, mfm_v3_mul(mfm_v3_sub(b, a), t));
     return res;
 }
 
@@ -431,26 +468,30 @@ mfm_v2i& operator+=(mfm_v2i& a, mfm_v2i& b)
 }
 
 // Vector 3
+template <typename T>
 inline
-mfm_v3 operator+(mfm_v3 a, mfm_v3 b)
+mfm_v3<T> operator+(mfm_v3<T> a, mfm_v3<T> b)
 {
     return mfm_v3_add(a, b);
 }
 
+template <typename T>
 inline
-mfm_v3 operator-(mfm_v3 a, mfm_v3 b)
+mfm_v3<T> operator-(mfm_v3<T> a, mfm_v3<T> b)
 {
     return mfm_v3_sub(a, b);
 }
 
+template <typename T>
 inline
-mfm_v3 operator*(mfm_v3 a, float b)
+mfm_v3<T> operator*(mfm_v3<T> a, float b)
 {
     return mfm_v3_mul(a, b);
 }
 
+template <typename T>
 inline
-mfm_v3 operator/(mfm_v3 a, float b)
+mfm_v3<T> operator/(mfm_v3<T> a, float b)
 {
     return mfm_v3_div(a, b);
 }
@@ -507,11 +548,12 @@ inline mfm_m4 mfm_m4_perspective(float fov, float aspect, float near, float far)
     return res;
 }
 
-inline mfm_m4 mfm_m4_look_at(mfm_v3 eye, mfm_v3 center, mfm_v3 up)
+template <typename T>
+inline mfm_m4 mfm_m4_look_at(mfm_v3<T> eye, mfm_v3<T> center, mfm_v3<T> up)
 {
-    mfm_v3 zaxis = mfm_v3_normalize(center - eye);
-    mfm_v3 xaxis = mfm_v3_normalize(mfm_v3_cross(zaxis, up));
-    mfm_v3 yaxis = mfm_v3_cross(xaxis, zaxis);
+    mfm_v3<T> zaxis = mfm_v3_normalize(center - eye);
+    mfm_v3<T> xaxis = mfm_v3_normalize(mfm_v3_cross(zaxis, up));
+    mfm_v3<T> yaxis = mfm_v3_cross(xaxis, zaxis);
 
     mfm_m4 res = {
         xaxis.x, xaxis.y, xaxis.z, -mfm_v3_dot(xaxis, eye),
@@ -525,6 +567,13 @@ inline mfm_m4 mfm_m4_look_at(mfm_v3 eye, mfm_v3 center, mfm_v3 up)
 #endif
 
 #ifdef MF_TEST_ACTIVE
+
+TEST("mf_clamp") {
+    MFT_CHECK(mf_clamp(1.0, 0.0, 100.0) == 1.0);
+    MFT_CHECK(mf_clamp(1.0, 2.0, 100.0) == 2.0);
+    MFT_CHECK(mf_clamp(110.0, 0.0, 100.0) == 100.0);
+}
+
 
 TEST("Vector 2 is equal")
 {
@@ -566,7 +615,7 @@ TEST("Vector 2 int add and add assign")
 
 TEST("Vector 255 to 1")
 {
-    mfm_v3 res = mfm_v3_255_to_1(128, 0, 255);
+    mfm_v3<float> res = mfm_v3_255_to_1<float>(128, 0, 255);
 
     MFT_CHECK_FLOAT(res.x, 0.5019f);
     MFT_CHECK_FLOAT(res.y, 0.0f);
@@ -575,8 +624,8 @@ TEST("Vector 255 to 1")
 
 TEST("Vector 3 add")
 {
-    mfm_v3 v1{1.0f, 2.0f, 3.0f};
-    mfm_v3 v2{4.0f, 5.0f, 6.0f};
+    mfm_v3<float> v1{1.0f, 2.0f, 3.0f};
+    mfm_v3<float> v2{4.0f, 5.0f, 6.0f};
 
     {
         mfm_v3 res = v1 + v2;
@@ -595,8 +644,8 @@ TEST("Vector 3 add")
 
 TEST("Vector 3 sub")
 {
-    mfm_v3 v1{1.0f, 2.0f, 3.0f};
-    mfm_v3 v2{4.0f, 5.0f, 6.0f};
+    mfm_v3<float> v1{1.0f, 2.0f, 3.0f};
+    mfm_v3<float> v2{4.0f, 5.0f, 6.0f};
 
     {
         mfm_v3 res = v1 - v2;
@@ -615,7 +664,7 @@ TEST("Vector 3 sub")
 
 TEST("Vector 3 mul")
 {
-    mfm_v3 v1{1.0f, 2.0f, 3.0f};
+    mfm_v3<float> v1{1.0f, 2.0f, 3.0f};
 
     {
         mfm_v3 res = v1 * 2.0f;

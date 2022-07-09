@@ -95,6 +95,7 @@ void mf_thread_run(mf_thread_context *tc);
 
 // Random
 u32 mf_random_int(u32 min, u32 max);
+double mf_random_double(double min, double max);
 
 
 #ifdef MF_IMPLEMENTATION
@@ -180,6 +181,13 @@ u32 mf_random_int(u32 min, u32 max)
 {
     mf__random_initialize();
     u32 res = rand() % (max + 1 - min) + min;
+    return res;
+}
+
+double mf_random_double(double min, double max)
+{
+    double res = rand() / (RAND_MAX + 1.0);
+    res = min + (max - min) * res;
     return res;
 }
 
