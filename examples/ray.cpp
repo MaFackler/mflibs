@@ -102,6 +102,7 @@ v3 random_in_unit_disk() {
     }
 }
 
+
 void camera_init(camera *c, v3 lookfrom, v3 lookat, v3 vup, double vfov, double aspect_ratio, double aperture, double focus_dist) {
 
     double theta = mfm_to_rad(vfov);
@@ -339,18 +340,58 @@ v3 ray_color(ray r, world *myworld, int depth) {
     return v3{1.0f, 1.0f, 1.0f} * (1.0f-t) + v3{0.5, 0.7f, 1.0f} * t;
 }
 
+void init_random_world(world *myworld) {
+    material material_ground = material_create_lambertian({0.5, 0.5, 0.5});
+    auto material_ground_id = world_add_material(myworld, material_ground);
+    world_add_sphere(myworld, {0, -1000, 0}, 1000, material_ground_id);
+
+    for (int a = -11; a < 11; ++a) {
+        for (int b = -11; b < 11; ++b) {
+            double choose_mat = random_double();
+            v3 center{a + 0.9 * random_double(), 0.2, b + 0.9 * random_double()};
+
+            if (mfm_v3_length(center - v3{4, 0.2, 0}) > 0.9) {
+                if (choose_mat < 0.8) {
+                    material material_temp = material_create_lambertian(v3_random());
+                    auto material_temp_id = world_add_material(myworld, material_temp);
+                    world_add_sphere(myworld, center, 0.2, material_temp_id);
+                } else if (choose_mat < 0.95) {
+                    material material_temp = material_create_metal(v3_random(), 0.5);
+                    auto material_temp_id = world_add_material(myworld, material_temp);
+                    world_add_sphere(myworld, center, 0.2, material_temp_id);
+                } else {
+                    material material_temp = material_create_dialectic(1.5);
+                    auto material_temp_id = world_add_material(myworld, material_temp);
+                    world_add_sphere(myworld, center, 0.2, material_temp_id);
+                }
+            }
+        }
+    }
+
+    material material1 = material_create_dialectic(1.5);
+    auto material1_id = world_add_material(myworld, material1);
+    world_add_sphere(myworld, {0, 1, 0}, 1.0, material1_id);
+
+    material material2 = material_create_lambertian({0.4, 0.2, 0.1});
+    auto material2_id = world_add_material(myworld, material2);
+    world_add_sphere(myworld, {-4, 1, 0}, 1.0, material2_id);
+
+    material material3 = material_create_metal({0.7, 0.6, 0.5}, 0.0);
+    auto material3_id = world_add_material(myworld, material3);
+    world_add_sphere(myworld, {4, 1, 0}, 1.0, material3_id);
+}
 
 
 int main() {
     const float aspect_ratio = 16.0f / 9.0f;
     const u32 image_width = 800;
     const u32 image_height = image_width / aspect_ratio;
-    const int samples_per_pixel = 10;
+    const int samples_per_pixel = 100;
     const int max_depth = 50;
 
 
     world myworld = {0};
-#if 1
+#if 0
     material material_ground = material_create_lambertian({0.8, 0.8, 0.0});
     material material_center = material_create_lambertian({0.1, 0.2, 0.5});
     material material_left = material_create_dialectic(1.5);
@@ -367,23 +408,15 @@ int main() {
     world_add_sphere(&myworld, v3{-1, 0, -1}, 0.5, material_left_id);
     world_add_sphere(&myworld, v3{1, 0, -1}, 0.5, material_right_id);
 #else
-    material material_left = material_create_lambertian({0, 0, 1});
-    material material_right = material_create_lambertian({1, 0, 0});
-
-    auto material_left_id = world_add_material(&myworld, material_left);
-    auto material_right_id = world_add_material(&myworld, material_right);
-
-    double r = cos(M_PI/4);
-    world_add_sphere(&myworld, v3{-r, 0, -1}, r, material_left_id);
-    world_add_sphere(&myworld, v3{r, 0, -1}, r, material_right_id);
+    init_random_world(&myworld);
 #endif
 
     camera cam = {0};
-    v3 lookfrom{3, 3, 2};
-    v3 lookat{0, 0, -1};
+    v3 lookfrom{13, 2, 3};
+    v3 lookat{0, 0, 0};
     v3 vup{0, 1, 0};
-    double dist_to_focus = mfm_v3_length(lookfrom - lookat);
-    double aperture = 2.0;
+    double dist_to_focus = 10.0;
+    double aperture = 0.1;
     camera_init(&cam, lookfrom, lookat, vup, 20, aspect_ratio, aperture, dist_to_focus);
 
     printf("P3\n%d %d\n255\n", image_width, image_height);
