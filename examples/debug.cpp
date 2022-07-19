@@ -8,6 +8,7 @@ void draw_text(mffo_font *font, const char *text) {
 
     float x = 0.0f;
     float y = 0.0f;
+#if 0
     while (char c = *text++) {
         auto cr = font->charrects[c];
         glBegin(GL_QUADS);
@@ -34,6 +35,7 @@ void draw_text(mffo_font *font, const char *text) {
 
         x += cr.x1 - cr.x0;
     }
+#endif
 }
 
 
@@ -46,14 +48,14 @@ int main() {
     mfp_window_open(&p, "Debug", 0, 0, width, height);
 
     mffo_font font;
-    mffo_font_alloc(&font, "/usr/share/fonts/ubuntu/UbuntuMono-R.ttf");
+    mffo_font_init(&font, "/usr/share/fonts/ubuntu/UbuntuMono-R.ttf", 64.0f);
     //mffo_font_alloc(&font, "/usr/share/fonts/TTF/FiraSans-Bold.ttf");
 
     unsigned int id;
     glGenTextures(1, &id);
     glBindTexture(GL_TEXTURE_2D, id);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
-                 font.dim, font.dim, 0, GL_BGRA,
+                 FONT_ATLAS_DIM, FONT_ATLAS_DIM, 0, GL_BGRA,
                  GL_UNSIGNED_BYTE, font.data);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -62,8 +64,10 @@ int main() {
     glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
 
+#if 0
     mffo_charrect cr;
     mffo_font_get_charrect(&font, &cr, 'd');
+#endif
 
     bool quit = false;
 

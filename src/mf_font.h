@@ -1,12 +1,18 @@
 #ifndef MF_FONT_H
 #define MF_FONT_H
 
+#include "mf.h"
+#ifdef _WIN32
+#define STB_TRUETYPE_IMPLEMENTATION
+#include <stb_truetype.h>
+#else
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#endif
 
 typedef struct {
-    unsigned int width;
-    unsigned int height;
+    int width;
+    int height;
     int xbearing;
     int ybearing;
     long int advance;
@@ -28,11 +34,66 @@ typedef struct {
 
 int mffo_font_init(mffo_font *font, const char *path, float size);
 
+#ifdef _WIN32
+#else
 void mffo__font_load_chars(mffo_font *font, FT_Face &face);
+#endif
+
 
 #ifdef MF_FONT_IMPLEMENTATION
+#ifdef _WIN32
+int mffo_font_init(mffo_font *font, const char *path, float size) {
+    stbtt_fontinfo stbfontinfo;
+    char ttf_buffer[1<<25];
+    const unsigned char *ptr = (const unsigned char *) &ttf_buffer[0];
 
+    int w;
+    int h;
 
+    fread(ttf_buffer, 1, 1<<25, fopen("c:/windows/fonts/arialbd.ttf", "rb"));
+
+    int offset = stbtt_GetFontOffsetForIndex(ptr, 0);
+    stbtt_InitFont(&stbfontinfo, ptr, offset);
+    int xatlas = 0;
+    int yatlas = 0;
+    int max_height = 0;
+    for (unsigned char c = 0; c < 128; c++) {
+        // load character glyph 
+        unsigned char *bitmap;
+        bitmap = stbtt_GetCodepointBitmap(&stbfontinfo,
+                                          0,
+                                          stbtt_ScaleForPixelHeight(&stbfontinfo, size),
+                                          c, &w, &h, 0, 0);
+        mffo_font_char character = {
+            w, h,
+            0, 0,
+            0,
+        };
+        //character.data = (unsigned char *) malloc(character.width * character.height);
+        max_height = MF_Max(character.height, max_height);
+        if (xatlas + character.width >= FONT_ATLAS_DIM) {
+            xatlas = 0; 
+            yatlas += max_height;
+        }
+        MF_Assert(yatlas + character.height < FONT_ATLAS_DIM);
+        unsigned char *src = bitmap;
+
+        for (int y = 0; y < character.height; ++y) {
+            unsigned char *dest = font->data + ((yatlas + y) * FONT_ATLAS_DIM) + xatlas;
+            for (int x = 0; x < character.width; ++x) {
+                *dest++ = *src++;
+            }
+        }
+        character.u0 = (float) xatlas / (float) FONT_ATLAS_DIM,
+        character.u1 = (float) (xatlas + character.width) / (float) FONT_ATLAS_DIM,
+        character.v0 = (float) yatlas / (float) FONT_ATLAS_DIM,
+        character.v1 = (float) (yatlas + character.height) / (float) FONT_ATLAS_DIM,
+        font->characters[c] = character;
+        xatlas += character.width;
+    }
+    return 0;
+}
+#else
 int mffo_font_init(mffo_font *font, const char *path, float size) {
     FT_Library ft;
     if (FT_Init_FreeType(&ft)) {
@@ -54,7 +115,6 @@ int mffo_font_init(mffo_font *font, const char *path, float size) {
 }
 
 void mffo__font_load_chars(mffo_font *font, FT_Face &face) {
-
     int xatlas = 0;
     int yatlas = 0;
     int max_height = 0;
@@ -92,6 +152,7 @@ void mffo__font_load_chars(mffo_font *font, FT_Face &face) {
         xatlas += character.width;
     }
 }
+#endif // _WIN32
 
 #endif // MF_FONT_IMPLEMENTATION
 

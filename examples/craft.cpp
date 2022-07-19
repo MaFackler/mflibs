@@ -9,7 +9,7 @@
 #define MF_MATH_IMPLEMENTATION
 #include "mf_math.h"
 
-typedef mfm_v3 v3;
+typedef mfm_v3<float> v3;
 typedef mfm_v4 v4;
 typedef unsigned int u32;
 
@@ -87,7 +87,7 @@ int main() {
     mfm_m4 perspective = mfm_m4_perspective(60.0f, 16.0f/9.0f, 0.0001f, 100);
     mfgl_shader_uniform_4fv(location_perspective, 1, (float *) &perspective.m);
 
-    mfm_m4 view = mfm_m4_look_at({0.0f, 0.0f, 20.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
+    mfm_m4 view = mfm_m4_look_at<float>({0.0f, 0.0f, 20.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
     u32 location_view = mfgl_shader_uniform_location(program, "view");
     mfgl_shader_uniform_4fv(location_view, 1, (float *) view.m);
     mfgl_error_check();

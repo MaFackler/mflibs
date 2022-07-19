@@ -19,7 +19,7 @@
 
 
 typedef mfm_v2 v2;
-typedef mfm_v3 v3;
+typedef mfm_v3<float> v3;
 
 // F = G * (m1 * m2 / (r * r) )
 //#define G_CONST 0.0000000000674f
@@ -157,8 +157,8 @@ int main() {
     planets[1].color = v3{0.3f, 0.3f, 0.3f};
 
     mffo_font font;
-    mffo_font_alloc(&font, "/usr/share/fonts/ubuntu/Ubuntu-B.ttf", 48.0f);
-    u32 texture_font = mfgl_texture_create_argb(font.dim, font.dim, font.data);
+    mffo_font_init(&font, "/usr/share/fonts/ubuntu/Ubuntu-B.ttf", 48.0f);
+    u32 texture_font = mfgl_texture_create_argb(FONT_ATLAS_DIM, FONT_ATLAS_DIM, font.data);
 
 #if 0
     u32 vs = mfgl_shader_vertex_create(SRC_VS);
@@ -271,8 +271,8 @@ int main() {
 
         mfgl_viewport_top_down(width, height);
         mfgl_texture_bind(texture_font);
-        mffo_charrect crect;
-        mffo_font_get_charrect(&font, &crect, 'c');
+        //mffo_charrect crect;
+        //mffo_font_get_charrect(&font, &crect, 'c');
         //mfgl_draw_rect(0, 0, 512, 512);
         mfui_button(&font);
 #endif

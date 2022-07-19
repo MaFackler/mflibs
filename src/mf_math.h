@@ -1,5 +1,6 @@
 #ifndef MF_MATH_H
 #define MF_MATH_H
+#define _USE_MATH_DEFINES
 #include <math.h>
 
 
@@ -142,7 +143,7 @@ union mfm_m4
 };
 
 inline mfm_m4 mfm_m4_identity();
-inline mfm_m4 mfm_m4_perspective(float fov, float aspect, float near, float far);
+inline mfm_m4 mfm_m4_perspective(float fov, float aspect, float nearr, float farr);
 template <typename T>
 inline mfm_m4 mfm_m4_look_at(mfm_v3<T> eye, mfm_v3<T> center, mfm_v3<T> up);
 
@@ -555,22 +556,23 @@ mfm_m4 mfm_m4_identity()
     return res;
 }
 
-inline mfm_m4 mfm_m4_ortho(float left, float right, float bottom, float top, float near, float far) {
+inline mfm_m4 mfm_m4_ortho(float left, float right, float bottom, float top, float nearr, float farr) {
 	mfm_m4 res = {};
 
     res.m[0 * 4 + 0] = 2.0f / (right - left);
     res.m[1 * 4 + 1] = 2.0f / (top - bottom);
-    res.m[2 * 4 + 2] = 2.0f / (near - far);
+    res.m[2 * 4 + 2] = 2.0f / (nearr - farr);
+    res.m[2 * 4 + 2] = 2.0f / nearr;
     res.m[3 * 4 + 3] = 1.0f;
 
     res.m[3 * 4 + 0] = (left + right) / (left - right);
     res.m[3 * 4 + 1] = (bottom + top) / (bottom - top);
-    res.m[3 * 4 + 2] = (far + near) / (near - far);
+    res.m[3 * 4 + 2] = (farr + nearr) / (nearr - farr);
 
     return res;
 }
 
-inline mfm_m4 mfm_m4_perspective(float fov, float aspect, float near, float far)
+inline mfm_m4 mfm_m4_perspective(float fov, float aspect, float nearr, float farr)
 {
     mfm_m4 res = {};
 
@@ -580,19 +582,19 @@ inline mfm_m4 mfm_m4_perspective(float fov, float aspect, float near, float far)
     res.m[0 * 4 + 0] = s;
     res.m[1 * 4 + 1] = s;
 
-    res.m[2 * 4 + 2] = -far / (far - near);
+    res.m[2 * 4 + 2] = -farr / (farr - nearr);
     res.m[2 * 4 + 3] = -1.0f;
 
-    res.m[3 * 4 + 2] = -(far * near) / (far - near);
+    res.m[3 * 4 + 2] = -(farr * nearr) / (farr - nearr);
 #else
     float c = 1.0f / (tanf(fov * (M_PI / 360.0f)));
     res.m[0 * 4 + 0] = c / aspect;
     res.m[1 * 4 + 1] =  c;
 
-    res.m[2 * 4 + 2] = (near + far) / (near - far);
+    res.m[2 * 4 + 2] = (nearr + farr) / (nearr - farr);
     res.m[2 * 4 + 3] = -1.0f;
 
-    res.m[2 * 4 + 2] = (2.0f * far * near) / (near - far);
+    res.m[2 * 4 + 2] = (2.0f * farr * nearr) / (nearr - farr);
 #endif
     return res;
 }
@@ -677,14 +679,14 @@ TEST("Vector 3 add")
     mfm_v3<float> v2{4.0f, 5.0f, 6.0f};
 
     {
-        mfm_v3 res = v1 + v2;
+        mfm_v3<float> res = v1 + v2;
         MFT_CHECK_FLOAT(res.x, 5.0f);
         MFT_CHECK_FLOAT(res.y, 7.0f);
         MFT_CHECK_FLOAT(res.z, 9.0f);
     }
 
     {
-        mfm_v3 res = mfm_v3_add(v1, v2);
+        mfm_v3<float> res = mfm_v3_add(v1, v2);
         MFT_CHECK_FLOAT(res.x, 5.0f);
         MFT_CHECK_FLOAT(res.y, 7.0f);
         MFT_CHECK_FLOAT(res.z, 9.0f);
@@ -697,14 +699,14 @@ TEST("Vector 3 sub")
     mfm_v3<float> v2{4.0f, 5.0f, 6.0f};
 
     {
-        mfm_v3 res = v1 - v2;
+        mfm_v3<float> res = v1 - v2;
         MFT_CHECK_FLOAT(res.x, -3.0f);
         MFT_CHECK_FLOAT(res.y, -3.0f);
         MFT_CHECK_FLOAT(res.z, -3.0f);
     }
 
     {
-        mfm_v3 res = mfm_v3_sub(v1, v2);
+        mfm_v3<float> res = mfm_v3_sub(v1, v2);
         MFT_CHECK_FLOAT(res.x, -3.0f);
         MFT_CHECK_FLOAT(res.y, -3.0f);
         MFT_CHECK_FLOAT(res.z, -3.0f);
@@ -716,14 +718,14 @@ TEST("Vector 3 mul")
     mfm_v3<float> v1{1.0f, 2.0f, 3.0f};
 
     {
-        mfm_v3 res = v1 * 2.0f;
+        mfm_v3<float> res = v1 * 2.0f;
         MFT_CHECK_FLOAT(res.x, 2.0f);
         MFT_CHECK_FLOAT(res.y, 4.0f);
         MFT_CHECK_FLOAT(res.z, 6.0f);
     }
 
     {
-        mfm_v3 res = mfm_v3_mul(v1, 2.0f);
+        mfm_v3<float> res = mfm_v3_mul(v1, 2.0f);
         MFT_CHECK_FLOAT(res.x, 2.0f);
         MFT_CHECK_FLOAT(res.y, 4.0f);
         MFT_CHECK_FLOAT(res.z, 6.0f);

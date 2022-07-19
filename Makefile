@@ -17,8 +17,7 @@ endif
 HEADERS=$(wildcard src/*.h)
 TESTS=$(wildcard tests/*.cpp)
 
-all: $(OUTDIR)/ray
-# all:  build $(OUTDIR)/runtests examples
+all:  build $(OUTDIR)/runtests examples ray
 
 build:
 	mkdir build

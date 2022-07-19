@@ -100,6 +100,9 @@ int main()
 #define GL_DYNAMIC_DRAW                   0x88E8
 #define GL_DYNAMIC_READ                   0x88E9
 #define GL_DYNAMIC_COPY                   0x88EA
+#define GL_CLAMP_TO_EDGE                  0x812F
+#define GL_CLAMP                          0x2900
+#define GL_CLAMP_TO_BORDER                0x812D
 
 #define GL_FUNC_DEF(rtype, name, ...) \
     typedef rtype (*name##Proc)(__VA_ARGS__); \
@@ -121,6 +124,7 @@ GL_FUNC_DEF(void, glDeleteShader, GLuint shader);
 GL_FUNC_DEF(GLint, glGetUniformLocation, GLuint program, const char *name);
 GL_FUNC_DEF(void, glUniform4f, GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
 GL_FUNC_DEF(void, glUniform1i, GLint location, GLint v0);
+GL_FUNC_DEF(void, glUniformMatrix4fv, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
 GL_FUNC_DEF(void, glVertexAttribPointer, GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void * pointer);
 GL_FUNC_DEF(void, glEnableVertexAttribArray, GLuint index);
 GL_FUNC_DEF(void, glActiveTexture, GLenum texture);
@@ -132,6 +136,8 @@ GL_FUNC_DEF(void, glBufferData, GLenum target, GLsizei size, const void *data, G
 GL_FUNC_DEF(void*, glMapBuffer, GLenum target, GLenum access);
 GL_FUNC_DEF(void, glGenVertexArrays, GLsizei n, GLuint *arrays);
 GL_FUNC_DEF(void, glBindVertexArray, GLuint array);
+GL_FUNC_DEF(void, glBufferSubData, GLenum target, GLint *offset, GLsizei size, const void *data);
+
 
 
 
