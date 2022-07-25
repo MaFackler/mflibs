@@ -23,9 +23,9 @@ typedef struct {
 } mffo_font_char;
 
 typedef struct {
-    int ascent;
-    int descent;
-    int linegap;
+    float ascent;
+    float descent;
+    float linegap;
     unsigned char *data;
     mffo_font_char characters[256];
 } mffo_font;
@@ -55,11 +55,17 @@ int mffo_font_init(mffo_font *font, const char *path, float size) {
 
     int offset = stbtt_GetFontOffsetForIndex(ptr, 0);
     stbtt_InitFont(&stbfontinfo, ptr, offset);
+
     int xatlas = 0;
     int yatlas = 0;
     int max_height = 0;
-    //memset(font->data, 255, FONT_ATLAS_DIM * FONT_ATLAS_DIM * sizeof(int));
+    memset(font->data, 100, FONT_ATLAS_DIM * FONT_ATLAS_DIM * sizeof(int));
     float scale = stbtt_ScaleForPixelHeight(&stbfontinfo, size);
+    int ascent, descent, linegap;
+    stbtt_GetFontVMetrics(&stbfontinfo, &ascent, &descent, &linegap);
+    font->ascent = ascent * scale;
+    font->descent = descent * scale;
+    font->linegap = (float) linegap * scale;
     for (unsigned char c = 0; c < 128; c++) {
         // load character glyph 
         unsigned char *bitmap;
@@ -71,7 +77,7 @@ int mffo_font_init(mffo_font *font, const char *path, float size) {
         stbtt_GetCodepointHMetrics(&stbfontinfo, c, &advance_width, &lsb);
         mffo_font_char character = {
             (float) w, (float) h,
-            (float) (xoffset * scale), (float) (yoffset * scale),
+            (float) (xoffset), (float) (h + yoffset),
             (float) (advance_width * scale),
         };
         max_height = (int) MF_Max(character.height, max_height);
@@ -83,14 +89,11 @@ int mffo_font_init(mffo_font *font, const char *path, float size) {
         unsigned char *src = bitmap;
 
         for (int y = 0; y < character.height; ++y) {
-            //int *dest = (int*) (font->data) + ((yatlas + y) * FONT_ATLAS_DIM) + xatlas;
-            int *dest = (int*) (font->data) + ((FONT_ATLAS_DIM - yatlas - y) * FONT_ATLAS_DIM) + xatlas;
+            int *dest = (int*) font->data;
+            dest += (FONT_ATLAS_DIM - yatlas - y - 1) * FONT_ATLAS_DIM;
+            dest += xatlas;
             for (int x = 0; x < character.width; ++x) {
                 char src_value = *src++;
-                //*dest++ = ((src_value << 24) |
-                //           (src_value << 16) |
-                //           (src_value << 8) |
-                //           (src_value << 0));
                 *dest++ = ((src_value << 24) |
                            (255 << 16) |
                            (255 << 8) |

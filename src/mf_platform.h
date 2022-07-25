@@ -832,21 +832,20 @@ void mfp__dispatch_windows_key(mfp_input *input, u32 keycode, bool down)
     i32 keyIndex = keycode;
     char buf[1024] = {};
     OutputDebugString(buf);
-    // NOTE: hack that you dont have to query keys with capital chars
-    if (keyIndex >= 'a' && keyIndex <= 'z')
-        return;
+
+    // NOTE: only big letter chars
+    assert(keyIndex < 'a' || keyIndex > 'z');
     if (keyIndex >= 'A' && keyIndex <= 'Z')
     {
         i32 upperLowerOffset = 32;
-        if (!input->keys[MF_KEY_SHIFT].down)
-        {
-            keyIndex += upperLowerOffset;
-        }
-        else
+        bool shift_down = input->keys[MF_KEY_SHIFT].down;
+        if (shift_down || input->keys[MF_KEY_CTRL].down)
         {
             // NOTE: if upper case also dispatch lower case press
             mfp_button_state *state = &input->keys[keyIndex + upperLowerOffset];
             mfp__dispatch_key_to_input(input, state, down);
+
+            input->text[input->textLength++] = shift_down ? keyIndex : keyIndex + 32;
         }
     }
     else if (keyIndex == VK_BACK)
@@ -881,6 +880,7 @@ void mfp__dispatch_windows_key(mfp_input *input, u32 keycode, bool down)
         input->downKeysBuffer[input->downKeysBufferSize++] = keyIndex;
     }
     mfp__dispatch_key_to_input(input, state, down);
+    return;
 }
 
 LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -930,15 +930,24 @@ LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM 
             break;
         }
         case WM_SYSKEYDOWN:
+        {
+            printf("WM_SYSKEYDOWN %d\n", (u32) wParam);
+            break;
+        }
         case WM_KEYDOWN:
         {
             // TODO: if the _WinProc loop is slow the amount of repeats will be more than one
             // so the application misses some key repeats but maybe this is okay
             //u32 amount = lParam & 0x0FFFF;
+            printf("WM_KEYDOWN %d %c\n", (u32) wParam, (char) wParam);
             mfp__dispatch_windows_key(&g_platform->input, (u32) wParam, true);
             break;
         }
         case WM_SYSKEYUP:
+        {
+            //printf("WM_SYSKEYUP %d\n", (u32) wParam);
+            break;
+        }
         case WM_KEYUP:
         {
             mfp__dispatch_windows_key(&g_platform->input, (u32) wParam, false);
@@ -972,9 +981,12 @@ LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM 
         case WM_CHAR:
         {
             WCHAR utfChar = (WCHAR) wParam;
+            int shifted = ((int) lParam >> 16) & 0x0F;
             char asciiChar;
             i32 length = WideCharToMultiByte(CP_ACP, 0, &utfChar, 1, &asciiChar, 1, 0, 0);
             mfp_input *input = &g_platform->input;
+            printf("WM_CHAR %d %c %d\n", (u32) wParam, asciiChar, shifted);
+            //res = 0;
             if (length == 1 && asciiChar >= ' ')
             {
                 if (asciiChar == '\r') {
@@ -982,6 +994,7 @@ LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM 
                 }
                 input->text[input->textLength++] = asciiChar;
                 input->text[input->textLength] = 0;
+                //res = 1;
             }
         }
 

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #define _USE_MATH_DEFINES
 #include <cmath>
+#include <math.h>
 
 // NOTE: opengl code should be included by platform
 
@@ -43,22 +44,22 @@ void mfgl_shader_uniform_4fv(unsigned int location, unsigned int count, float *d
 
 
 // Textures
-unsigned int mfgl_texture_create_argb(size_t width, size_t height, unsigned char *data);
-unsigned int mfgl_texture_create_alpha(size_t width, size_t height, unsigned char *data);
+unsigned int mfgl_texture_create_argb(int width, int height, unsigned char *data);
+unsigned int mfgl_texture_create_alpha(int width, int height, unsigned char *data);
 void mfgl_texture_bind(unsigned int id);
 
 // Vertex Buffer
-unsigned int mfgl_vertex_buffer_create(float *vertices, size_t n);
-unsigned int mfgl_vertex_buffer_dynamic_create(float *vertices, size_t n, float **map);
+unsigned int mfgl_vertex_buffer_create(float *vertices, int n);
+unsigned int mfgl_vertex_buffer_dynamic_create(float *vertices, int n, float **map);
 void mfgl_vertex_buffer_bind(unsigned int vbo);
-void mfgl_vertex_attrib_link(unsigned int location, size_t size, size_t start, size_t stride);
-void mfgl_vertex_buffer_draw(unsigned int vbo, size_t n);
+void mfgl_vertex_attrib_link(unsigned int location, int size, int start, int stride);
+void mfgl_vertex_buffer_draw(unsigned int vbo, int n);
 
 // Element Buffer
-unsigned int mfgl_element_buffer_create(unsigned int *indices, size_t n);
-unsigned int mfgl_element_buffer_dynamic_create(unsigned int *indices, size_t n, unsigned int **map);
+unsigned int mfgl_element_buffer_create(unsigned int *indices, int n);
+unsigned int mfgl_element_buffer_dynamic_create(unsigned int *indices, int n, unsigned int **map);
 void mfgl_element_buffer_bind(unsigned int ebo);
-void mfgl_element_buffer_draw(unsigned int ebo, size_t n);
+void mfgl_element_buffer_draw(unsigned int ebo, int n);
 
 // Vertex Array
 unsigned int mfgl_vertex_array_create();
@@ -199,8 +200,8 @@ void mfgl_draw_circle(float x, float y, float radius)
     glVertex2f(x, y);
     for (int i = 0; i <= triangles; ++i)
     {
-        glVertex2f(x + radius * (cos((i * 2.0f * M_PI) / triangles)),
-                   y + radius * (sin((i * 2.0f * M_PI) / triangles)));
+        glVertex2f((float) (x + radius * (cos((i * 2.0f * M_PI) / triangles))),
+                   (float) (y + radius * (sin((i * 2.0f * M_PI) / triangles))));
     }
     glEnd();
 }
@@ -302,19 +303,19 @@ void mfgl_shader_uniform_4fv(unsigned int location, unsigned int count, float *d
     glUniformMatrix4fv(location, count, GL_FALSE, data);
 }
 
-void mfgl_vertex_attrib_link(unsigned int location, size_t size, size_t start, size_t stride)
+void mfgl_vertex_attrib_link(unsigned int location, int size, int start, int stride)
 {
     glVertexAttribPointer(location, size, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void *) (start * sizeof(float)));
     glEnableVertexAttribArray(location);
 }
 
-void mfgl_vertex_buffer_draw(unsigned int vbo, size_t n)
+void mfgl_vertex_buffer_draw(unsigned int vbo, int n)
 {
     mfgl_vertex_buffer_bind(vbo);
     glDrawArrays(GL_TRIANGLES, 0, n);
 }
 
-unsigned int mfgl_texture_create_argb(size_t width, size_t height, unsigned char *data)
+unsigned int mfgl_texture_create_argb(int width, int height, unsigned char *data)
 {
     unsigned int id;
     glGenTextures(1, &id);
@@ -337,7 +338,7 @@ unsigned int mfgl_texture_create_argb(size_t width, size_t height, unsigned char
     return id;
 }
 
-unsigned int mfgl_texture_create_alpha(size_t width, size_t height, unsigned char *data)
+unsigned int mfgl_texture_create_alpha(int width, int height, unsigned char *data)
 {
     unsigned int id = 0;
     //glActiveTexture(GL_TEXTURE0);
@@ -360,7 +361,7 @@ void mfgl_texture_bind(unsigned int id)
     glBindTexture(GL_TEXTURE_2D, id);
 }
 
-unsigned int mfgl_vertex_buffer_create(float *vertices, size_t n)
+unsigned int mfgl_vertex_buffer_create(float *vertices, int n)
 {
     unsigned int res;
     glGenBuffers(1, &res);
@@ -369,7 +370,7 @@ unsigned int mfgl_vertex_buffer_create(float *vertices, size_t n)
     return res;
 }
 
-unsigned int mfgl_vertex_buffer_dynamic_create(float *vertices, size_t n, float **map)
+unsigned int mfgl_vertex_buffer_dynamic_create(float *vertices, int n, float **map)
 {
     u32 vbo;
     glGenBuffers(1, &vbo);
@@ -384,7 +385,7 @@ void mfgl_vertex_buffer_bind(unsigned int vbo)
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
 }
 
-unsigned int mfgl_element_buffer_create(unsigned int *indices, size_t n)
+unsigned int mfgl_element_buffer_create(unsigned int *indices, int n)
 {
 	unsigned int res;
 	glGenBuffers(1, &res);
@@ -393,7 +394,7 @@ unsigned int mfgl_element_buffer_create(unsigned int *indices, size_t n)
 	return res;
 }
 
-unsigned int mfgl_element_buffer_dynamic_create(unsigned int *indices, size_t n, unsigned int **map)
+unsigned int mfgl_element_buffer_dynamic_create(unsigned int *indices, int n, unsigned int **map)
 {
 	unsigned int res;
 	glGenBuffers(1, &res);
@@ -408,7 +409,7 @@ void mfgl_element_buffer_bind(unsigned int ebo)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 }
 
-void mfgl_element_buffer_draw(unsigned int ebo, size_t n)
+void mfgl_element_buffer_draw(unsigned int ebo, int n)
 {
     mfgl_element_buffer_bind(ebo);
     glDrawElements(GL_TRIANGLES, n, GL_UNSIGNED_INT, 0);
