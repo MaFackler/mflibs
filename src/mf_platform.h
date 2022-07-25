@@ -109,34 +109,34 @@ int main()
     static name##Proc name;
 
 GL_FUNC_DEF(HGLRC, wglCreateContextAttribsARB, HDC hDC, HGLRC hShareContext, const int *attribList);
-GL_FUNC_DEF(GLuint, glCreateShader, GLenum type);
 // TODO: why gl char not working
-GL_FUNC_DEF(void, glShaderSource, GLuint shader, GLsizei count, const char **string, GLint *length);
-GL_FUNC_DEF(void, glCompileShader, GLuint shader);
-GL_FUNC_DEF(void, glAttachShader, GLuint program, GLuint shader);
-GL_FUNC_DEF(void, glGetShaderiv, GLuint shader, GLenum pname, GLint *params);
-GL_FUNC_DEF(void, glGetShaderInfoLog, GLuint shader, GLsizei bufSIze, GLsizei *length, char *infoLog);
-GL_FUNC_DEF(GLuint, glCreateProgram, void);
-GL_FUNC_DEF(void, glLinkProgram, GLuint program);
-GL_FUNC_DEF(void, glGetProgramiv, GLuint program, GLenum pname, GLint *params);
-GL_FUNC_DEF(void, glUseProgram, GLuint program);
-GL_FUNC_DEF(void, glDeleteShader, GLuint shader);
 GL_FUNC_DEF(GLint, glGetUniformLocation, GLuint program, const char *name);
-GL_FUNC_DEF(void, glUniform4f, GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
-GL_FUNC_DEF(void, glUniform1i, GLint location, GLint v0);
-GL_FUNC_DEF(void, glUniformMatrix4fv, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
-GL_FUNC_DEF(void, glVertexAttribPointer, GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void * pointer);
-GL_FUNC_DEF(void, glEnableVertexAttribArray, GLuint index);
-GL_FUNC_DEF(void, glActiveTexture, GLenum texture);
-GL_FUNC_DEF(void, glGenerateMipmap, GLenum target);
-GL_FUNC_DEF(void, glGenBuffers, GLsizei n, GLuint *buffers);
-GL_FUNC_DEF(void, glBindBuffers, GLenum target, GLuint first, GLsizei count, const GLuint *buffers);
-GL_FUNC_DEF(void, glBindBuffer, GLenum target, GLuint buffer);
-GL_FUNC_DEF(void, glBufferData, GLenum target, GLsizei size, const void *data, GLenum usage);
+GL_FUNC_DEF(GLuint, glCreateProgram, void);
+GL_FUNC_DEF(GLuint, glCreateShader, GLenum type);
 GL_FUNC_DEF(void*, glMapBuffer, GLenum target, GLenum access);
-GL_FUNC_DEF(void, glGenVertexArrays, GLsizei n, GLuint *arrays);
+GL_FUNC_DEF(void, glActiveTexture, GLenum texture);
+GL_FUNC_DEF(void, glAttachShader, GLuint program, GLuint shader);
+GL_FUNC_DEF(void, glBindBuffer, GLenum target, GLuint buffer);
+GL_FUNC_DEF(void, glBindBuffers, GLenum target, GLuint first, GLsizei count, const GLuint *buffers);
 GL_FUNC_DEF(void, glBindVertexArray, GLuint array);
+GL_FUNC_DEF(void, glBufferData, GLenum target, GLsizei size, const void *data, GLenum usage);
 GL_FUNC_DEF(void, glBufferSubData, GLenum target, GLint *offset, GLsizei size, const void *data);
+GL_FUNC_DEF(void, glCompileShader, GLuint shader);
+GL_FUNC_DEF(void, glDeleteShader, GLuint shader);
+GL_FUNC_DEF(void, glEnableVertexAttribArray, GLuint index);
+GL_FUNC_DEF(void, glGenBuffers, GLsizei n, GLuint *buffers);
+GL_FUNC_DEF(void, glGenVertexArrays, GLsizei n, GLuint *arrays);
+GL_FUNC_DEF(void, glGenerateMipmap, GLenum target);
+GL_FUNC_DEF(void, glGetProgramiv, GLuint program, GLenum pname, GLint *params);
+GL_FUNC_DEF(void, glGetShaderInfoLog, GLuint shader, GLsizei bufSIze, GLsizei *length, char *infoLog);
+GL_FUNC_DEF(void, glGetShaderiv, GLuint shader, GLenum pname, GLint *params);
+GL_FUNC_DEF(void, glLinkProgram, GLuint program);
+GL_FUNC_DEF(void, glShaderSource, GLuint shader, GLsizei count, const char **string, GLint *length);
+GL_FUNC_DEF(void, glUniform1i, GLint location, GLint v0);
+GL_FUNC_DEF(void, glUniform4f, GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
+GL_FUNC_DEF(void, glUniformMatrix4fv, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
+GL_FUNC_DEF(void, glUseProgram, GLuint program);
+GL_FUNC_DEF(void, glVertexAttribPointer, GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void * pointer);
 
 
 
@@ -1014,14 +1014,6 @@ void mfp__init_opengl(mfp_platform *platform)
 #define GL_FUNC_LOAD(name)\
     name = (name##Proc) wglGetProcAddress(#name);
         wglCreateContextAttribsARB = (wglCreateContextAttribsARBProc) wglGetProcAddress("wglCreateContextAttribsARB");
-        //GL_FUNC_LOAD(wglCreateContextAttribsARB);
-        GL_FUNC_LOAD(glCreateShader);
-        GL_FUNC_LOAD(glShaderSource);
-        GL_FUNC_LOAD(glCompileShader);
-        GL_FUNC_LOAD(glAttachShader);
-        GL_FUNC_LOAD(glGetShaderiv);
-        GL_FUNC_LOAD(glGetShaderInfoLog);
-        GL_FUNC_LOAD(glLinkProgram);
         GLint attribs[] =
         {
             WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
@@ -1040,6 +1032,33 @@ void mfp__init_opengl(mfp_platform *platform)
         {
             *hgl = basicContext;
         }
+        GL_FUNC_LOAD(glActiveTexture);
+        GL_FUNC_LOAD(glAttachShader);
+        GL_FUNC_LOAD(glBindBuffer);
+        GL_FUNC_LOAD(glBindBuffers);
+        GL_FUNC_LOAD(glBindVertexArray);
+        GL_FUNC_LOAD(glBufferData);
+        GL_FUNC_LOAD(glBufferSubData);
+        GL_FUNC_LOAD(glCompileShader);
+        GL_FUNC_LOAD(glCreateProgram);
+        GL_FUNC_LOAD(glCreateShader);
+        GL_FUNC_LOAD(glDeleteShader);
+        GL_FUNC_LOAD(glEnableVertexAttribArray);
+        GL_FUNC_LOAD(glGenBuffers);
+        GL_FUNC_LOAD(glGenVertexArrays);
+        GL_FUNC_LOAD(glGenerateMipmap);
+        GL_FUNC_LOAD(glGetProgramiv);
+        GL_FUNC_LOAD(glGetShaderInfoLog);
+        GL_FUNC_LOAD(glGetShaderiv);
+        GL_FUNC_LOAD(glGetUniformLocation);
+        GL_FUNC_LOAD(glLinkProgram);
+        GL_FUNC_LOAD(glMapBuffer);
+        GL_FUNC_LOAD(glShaderSource);
+        GL_FUNC_LOAD(glUniform1i);
+        GL_FUNC_LOAD(glUniform4f);
+        GL_FUNC_LOAD(glUniformMatrix4fv);
+        GL_FUNC_LOAD(glUseProgram);
+        GL_FUNC_LOAD(glVertexAttribPointer);
     }
 }
 #endif // MF_PLATFORM_USE_OPENGL

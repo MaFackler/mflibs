@@ -318,13 +318,17 @@ unsigned int mfgl_texture_create_argb(size_t width, size_t height, unsigned char
 {
     unsigned int id;
     glGenTextures(1, &id);
-    glActiveTexture(GL_TEXTURE0);
+    //glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, id);
+    //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
                  width, height, 0, GL_BGRA,
                  GL_UNSIGNED_BYTE, data);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
@@ -336,7 +340,7 @@ unsigned int mfgl_texture_create_argb(size_t width, size_t height, unsigned char
 unsigned int mfgl_texture_create_alpha(size_t width, size_t height, unsigned char *data)
 {
     unsigned int id = 0;
-    glActiveTexture(GL_TEXTURE0);
+    //glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, id);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA,
                  width, height, 0, GL_ALPHA,

@@ -48,8 +48,17 @@ int main() {
     mfp_window_open(&p, "Debug", 0, 0, width, height);
 
     mffo_font font;
-    mffo_font_init(&font, "/usr/share/fonts/ubuntu/UbuntuMono-R.ttf", 64.0f);
+#ifdef _WIN32
+    const char *path = "c:/windows/fonts/arialbd.ttf";
+#else
+    const char *path = "/usr/share/fonts/ubuntu/Ubuntu-B.ttf";
+#endif
+    mffo_font_init(&font, path, 64.0f);
     //mffo_font_alloc(&font, "/usr/share/fonts/TTF/FiraSans-Bold.ttf");
+    
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     unsigned int id;
     glGenTextures(1, &id);
@@ -71,10 +80,8 @@ int main() {
 
     bool quit = false;
 
-    glEnable(GL_TEXTURE_2D);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+#if 0
     glMatrixMode(GL_PROJECTION);
     float mat[] =
     {
@@ -84,6 +91,7 @@ int main() {
         -1, -1, 0, 1
     };
     glLoadMatrixf(mat);
+#endif
 
     while (!quit && p.window.isOpen) {
         mfp_begin(&p);
@@ -95,18 +103,18 @@ int main() {
         glClearColor(0.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         glBindTexture(GL_TEXTURE_2D, id);
-        //glBegin(GL_QUADS);
-        //    glTexCoord2f(0.0f, 0.0f);
-        //    glVertex2f(-1.0f, -1.0f);
-        //    glTexCoord2f(1.0f, 0.0f);
-        //    glVertex2f(1.0f, -1.0f);
-        //    glTexCoord2f(1.0f, 1.0f);
-        //    glVertex2f(1.0f, 1.0f);
-        //    glTexCoord2f(0.0f, 1.0f);
-        //    glVertex2f(-1.0f, 1.0f);
-        //glEnd();
+        glBegin(GL_QUADS);
+            glTexCoord2f(0.0f, 0.0f);
+            glVertex2f(-1.0f, -1.0f);
+            glTexCoord2f(1.0f, 0.0f);
+            glVertex2f(1.0f, -1.0f);
+            glTexCoord2f(1.0f, 1.0f);
+            glVertex2f(1.0f, 1.0f);
+            glTexCoord2f(0.0f, 1.0f);
+            glVertex2f(-1.0f, 1.0f);
+        glEnd();
 
-        draw_text(&font, "hellop'");
+        //draw_text(&font, "hellop'");
         mfp_end(&p);
     }
 

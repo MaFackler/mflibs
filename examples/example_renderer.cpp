@@ -1,3 +1,4 @@
+#define MF_IMPLEMENTATION
 #include "mf.h"
 #define MF_PLATFORM_USE_OPENGL
 #define MF_PLATFORM_IMPLEMENTATION
@@ -76,7 +77,8 @@ static const char *SRC_FS =
 "uniform sampler2D sampler;\n"
 "void main() {\n"
 //"   FragColor = texture(sampler, tex_) * vec4(color_.r, color_.g, color_.b, 1.0);\n"
-"   FragColor = vec4(color_.r, color_.g, color_.b, 1.0);\n"
+"   FragColor = texture(sampler, tex_);\n"
+//"   FragColor = vec4(color_.r, color_.g, color_.b, 1.0);\n"
 "}\n";
 
 struct Planet
@@ -124,13 +126,38 @@ void mfui_button(mffo_font * font)
     mfgl_set_color(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
+void render_text(mffo_font *font, const char *text) {
+
+    float x = 0;
+    for (int i = 0; i < strlen(text); ++i) {
+        auto ch = font->characters[text[i]];
+        glBegin(GL_QUADS);
+            glTexCoord2f(ch.u0, ch.v0);
+            glVertex2f(x + ch.xbearing, ch.ybearing);
+            //glVertex2f(-1.0f, -1.0f);
+            glTexCoord2f(ch.u1, ch.v0);
+            glVertex2f(x + ch.xbearing + ch.width, ch.ybearing);
+            //glVertex2f(1.0f, -1.0f);
+            glTexCoord2f(ch.u1, ch.v1);
+            glVertex2f(x + ch.xbearing + ch.width, ch.ybearing + ch.height);
+            //glVertex2f(1.0f, 1.0f);
+            glTexCoord2f(ch.u0, ch.v1);
+            glVertex2f(x + ch.xbearing, ch.ybearing + ch.height);
+            //glVertex2f(-1.0f, 1.0f);
+        glEnd();
+        x += ch.advance;
+    }
+}
+
 int main() {
     u32 width = 1600;
     u32 height = 900;
     mfp_platform platform = {};
     mfp_init(&platform);
     mfp_window_open(&platform, "Example-Renderer", 0, 0, width, height);
+    mfgl_viewport_bottom_up(width, height);
 
+#if 0
     mfr_renderer renderer = {};
     renderer.set_color = mfgl_set_color;
     renderer.render_rect = mfgl_draw_rect;
@@ -140,7 +167,6 @@ int main() {
     mfr_init(&renderer, 1024 * 1024 * 1024);
 
     glEnable(GL_TEXTURE_2D);
-    mfgl_viewport_bottom_up(width, height);
 
     Planet planets[2] = {0};
     planets[0].pos.x = 800;
@@ -155,10 +181,33 @@ int main() {
     planets[1].radius = 30;
     planets[1].velocity = {0, 80.0f};
     planets[1].color = v3{0.3f, 0.3f, 0.3f};
+#endif
 
     mffo_font font;
-    mffo_font_init(&font, "/usr/share/fonts/ubuntu/Ubuntu-B.ttf", 48.0f);
+#ifdef _WIN32
+    const char *path = "c:/windows/fonts/arialbd.ttf";
+#else
+    const char *path = "/usr/share/fonts/ubuntu/Ubuntu-B.ttf";
+#endif
+    mffo_font_init(&font, path, 128.0f);
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     u32 texture_font = mfgl_texture_create_argb(FONT_ATLAS_DIM, FONT_ATLAS_DIM, font.data);
+#if 0
+    unsigned int texture_font;
+    glGenTextures(1, &texture_font);
+    glBindTexture(GL_TEXTURE_2D, texture_font);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
+                 FONT_ATLAS_DIM, FONT_ATLAS_DIM, 0, GL_BGRA,
+                 GL_UNSIGNED_BYTE, font.data);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, 0);
+#endif
 
 #if 0
     u32 vs = mfgl_shader_vertex_create(SRC_VS);
@@ -208,6 +257,7 @@ int main() {
 	};
 #endif
 
+#if 0
     float *data = NULL;
     unsigned int *indices = NULL;
     u32 vbo = mfgl_vertex_buffer_dynamic_create(NULL, 512, &data);
@@ -222,13 +272,14 @@ int main() {
     mfgl_vertex_attrib_link(0, 2, 0, 7); // x,y
     mfgl_vertex_attrib_link(1, 3, 2, 7); // color r.g.b
     mfgl_vertex_attrib_link(2, 2, 5, 7); // u,t
+#endif
 
     mfgl_error_check();
     bool running = true;
     while (running && platform.window.isOpen)
     {
         mfp_begin(&platform);
-#if 1
+#if 0
         mfgl_viewport_bottom_up(width, height);
 
         // Update
@@ -258,29 +309,33 @@ int main() {
         //mfr_push_rect(&renderer, 10, 10, 30, 30);
 
 
+#if 0
         for (auto &p: planets)
         {
             mfr_set_color(&renderer, p.color.x, p.color.y, p.color.z, 1.0f);
             mfr_push_circle(&renderer, p.pos.x, p.pos.y, p.radius);
         }
+#endif
 
         mfr_push_bitmap(&renderer, texture_font, 0, 0, 512, 512);
 
         
         mfr_flush(&renderer);
 
+#if 0
         mfgl_viewport_top_down(width, height);
         mfgl_texture_bind(texture_font);
+#endif
         //mffo_charrect crect;
         //mffo_font_get_charrect(&font, &crect, 'c');
         //mfgl_draw_rect(0, 0, 512, 512);
-        mfui_button(&font);
+        //mfui_button(&font);
 #endif
         if (platform.input.keys['q'].pressed)
             running = false;
 
-        if (platform.input.keys['s'].pressed)
-            data[0] = 0.0f;
+        //if (platform.input.keys['s'].pressed)
+        //    data[0] = 0.0f;
 
 #if 0
         // UI
@@ -314,8 +369,45 @@ int main() {
         mffo_font_get_charrect(&font, &charrect, 'c');
 #endif
 
+        glClearColor(0.0f, 1.0f, 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glBindTexture(GL_TEXTURE_2D, texture_font);
+
+        auto ch = font.characters['c'];
+#if 0
+        glBegin(GL_QUADS);
+            glTexCoord2f(0.0f, 0.0f);
+            glVertex2f(-1.0f, -1.0f);
+            glTexCoord2f(1.0f, 0.0f);
+            glVertex2f(1.0f, -1.0f);
+            glTexCoord2f(1.0f, 1.0f);
+            glVertex2f(1.0f, 1.0f);
+            glTexCoord2f(0.0f, 1.0f);
+            glVertex2f(-1.0f, 1.0f);
+        glEnd();
+#else
+#if 0
+        glBegin(GL_QUADS);
+            glTexCoord2f(ch.u0, ch.v0);
+            glVertex2f(ch.xbearing, ch.ybearing);
+            //glVertex2f(-1.0f, -1.0f);
+            glTexCoord2f(ch.u1, ch.v0);
+            glVertex2f(ch.xbearing + ch.width, ch.ybearing);
+            //glVertex2f(1.0f, -1.0f);
+            glTexCoord2f(ch.u1, ch.v1);
+            glVertex2f(ch.xbearing + ch.width, ch.ybearing + ch.height);
+            //glVertex2f(1.0f, 1.0f);
+            glTexCoord2f(ch.u0, ch.v1);
+            glVertex2f(ch.xbearing, ch.ybearing + ch.height);
+            //glVertex2f(-1.0f, 1.0f);
+        glEnd();
+#endif
+
+        render_text(&font, "Maximilian");
+#endif
         mfgl_error_check();
         mfp_end(&platform);
+        mf_sleep_ms(16);
     }
 
     mfp_window_close(&platform);

@@ -11,11 +11,11 @@
 #endif
 
 typedef struct {
-    int width;
-    int height;
-    int xbearing;
-    int ybearing;
-    long int advance;
+    float width;
+    float height;
+    float xbearing;
+    float ybearing;
+    float advance;
     float u0;
     float u1;
     float v0;
@@ -30,7 +30,10 @@ typedef struct {
     mffo_font_char characters[256];
 } mffo_font;
 
-#define FONT_ATLAS_DIM 512
+#define FONT_ATLAS_DIM 1024
+
+// TODO: memory
+static char ttf_buffer[1<<25];
 
 int mffo_font_init(mffo_font *font, const char *path, float size);
 
@@ -44,32 +47,33 @@ void mffo__font_load_chars(mffo_font *font, FT_Face &face);
 #ifdef _WIN32
 int mffo_font_init(mffo_font *font, const char *path, float size) {
     stbtt_fontinfo stbfontinfo;
-    char ttf_buffer[1<<25];
     const unsigned char *ptr = (const unsigned char *) &ttf_buffer[0];
 
-    int w;
-    int h;
-
-    fread(ttf_buffer, 1, 1<<25, fopen("c:/windows/fonts/arialbd.ttf", "rb"));
+    int w, h, xoffset, yoffset;
+    font->data = (unsigned char *) malloc(FONT_ATLAS_DIM * FONT_ATLAS_DIM * sizeof(int));
+    fread(ttf_buffer, 1, 1<<25, fopen(path, "rb"));
 
     int offset = stbtt_GetFontOffsetForIndex(ptr, 0);
     stbtt_InitFont(&stbfontinfo, ptr, offset);
     int xatlas = 0;
     int yatlas = 0;
     int max_height = 0;
+    //memset(font->data, 255, FONT_ATLAS_DIM * FONT_ATLAS_DIM * sizeof(int));
+    float scale = stbtt_ScaleForPixelHeight(&stbfontinfo, size);
     for (unsigned char c = 0; c < 128; c++) {
         // load character glyph 
         unsigned char *bitmap;
         bitmap = stbtt_GetCodepointBitmap(&stbfontinfo,
                                           0,
-                                          stbtt_ScaleForPixelHeight(&stbfontinfo, size),
-                                          c, &w, &h, 0, 0);
+                                          scale,   
+                                          c, &w, &h, &xoffset, &yoffset);
+        int advance_width, lsb;
+        stbtt_GetCodepointHMetrics(&stbfontinfo, c, &advance_width, &lsb);
         mffo_font_char character = {
-            w, h,
-            0, 0,
-            0,
+            (float) w, (float) h,
+            (float) (xoffset * scale), (float) (yoffset * scale),
+            (float) (advance_width * scale),
         };
-        //character.data = (unsigned char *) malloc(character.width * character.height);
         max_height = MF_Max(character.height, max_height);
         if (xatlas + character.width >= FONT_ATLAS_DIM) {
             xatlas = 0; 
@@ -79,15 +83,26 @@ int mffo_font_init(mffo_font *font, const char *path, float size) {
         unsigned char *src = bitmap;
 
         for (int y = 0; y < character.height; ++y) {
-            unsigned char *dest = font->data + ((yatlas + y) * FONT_ATLAS_DIM) + xatlas;
+            //int *dest = (int*) (font->data) + ((yatlas + y) * FONT_ATLAS_DIM) + xatlas;
+            int *dest = (int*) (font->data) + ((FONT_ATLAS_DIM - yatlas - y) * FONT_ATLAS_DIM) + xatlas;
             for (int x = 0; x < character.width; ++x) {
-                *dest++ = *src++;
+                char src_value = *src++;
+                //*dest++ = ((src_value << 24) |
+                //           (src_value << 16) |
+                //           (src_value << 8) |
+                //           (src_value << 0));
+                *dest++ = ((src_value << 24) |
+                           (255 << 16) |
+                           (255 << 8) |
+                           (255 << 0));
             }
         }
         character.u0 = (float) xatlas / (float) FONT_ATLAS_DIM,
         character.u1 = (float) (xatlas + character.width) / (float) FONT_ATLAS_DIM,
-        character.v0 = (float) yatlas / (float) FONT_ATLAS_DIM,
-        character.v1 = (float) (yatlas + character.height) / (float) FONT_ATLAS_DIM,
+        //character.v0 = (float) yatlas / (float) FONT_ATLAS_DIM,
+        //character.v1 = (float) (yatlas + character.height) / (float) FONT_ATLAS_DIM,
+        character.v1 = (float) (FONT_ATLAS_DIM - yatlas) / (float) FONT_ATLAS_DIM,
+        character.v0 = (float) (FONT_ATLAS_DIM - yatlas - character.height) / (float) FONT_ATLAS_DIM,
         font->characters[c] = character;
         xatlas += character.width;
     }
@@ -108,7 +123,7 @@ int mffo_font_init(mffo_font *font, const char *path, float size) {
     font->descent = face->size->metrics.descender / 64.0f;
     font->linegap = font->ascent - font->descent;
 
-    font->data = (unsigned char *) malloc(FONT_ATLAS_DIM * FONT_ATLAS_DIM);
+    font->data = (unsigned char *) malloc(FONT_ATLAS_DIM * FONT_ATLAS_DIM * sizeof(int));
 
     mffo__font_load_chars(font, face);
     return 0;
@@ -129,7 +144,6 @@ void mffo__font_load_chars(mffo_font *font, FT_Face &face) {
             face->glyph->bitmap_left, face->glyph->bitmap_top,
             face->glyph->advance.x,
         };
-        //character.data = (unsigned char *) malloc(character.width * character.height);
         max_height = MF_Max(character.height, max_height);
         if (xatlas + character.width >= FONT_ATLAS_DIM) {
             xatlas = 0; 

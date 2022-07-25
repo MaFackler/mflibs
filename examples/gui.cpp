@@ -101,7 +101,7 @@ void render_text(mffo_font *font, u32 *tids, mf_vec_float *vertices, u32 vbo, u3
         mfgl_element_buffer_bind(ebo);
         mfgl_element_buffer_draw(ebo, 6); 
 
-        xc += (ch->advance >> 6);
+        //xc += (ch->advance >> 6);
         mf_vec_clear(*vertices);
     }
 }

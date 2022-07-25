@@ -9,7 +9,7 @@ objects=
 ifeq ($(OS),Windows_NT)
 	CC=cl
 	CFLAGS=/Zi /EHsc /Isrc
-	LIBS=/link kernel32.lib user32.lib winmm.lib opengl32.lib Gdi32.lib
+	LIBS=/link /DEBUG:full kernel32.lib user32.lib winmm.lib opengl32.lib Gdi32.lib
 	OUTPUT=/Fe:
 	objects=/Fd$(OUTDIR)/ /Fo:$(addsuffix .obj, $(1))
 endif
