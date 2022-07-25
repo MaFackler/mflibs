@@ -74,7 +74,7 @@ int mffo_font_init(mffo_font *font, const char *path, float size) {
             (float) (xoffset * scale), (float) (yoffset * scale),
             (float) (advance_width * scale),
         };
-        max_height = MF_Max(character.height, max_height);
+        max_height = (int) MF_Max(character.height, max_height);
         if (xatlas + character.width >= FONT_ATLAS_DIM) {
             xatlas = 0; 
             yatlas += max_height;
@@ -104,7 +104,7 @@ int mffo_font_init(mffo_font *font, const char *path, float size) {
         character.v1 = (float) (FONT_ATLAS_DIM - yatlas) / (float) FONT_ATLAS_DIM,
         character.v0 = (float) (FONT_ATLAS_DIM - yatlas - character.height) / (float) FONT_ATLAS_DIM,
         font->characters[c] = character;
-        xatlas += character.width;
+        xatlas += (int) character.width;
     }
     return 0;
 }
