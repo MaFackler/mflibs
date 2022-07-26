@@ -40,11 +40,14 @@ bool mf_path_item_is_file(mf_path_item *item);
 
 char* mff_file_read(const char *path, const char *mode, size_t *size) {
     FILE *file = fopen(path, mode);
-    size_t bytesToRead = 0;
+    int bytesToRead = 0;
     fseek(file, 0, SEEK_END);
     bytesToRead = ftell(file);
+    if (strcmp(mode, "r") == 0) {
+        MF_AssertInvalid();
+    }
 
-    if (size)
+    if (size != NULL)
         *size = bytesToRead;
 
     fseek(file, 0, SEEK_SET);
@@ -251,9 +254,16 @@ TEST("mff_file_read empty file") {
 TEST("mff_file_read") {
     size_t size = 0;
     char *contents = mff_file_read("tests/data/testfile.txt", "rb", &size);
+#if defined(MF_OS_WINDOWS)
+    MFT_CHECK_SIZET(size, 5);
+    MFT_CHECK_STRINGN(contents, "abc", 3);
+    MFT_CHECK_INT(contents[3], '\r');
+    MFT_CHECK_INT(contents[4], '\n');
+#elif defined(MF_OS_LINUX)
     MFT_CHECK_SIZET(size, 4);
     MFT_CHECK_STRINGN(contents, "abc", 3);
     MFT_CHECK_INT(contents[3], '\n');
+#endif
 }
 
 TEST("mf_path_join_create") {

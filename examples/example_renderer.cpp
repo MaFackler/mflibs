@@ -18,6 +18,8 @@
 #define MF_GUI_IMPLEMENTATION
 #include "mf_gui.h"
 
+#define MF_TIME_IMPLEMENTATION
+#include "mf_time.h"
 
 typedef mfm_v2 v2;
 typedef mfm_v3<float> v3;
@@ -407,7 +409,7 @@ int main() {
 #endif
         mfgl_error_check();
         mfp_end(&platform);
-        mf_sleep_ms(16);
+        mf::time::sleep_ms(16);
     }
 
     mfp_window_close(&platform);

@@ -11,6 +11,8 @@
 #include <mf_opengl.h>
 #define MF_RENDERER_IMPLEMENTATION
 #include <mf_renderer.h>
+#define MF_TIME_IMPLEMENTATION
+#include <mf_time.h>
 
 
 typedef mfm_v3<float> v3;
@@ -582,7 +584,7 @@ int main()
         GameStateUpdate(&input, &state, platform.timer.deltaSec);
         GameStateRender(&state, &renderer, window.height);
 
-        mf_sleep_ms(16);
+        mf::time::sleep_ms(16);
         mfr_flush(&renderer);
         mfp_end(&platform);
 

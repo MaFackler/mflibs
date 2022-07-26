@@ -5,6 +5,9 @@
 #include <mf_vector.h>
 #define MF_MATH_IMPLEMENTATION
 #include <mf_math.h>
+
+#define MF_RANDOM_IMPLEMENTATION
+#include <mf_random.h>
 #include <limits>
 
 typedef mfm_v3<double> v3;
@@ -73,7 +76,7 @@ struct camera {
 };
 
 inline double random_double() {
-    return mf_random_double(0.0, 1.0);
+    return mf::random::f64_range(0.0, 1.0);
 }
 
 v3 v3_random() {
@@ -82,7 +85,7 @@ v3 v3_random() {
 }
 
 v3 v3_random_min_max(double min, double max) {
-    v3 res = v3{mf_random_double(min, max), mf_random_double(min, max), mf_random_double(min, max)};
+    v3 res = v3{mf::random::f64_range(min, max), mf::random::f64_range(min, max), mf::random::f64_range(min, max)};
     return res;
 }
 
@@ -96,7 +99,7 @@ v3 random_in_unit_sphere() {
 
 v3 random_in_unit_disk() {
     while (true) {
-        v3 p = v3{mf_random_double(-1, 1), mf_random_double(-1, 1), 0};
+        v3 p = v3{mf::random::f64_range(-1, 1), mf::random::f64_range(-1, 1), 0};
         if (mfm_v3_length_squared(p) >= 1) continue;
         return p;
     }
@@ -216,7 +219,11 @@ material_id world_add_material(world *myworld, material m) {
 }
 
 void world_add_sphere(world *myworld, v3 origin, double radius, u32 mid) {
-    mf_vec_push(myworld->spheres, ((sphere){origin, radius, mid}));
+    //mf_vec_push(myworld->spheres, ((sphere){origin, radius, mid}));
+    sphere *s = mf_vec_add(myworld->spheres);
+    s->center = origin;
+    s->radius = radius;
+    s->mid = mid;
 }
 
 

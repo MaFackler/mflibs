@@ -8,7 +8,7 @@ objects=
 
 ifeq ($(OS),Windows_NT)
 	CC=cl
-	CFLAGS=/Zi /EHsc /Isrc
+	CFLAGS=/nologo /Zi /EHsc /Isrc
 	LIBS=/link /DEBUG:full kernel32.lib user32.lib winmm.lib opengl32.lib Gdi32.lib
 	OUTPUT=/Fe:
 	objects=/Fd$(OUTDIR)/ /Fo:$(addsuffix .obj, $(1))
@@ -17,7 +17,7 @@ endif
 HEADERS=$(wildcard src/*.h)
 TESTS=$(wildcard tests/*.cpp)
 
-all:  build $(OUTDIR)/runtests examples ray
+all:  build $(OUTDIR)/runtests examples
 
 build:
 	mkdir build
@@ -40,7 +40,7 @@ $(OUTDIR)/tetris: examples/tetris.cpp $(HEADERS)
 	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
 
 $(OUTDIR)/gui: examples/gui.cpp $(HEADERS)
-	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS) `pkg-config --libs freetype2`
+	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
 
 $(OUTDIR)/ray: examples/ray.cpp $(HEADERS)
 	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $<
