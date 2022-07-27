@@ -1,90 +1,90 @@
-#ifndef MF_OPENGL_H
-#define MF_OPENGL_H
+#pragma once
+#include <mf.h>
+
 #include <stdio.h>
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include <math.h>
 
+namespace mf { namespace gl {
+
 // NOTE: opengl code should be included by platform
 
 
 // glEnable/glDisable wrappers
-void mfgl_texture(bool value);
-void mfgl_blend(bool value);
-void mfgl_wireframe(bool value);
+void set_texture(bool value);
+void set_blend(bool value);
+void set_wireframe(bool value);
 
 // Color
-void mfgl_set_color(float r, float g, float b, float a);
-void mfgl_set_color_i32(i32 value);
-void mfgl_set_color_255(i32 r, i32 g, i32 b, i32 a);
-void mfgl_set_color_rgb(float r, float g, float b);
-void mfgl_set_color_rgb_255(i32 r, i32 g, i32 b);
+void set_color(f32 r, f32 g, f32 b, f32 a);
+void set_color_i32(i32 value);
+void set_color_255(i32 r, i32 g, i32 b, i32 a);
+void set_color_rgb(f32 r, f32 g, f32 b);
+void set_color_rgb_255(i32 r, i32 g, i32 b);
 
 // Viewport
-void mfgl_viewport_bottom_up(u32 width, u32 height);
-void mfgl_viewport_top_down(u32 width, u32 height);
+void viewport_bottom_up(u32 width, u32 height);
+void viewport_top_down(u32 width, u32 height);
 
 // Drawing
-void mfgl_clear();
-void mfgl_draw_rect(float x, float y, float w, float h);
-void mfgl_draw_rect_with_texture_coords(float x, float y, float w, float h, float s, float t, float sw, float th);
-void mfgl_draw_circle(float x, float y, float radius);
-void mfgl_draw_triangle(float a, float b, float c, float d, float e, float f);
+void clear();
+void draw_rect(f32 x, f32 y, f32 w, f32 h);
+void draw_rect_with_texture_coords(f32 x, f32 y, f32 w, f32 h, f32 s, f32 t, f32 sw, f32 th);
+void draw_circle(f32 x, f32 y, f32 radius);
+void draw_triangle(f32 a, f32 b, f32 c, f32 d, f32 e, f32 f);
 
 // Shaders
-unsigned int mfgl_shader_vertex_create(const char *vs);
-unsigned int mfgl_shader_fragment_create(const char *fs);
-unsigned int mfgl_shader_program_create(unsigned int vs, unsigned int fs);
-void mfgl_shader_program_use(unsigned int program);
-void mfgl_shader_delete(unsigned int id);
-unsigned int mfgl_shader_uniform_location(unsigned int shader, const char *name);
-void mfgl_shader_uniform_4f(unsigned int location, float a, float b, float c, float d);
-void mfgl_shader_uniform_1i(unsigned int location, int a);
-void mfgl_shader_uniform_4fv(unsigned int location, unsigned int count, float *data);
+u32 shader_vertex_create(const char *vs);
+u32 shader_fragment_create(const char *fs);
+u32 shader_program_create(u32 vs, u32 fs);
+void shader_program_use(u32 program);
+void shader_delete(u32 id);
+u32 shader_uniform_location(u32 shader, const char *name);
+void shader_uniform_4f(u32 location, f32 a, f32 b, f32 c, f32 d);
+void shader_uniform_1i(u32 location, i32 a);
+void shader_uniform_4fv(u32 location, u32 count, f32 *data);
 
 
 // Textures
-unsigned int mfgl_texture_create_argb(int width, int height, unsigned char *data);
-unsigned int mfgl_texture_create_alpha(int width, int height, unsigned char *data);
-void mfgl_texture_bind(unsigned int id);
+u32 texture_create_argb(i32 width, i32 height, unsigned char *data);
+u32 texture_create_alpha(i32 width, i32 height, unsigned char *data);
+void texture_bind(u32 id);
 
 // Vertex Buffer
-unsigned int mfgl_vertex_buffer_create(float *vertices, int n);
-unsigned int mfgl_vertex_buffer_dynamic_create(float *vertices, int n, float **map);
-void mfgl_vertex_buffer_bind(unsigned int vbo);
-void mfgl_vertex_attrib_link(unsigned int location, int size, int start, int stride);
-void mfgl_vertex_buffer_draw(unsigned int vbo, int n);
+u32 vertex_buffer_create(f32 *vertices, i32 n);
+u32 vertex_buffer_dynamic_create(f32 *vertices, i32 n, f32 **map);
+void vertex_buffer_bind(u32 vbo);
+void vertex_attrib_link(u32 location, i32 size, i32 start, i32 stride);
+void vertex_buffer_draw(u32 vbo, i32 n);
 
 // Element Buffer
-unsigned int mfgl_element_buffer_create(unsigned int *indices, int n);
-unsigned int mfgl_element_buffer_dynamic_create(unsigned int *indices, int n, unsigned int **map);
-void mfgl_element_buffer_bind(unsigned int ebo);
-void mfgl_element_buffer_draw(unsigned int ebo, int n);
+u32 element_buffer_create(u32 *indices, i32 n);
+u32 element_buffer_dynamic_create(u32 *indices, i32 n, u32 **map);
+void element_buffer_bind(u32 ebo);
+void element_buffer_draw(u32 ebo, i32 n);
 
 // Vertex Array
-unsigned int mfgl_vertex_array_create();
-void mfgl_vertex_array_bind(unsigned int vao);
+u32 vertex_array_create();
+void vertex_array_bind(u32 vao);
 
 
 
 // Error
-void mfgl_error_check();
+void error_check();
 
 
 #ifdef MF_OPENGL_IMPLEMENTATION
 
-void mfgl_texture(bool value)
-{
+void set_texture(bool value) {
     if (value)
         glEnable(GL_TEXTURE_2D);
     else
         glDisable(GL_TEXTURE_2D);
 }
 
-void mfgl_blend(bool value)
-{
-    if (value)
-    {
+void set_blend(bool value) {
+    if (value) {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     } else {
@@ -92,8 +92,7 @@ void mfgl_blend(bool value)
     }
 }
 
-void mfgl_wireframe(bool value)
-{
+void set_wireframe(bool value) {
     if (value)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     else
@@ -102,38 +101,32 @@ void mfgl_wireframe(bool value)
 }
 
 
-void mfgl_set_color(float r, float g, float b, float a)
-{
+void set_color(f32 r, f32 g, f32 b, f32 a) {
     glColor4f(r, g, b, a);
 }
 
-void mfgl_set_color_i32(i32 value)
-{
-    float r = (value >> 16 & 0xFF) / 255.0f;
-    float g = (value >> 8 & 0xFF) / 255.0f;
-    float b = (value >> 0 & 0xFF) / 255.0f;
-    mfgl_set_color_rgb(r, g, b);
+void set_color_i32(i32 value) {
+    f32 r = (value >> 16 & 0xFF) / 255.0f;
+    f32 g = (value >> 8 & 0xFF) / 255.0f;
+    f32 b = (value >> 0 & 0xFF) / 255.0f;
+    set_color_rgb(r, g, b);
 }
 
-void mfgl_set_color_255(i32 r, i32 g, i32 b, i32 a)
-{
-    mfgl_set_color(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
+void set_color_255(i32 r, i32 g, i32 b, i32 a) {
+    set_color(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
 }
 
-void mfgl_set_color_rgb(float r, float g, float b)
-{
-    mfgl_set_color(r, g, b, 1.0f);
+void set_color_rgb(f32 r, f32 g, f32 b) {
+    set_color(r, g, b, 1.0f);
 }
 
-void mfgl_set_color_rgb_255(i32 r, i32 g, i32 b)
-{
-    mfgl_set_color_rgb(r / 255.f, g / 255.f, b / 255.f);
+void set_color_rgb_255(i32 r, i32 g, i32 b) {
+    set_color_rgb(r / 255.f, g / 255.f, b / 255.f);
 }
 
-void mfgl_viewport_bottom_up(u32 width, u32 height)
-{
+void viewport_bottom_up(u32 width, u32 height) {
     glMatrixMode(GL_PROJECTION);
-    float mat[] =
+    f32 mat[] =
     {
         2.0f/width, 0, 0, 0,
         0, 2.0f/height, 0, 0,
@@ -144,11 +137,9 @@ void mfgl_viewport_bottom_up(u32 width, u32 height)
 
 }
 
-void mfgl_viewport_top_down(u32 width, u32 height)
-{
+void viewport_top_down(u32 width, u32 height) {
     glMatrixMode(GL_PROJECTION);
-    float mat[] =
-    {
+    f32 mat[] = {
         2.0f/width, 0, 0, 0,
         0, -2.0f/height, 0, 0,
         0, 0, 1, 0,
@@ -157,16 +148,14 @@ void mfgl_viewport_top_down(u32 width, u32 height)
     glLoadMatrixf(mat);
 }
 
-void mfgl_clear()
-{
-    float color[4];
+void clear() {
+    f32 color[4];
     glGetFloatv(GL_CURRENT_COLOR, color);
     glClearColor(color[0], color[1], color[2], color[3]);
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void mfgl_draw_rect(float x, float y, float w, float h)
-{
+void draw_rect(f32 x, f32 y, f32 w, f32 h) {
     glBegin(GL_QUADS);
         glTexCoord2f(0.0f, 0.0f);
         glVertex2f(x, y);
@@ -179,8 +168,7 @@ void mfgl_draw_rect(float x, float y, float w, float h)
     glEnd();
 }
 
-void mfgl_draw_rect_with_texture_coords(float x, float y, float w, float h, float s, float t, float sw, float th)
-{
+void draw_rect_with_texture_coords(f32 x, f32 y, f32 w, f32 h, f32 s, f32 t, f32 sw, f32 th) {
     glBegin(GL_QUADS);
         glTexCoord2f(s, t);
         glVertex2f(x, y);
@@ -193,21 +181,19 @@ void mfgl_draw_rect_with_texture_coords(float x, float y, float w, float h, floa
     glEnd();
 }
 
-void mfgl_draw_circle(float x, float y, float radius)
-{
+void draw_circle(f32 x, f32 y, f32 radius) {
     glBegin(GL_TRIANGLE_FAN);
-    int triangles = 40;
+    i32 triangles = 40;
     glVertex2f(x, y);
-    for (int i = 0; i <= triangles; ++i)
+    for (i32 i = 0; i <= triangles; ++i)
     {
-        glVertex2f((float) (x + radius * (cos((i * 2.0f * M_PI) / triangles))),
-                   (float) (y + radius * (sin((i * 2.0f * M_PI) / triangles))));
+        glVertex2f((f32) (x + radius * (cos((i * 2.0f * M_PI) / triangles))),
+                   (f32) (y + radius * (sin((i * 2.0f * M_PI) / triangles))));
     }
     glEnd();
 }
 
-void mfgl_draw_triangle(float a, float b, float c, float d, float e, float f)
-{
+void draw_triangle(f32 a, f32 b, f32 c, f32 d, f32 e, f32 f) {
     glBegin(GL_TRIANGLES);
         glVertex2f(a, b);
         glVertex2f(c, d);
@@ -215,109 +201,97 @@ void mfgl_draw_triangle(float a, float b, float c, float d, float e, float f)
     glEnd();
 }
 
-unsigned int mfgl_shader_vertex_create(const char *vs)
-{
-    unsigned int res;
+u32 shader_vertex_create(const char *vs) {
+    u32 res;
     res = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(res, 1, &vs, NULL);
     glCompileShader(res);
 
-    int success = 0;
+    i32 success = 0;
     char info[512];
     glGetShaderiv(res, GL_COMPILE_STATUS, &success);
     if (!success)
     {
         glGetShaderInfoLog(res, 512, NULL, info);
-        printf("%s", info);
+        printf("%s\n", info);
         exit(1);
     }
     return res;
 }
 
-unsigned int mfgl_shader_fragment_create(const char *fs)
-{
-    unsigned int res;
+u32 shader_fragment_create(const char *fs) {
+    u32 res;
     // Fragment shader
     res = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(res, 1, &fs, NULL);
     glCompileShader(res);
-    int success = 0;
+    i32 success = 0;
     char info[512];
     glGetShaderiv(res, GL_COMPILE_STATUS, &success);
     if (!success)
     {
         glGetShaderInfoLog(res, 512, NULL, info);
-        printf("%s", info);
+        printf("%s\n", info);
         exit(1);
     }
     return res;
 }
 
-unsigned int mfgl_shader_program_create(unsigned int vs, unsigned int fs)
-{
-    unsigned int res;
+u32 shader_program_create(u32 vs, u32 fs) {
+    u32 res;
     res = glCreateProgram();
     glAttachShader(res, vs);
     glAttachShader(res, fs);
     glLinkProgram(res);
 
-    int success = 0;
+    i32 success = 0;
     char info[512];
     glGetProgramiv(res, GL_LINK_STATUS, &success);
     if (!success)
     {
         glGetShaderInfoLog(res, 512, NULL, info);
-        printf("%s", info);
+        printf("%s\n", info);
         exit(1);
     }
     return res;
 }
 
-void mfgl_shader_program_use(unsigned int program)
-{
+void shader_program_use(u32 program) {
     glUseProgram(program);
 }
 
-void mfgl_shader_delete(unsigned int id)
-{
+void shader_delete(u32 id) {
     glDeleteShader(id);
 }
 
-unsigned int mfgl_shader_uniform_location(unsigned int shader, const char *name)
-{
+u32 shader_uniform_location(u32 shader, const char *name) {
     return glGetUniformLocation(shader, name);
 }
 
-void mfgl_shader_uniform_4f(unsigned int location, float a, float b, float c, float d)
-{
+void shader_uniform_4f(u32 location, f32 a, f32 b, f32 c, f32 d) {
     glUniform4f(location, a, b, c, d);
 }
 
-void mfgl_shader_uniform_1i(unsigned int location, int a)
-{
+void shader_uniform_1i(u32 location, i32 a) {
     glUniform1i(location, a);
 }
 
-void mfgl_shader_uniform_4fv(unsigned int location, unsigned int count, float *data)
-{
+void shader_uniform_4fv(u32 location, u32 count, f32 *data) {
     glUniformMatrix4fv(location, count, GL_FALSE, data);
 }
 
-void mfgl_vertex_attrib_link(unsigned int location, int size, int start, int stride)
-{
-    glVertexAttribPointer(location, size, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void *) (start * sizeof(float)));
+void vertex_attrib_link(u32 location, i32 size, i32 start, i32 stride) {
+    glVertexAttribPointer(location, size, GL_FLOAT, GL_FALSE, stride * sizeof(f32), (void *) (start * sizeof(f32)));
     glEnableVertexAttribArray(location);
 }
 
-void mfgl_vertex_buffer_draw(unsigned int vbo, int n)
-{
-    mfgl_vertex_buffer_bind(vbo);
+void vertex_buffer_draw(u32 vbo, i32 n) {
+    vertex_buffer_bind(vbo);
     glDrawArrays(GL_TRIANGLES, 0, n);
 }
 
-unsigned int mfgl_texture_create_argb(int width, int height, unsigned char *data)
-{
-    unsigned int id;
+u32 texture_create_argb(i32 width, i32 height, unsigned char *data) {
+    u32 id;
     glGenTextures(1, &id);
     //glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, id);
@@ -338,9 +312,8 @@ unsigned int mfgl_texture_create_argb(int width, int height, unsigned char *data
     return id;
 }
 
-unsigned int mfgl_texture_create_alpha(int width, int height, unsigned char *data)
-{
-    unsigned int id = 0;
+u32 texture_create_alpha(i32 width, i32 height, unsigned char *data) {
+    u32 id = 0;
     //glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, id);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA,
@@ -356,80 +329,69 @@ unsigned int mfgl_texture_create_alpha(int width, int height, unsigned char *dat
     return id;
 }
 
-void mfgl_texture_bind(unsigned int id)
-{
+void texture_bind(u32 id) {
     glBindTexture(GL_TEXTURE_2D, id);
 }
 
-unsigned int mfgl_vertex_buffer_create(float *vertices, int n)
-{
-    unsigned int res;
+u32 vertex_buffer_create(f32 *vertices, i32 n) {
+    u32 res;
     glGenBuffers(1, &res);
     glBindBuffer(GL_ARRAY_BUFFER, res);
-    glBufferData(GL_ARRAY_BUFFER, n * sizeof(float), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, n * sizeof(f32), vertices, GL_STATIC_DRAW);
     return res;
 }
 
-unsigned int mfgl_vertex_buffer_dynamic_create(float *vertices, int n, float **map)
-{
+u32 vertex_buffer_dynamic_create(f32 *vertices, i32 n, f32 **map) {
     u32 vbo;
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, n * sizeof(float), vertices, GL_DYNAMIC_DRAW);
-    *map = (float *) glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+    glBufferData(GL_ARRAY_BUFFER, n * sizeof(f32), vertices, GL_DYNAMIC_DRAW);
+    *map = (f32 *) glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
     return vbo;
 }
 
-void mfgl_vertex_buffer_bind(unsigned int vbo)
-{
+void vertex_buffer_bind(u32 vbo) {
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
 }
 
-unsigned int mfgl_element_buffer_create(unsigned int *indices, int n)
-{
-	unsigned int res;
+u32 element_buffer_create(u32 *indices, i32 n) {
+	u32 res;
 	glGenBuffers(1, &res);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, n * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, n * sizeof(u32), indices, GL_STATIC_DRAW);
 	return res;
 }
 
-unsigned int mfgl_element_buffer_dynamic_create(unsigned int *indices, int n, unsigned int **map)
-{
-	unsigned int res;
+u32 element_buffer_dynamic_create(u32 *indices, i32 n, u32 **map) {
+	u32 res;
 	glGenBuffers(1, &res);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, res);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, n * sizeof(unsigned int), indices, GL_DYNAMIC_DRAW);
-    *map = (unsigned int *) glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, n * sizeof(u32), indices, GL_DYNAMIC_DRAW);
+    *map = (u32 *) glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	return res;
 }
 
-void mfgl_element_buffer_bind(unsigned int ebo)
-{
+void element_buffer_bind(u32 ebo) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 }
 
-void mfgl_element_buffer_draw(unsigned int ebo, int n)
-{
-    mfgl_element_buffer_bind(ebo);
+void element_buffer_draw(u32 ebo, i32 n) {
+    element_buffer_bind(ebo);
     glDrawElements(GL_TRIANGLES, n, GL_UNSIGNED_INT, 0);
 }
 
-unsigned int mfgl_vertex_array_create()
-{
-    unsigned int res;
+u32 vertex_array_create() {
+    u32 res;
     glGenVertexArrays(1, &res);
     glBindVertexArray(res);
     return res;
 }
 
-void mfgl_vertex_array_bind(unsigned int vao)
-{
+void vertex_array_bind(u32 vao) {
     glBindVertexArray(vao);
 }
 
-void mfgl_error_check()
-{
+void error_check() {
     GLenum code;
     code = glGetError();
     if (code != GL_NO_ERROR)
@@ -449,5 +411,4 @@ void mfgl_error_check()
 
 
 #endif
-
-#endif // MF_OPENGL_H
+}} // mf::gl

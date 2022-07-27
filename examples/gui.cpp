@@ -17,6 +17,7 @@
 
 using mf::math::m4;
 typedef mf::math::v2<u32> v2;
+using namespace mf::gl;
 
 
 const char *VS_SRC = R"(
@@ -92,13 +93,13 @@ void render_text(mf::font::Font *font, u32 *tids, mf_vec_float *vertices, u32 vb
         *mf_vec_add(*vertices) = 0.0f;
         *mf_vec_add(*vertices) = 0.0f;
 
-        mfgl_texture_bind(tids[c]);
-        mfgl_vertex_buffer_bind(vbo);
-        mfgl_error_check();
+        texture_bind(tids[c]);
+        vertex_buffer_bind(vbo);
+        error_check();
         glBufferSubData(GL_ARRAY_BUFFER, 0, mf_vec_size(*vertices) * sizeof(float), *vertices);
         //glBindBuffer(GL_ARRAY_BUFFER, 0);
-        mfgl_element_buffer_bind(ebo);
-        mfgl_element_buffer_draw(ebo, 6); 
+        element_buffer_bind(ebo);
+        element_buffer_draw(ebo, 6); 
 
         //xc += (ch->advance >> 6);
         mf_vec_clear(*vertices);
@@ -138,17 +139,17 @@ int main() {
     mfp_init(&platform);
     mfp_window_open(&platform, "example", 0, 0, 800, 600);
 
-	u32 vs = mfgl_shader_vertex_create(VS_SRC);
-	u32 fs = mfgl_shader_fragment_create(FS_SRC);
-    u32 program = mfgl_shader_program_create(vs, fs);
-    mfgl_shader_program_use(program);
+	u32 vs = shader_vertex_create(VS_SRC);
+	u32 fs = shader_fragment_create(FS_SRC);
+    u32 program = shader_program_create(vs, fs);
+    shader_program_use(program);
 
     //auto projection = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f);
 	m4 projection = m4::create_ortho(0.0f, 800.0f, 0.0f, 600.0f, 0.0f, 100.0f);	
-    u32 location_projection = mfgl_shader_uniform_location(program, "projection");
-    mfgl_shader_uniform_4fv(location_projection, 1, (float *) &projection.m[0]);
+    u32 location_projection = shader_uniform_location(program, "projection");
+    shader_uniform_4fv(location_projection, 1, (float *) &projection.m[0]);
 
-    //u32 vao = mfgl_vertex_array_create();
+    //u32 vao = vertex_array_create();
     u32 vbo;
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -164,12 +165,12 @@ int main() {
     };
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices, GL_DYNAMIC_DRAW);
 
-    mfgl_vertex_buffer_bind(vbo);
-    mfgl_element_buffer_bind(ebo);
-    mfgl_vertex_attrib_link(0, 2, 0, 4);
-    mfgl_vertex_attrib_link(1, 2, 2, 4);
+    vertex_buffer_bind(vbo);
+    element_buffer_bind(ebo);
+    vertex_attrib_link(0, 2, 0, 4);
+    vertex_attrib_link(1, 2, 2, 4);
 
-    mfgl_blend(true);
+    set_blend(true);
 
     u32 tid = load_texture(&font);
     MF_Assert(tid != 0);
@@ -214,13 +215,13 @@ int main() {
         glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        mfgl_texture_bind(tid);
-        mfgl_error_check();
-        mfgl_vertex_buffer_bind(vbo);
+        texture_bind(tid);
+        error_check();
+        vertex_buffer_bind(vbo);
         glBufferSubData(GL_ARRAY_BUFFER, 0, mf_vec_size(vertices) * sizeof(float), vertices);
         //glBindBuffer(GL_ARRAY_BUFFER, 0);
-        mfgl_element_buffer_bind(ebo);
-        mfgl_element_buffer_draw(ebo, 6); 
+        element_buffer_bind(ebo);
+        element_buffer_draw(ebo, 6); 
         
         //render_text(&font, &textures[0], &vertices, vbo, ebo, "Zeile Eins", 0, -font.descent + font.linegap);
         //render_text(&font, &textures[0], &vertices, vbo, ebo, "Zeile 2", 0, -font.descent);

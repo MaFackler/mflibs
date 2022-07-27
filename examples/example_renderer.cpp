@@ -21,6 +21,8 @@
 #define MF_TIME_IMPLEMENTATION
 #include "mf_time.h"
 
+
+using namespace mf::gl;
 typedef mf::math::v2<f32> v2;
 typedef mf::math::v3<f32> v3;
 
@@ -104,14 +106,14 @@ void my_render_bitmap(unsigned int bitmap_id, float x, float y, float w, float h
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_TEXTURE_2D);
-    mfgl_texture_bind(bitmap_id);
+    texture_bind(bitmap_id);
     glBegin(GL_QUADS);
     glTexCoord2f(0.0f, 0.0f); glVertex2f(x, y + h);
     glTexCoord2f(1.0f, 0.0f); glVertex2f(x + w, y + h);
     glTexCoord2f(1.0f, 1.0f); glVertex2f(x + w, y);
     glTexCoord2f(0.0f, 1.0f); glVertex2f(x, y);
     glEnd();
-    mfgl_texture_bind(0);
+    texture_bind(0);
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_BLEND);
 }
@@ -121,9 +123,9 @@ void mfui_button(mf::font::Font * font)
     int width = 100;
     int height = 50;
     int margin = 15;
-    mfgl_set_color(1.0f, 1.0f, 1.0f, 1.0f);
-    mfgl_draw_rect(0, 0, width, height);
-    mfgl_set_color(0.0f, 0.0f, 0.0f, 1.0f);
+    set_color(1.0f, 1.0f, 1.0f, 1.0f);
+    draw_rect(0, 0, width, height);
+    set_color(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
 void render_text(mf::font::Font *font, const char *text) {
@@ -155,14 +157,14 @@ int main() {
     mfp_platform platform = {};
     mfp_init(&platform);
     mfp_window_open(&platform, "Example-Renderer", 0, 0, width, height);
-    mfgl_viewport_bottom_up(width, height);
+    viewport_bottom_up(width, height);
 
 #if 0
     mfr_renderer renderer = {};
-    renderer.set_color = mfgl_set_color;
-    renderer.render_rect = mfgl_draw_rect;
-    renderer.render_clear = mfgl_clear;
-    renderer.render_circle = mfgl_draw_circle;
+    renderer.set_color = set_color;
+    renderer.render_rect = draw_rect;
+    renderer.render_clear = clear;
+    renderer.render_circle = draw_circle;
     renderer.render_bitmap = my_render_bitmap;
     mfr_init(&renderer, 1024 * 1024 * 1024);
 
@@ -193,7 +195,7 @@ int main() {
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    u32 texture_font = mfgl_texture_create_argb(FONT_ATLAS_DIM, FONT_ATLAS_DIM, font.data);
+    u32 texture_font = texture_create_argb(FONT_ATLAS_DIM, FONT_ATLAS_DIM, font.data);
 #if 0
     unsigned int texture_font;
     glGenTextures(1, &texture_font);
@@ -210,19 +212,19 @@ int main() {
 #endif
 
 #if 0
-    u32 vs = mfgl_shader_vertex_create(SRC_VS);
-    u32 fs = mfgl_shader_fragment_create(SRC_FS);
-    u32 program = mfgl_shader_program_create(vs, fs);
-    mfgl_shader_delete(vs);
-    mfgl_shader_delete(fs);
-    mfgl_shader_program_use(program);
-    mfgl_error_check();
+    u32 vs = shader_vertex_create(SRC_VS);
+    u32 fs = shader_fragment_create(SRC_FS);
+    u32 program = shader_program_create(vs, fs);
+    shader_delete(vs);
+    shader_delete(fs);
+    shader_program_use(program);
+    error_check();
 
-    u32 location_color = mfgl_shader_uniform_location(program, "color");
-    mfgl_shader_uniform_4f(location_color, 1.0f, 0.0f, 0.0f, 0.0f);
+    u32 location_color = shader_uniform_location(program, "color");
+    shader_uniform_4f(location_color, 1.0f, 0.0f, 0.0f, 0.0f);
 
-    //u32 location_smapler = mfgl_shader_uniform_location(program, "sampler");
-    //mfgl_shader_uniform_1i(location_smapler, 0);
+    //u32 location_smapler = shader_uniform_location(program, "sampler");
+    //shader_uniform_1i(location_smapler, 0);
 
     mfg_ui ui;
     mfg_init(&ui, 1600, 900);
@@ -244,7 +246,7 @@ int main() {
             pixels[y * 512 + x] = color;
         }
     }
-    u32 texture_id = mfgl_create_texture_argb(512, 512, font.data);
+    u32 texture_id = create_texture_argb(512, 512, font.data);
 
 	float vertices[] = {
 		 0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
@@ -260,27 +262,27 @@ int main() {
 #if 0
     float *data = NULL;
     unsigned int *indices = NULL;
-    u32 vbo = mfgl_vertex_buffer_dynamic_create(NULL, 512, &data);
-    //u32 vbo = mfgl_vertex_buffer_create(&vertices[0], MF_ArrayLength(vertices));
-    //u32 vao = mfgl_vertex_array_create();
-    //u32 ebo = mfgl_element_buffer_create(&ui.indices[0], MF_ArrayLength(ui.indices));
-    u32 ebo = mfgl_element_buffer_dynamic_create(NULL, 512, &indices);
+    u32 vbo = vertex_buffer_dynamic_create(NULL, 512, &data);
+    //u32 vbo = vertex_buffer_create(&vertices[0], MF_ArrayLength(vertices));
+    //u32 vao = vertex_array_create();
+    //u32 ebo = element_buffer_create(&ui.indices[0], MF_ArrayLength(ui.indices));
+    u32 ebo = element_buffer_dynamic_create(NULL, 512, &indices);
 
-    //mfgl_vertex_array_bind(vao);
-    mfgl_element_buffer_bind(ebo);
-    mfgl_vertex_buffer_bind(vbo);
-    mfgl_vertex_attrib_link(0, 2, 0, 7); // x,y
-    mfgl_vertex_attrib_link(1, 3, 2, 7); // color r.g.b
-    mfgl_vertex_attrib_link(2, 2, 5, 7); // u,t
+    //vertex_array_bind(vao);
+    element_buffer_bind(ebo);
+    vertex_buffer_bind(vbo);
+    vertex_attrib_link(0, 2, 0, 7); // x,y
+    vertex_attrib_link(1, 3, 2, 7); // color r.g.b
+    vertex_attrib_link(2, 2, 5, 7); // u,t
 #endif
 
-    mfgl_error_check();
+    error_check();
     bool running = true;
     while (running && platform.window.isOpen)
     {
         mfp_begin(&platform);
 #if 0
-        mfgl_viewport_bottom_up(width, height);
+        viewport_bottom_up(width, height);
 
         // Update
         if (platform.input.keys['q'].pressed)
@@ -323,12 +325,12 @@ int main() {
         mfr_flush(&renderer);
 
 #if 0
-        mfgl_viewport_top_down(width, height);
-        mfgl_texture_bind(texture_font);
+        viewport_top_down(width, height);
+        texture_bind(texture_font);
 #endif
         //mffo_charrect crect;
         //mffo_font_get_charrect(&font, &crect, 'c');
-        //mfgl_draw_rect(0, 0, 512, 512);
+        //draw_rect(0, 0, 512, 512);
         //mfui_button(&font);
 #endif
         if (platform.input.keys['q'].pressed)
@@ -344,22 +346,22 @@ int main() {
         mfg_button(&ui, 100, 100, 512, 512);
         
 
-        mfgl_shader_program_use(program);
-        //mfgl_vertex_array_bind(vao);
-        mfgl_set_color(1.0f, 0.0f, 0.0f, 1.0f);
-        mfgl_clear();
+        shader_program_use(program);
+        //vertex_array_bind(vao);
+        set_color(1.0f, 0.0f, 0.0f, 1.0f);
+        clear();
 
-        //mfgl_vertex_array_bind(vao);
-        mfgl_texture_bind(texture_font);
-        //mfgl_element_buffer_draw(ebo, 6);
+        //vertex_array_bind(vao);
+        texture_bind(texture_font);
+        //element_buffer_draw(ebo, 6);
 
         memcpy((unsigned char *) data, &ui.vertices[0], sizeof(mfg_vertex) * ui.vertices_index);
         memcpy((unsigned char *) &indices[0], &ui.indices[0], sizeof(unsigned int) * ui.indices_index);
 
-        mfgl_element_buffer_bind(ebo);
-        mfgl_vertex_buffer_bind(vbo);
-        //mfgl_vertex_buffer_draw(vbo, 3);
-        mfgl_element_buffer_draw(ebo, ui.indices_index);
+        element_buffer_bind(ebo);
+        vertex_buffer_bind(vbo);
+        //vertex_buffer_draw(vbo, 3);
+        element_buffer_draw(ebo, ui.indices_index);
         
         mfg_end(&ui);
         //glDisable(GL_BLEND);
@@ -405,7 +407,7 @@ int main() {
 
         render_text(&font, "Maximilian");
 #endif
-        mfgl_error_check();
+        error_check();
         mfp_end(&platform);
         mf::time::sleep_ms(16);
     }

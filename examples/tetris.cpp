@@ -14,6 +14,7 @@
 #define MF_TIME_IMPLEMENTATION
 #include <mf_time.h>
 
+using namespace mf::gl;
 typedef mf::math::v3<f32> v3;
 
 
@@ -556,10 +557,10 @@ int main()
 
     mfr_renderer renderer = {};
     mfr_init(&renderer, MF_MegaByte(4));
-    renderer.set_color = mfgl_set_color;
-    renderer.render_rect = mfgl_draw_rect;
-    renderer.render_clear = mfgl_clear;
-    mfgl_viewport_bottom_up(window.width, window.height);
+    renderer.set_color = set_color;
+    renderer.render_rect = draw_rect;
+    renderer.render_clear = clear;
+    viewport_bottom_up(window.width, window.height);
 
     GameState state;
     GameStateInit(&state);
