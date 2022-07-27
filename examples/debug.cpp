@@ -4,7 +4,7 @@
 #define MF_FONT_IMPLEMENTATION
 #include "mf_font.h"
 
-void draw_text(mffo_font *font, const char *text) {
+void draw_text(mf::font::Font font, const char *text) {
 
     float x = 0.0f;
     float y = 0.0f;
@@ -47,13 +47,13 @@ int main() {
     mfp_init(&p);
     mfp_window_open(&p, "Debug", 0, 0, width, height);
 
-    mffo_font font;
+    mf::font::Font font;
 #ifdef _WIN32
     const char *path = "c:/windows/fonts/arialbd.ttf";
 #else
     const char *path = "/usr/share/fonts/ubuntu/Ubuntu-B.ttf";
 #endif
-    mffo_font_init(&font, path, 64.0f);
+    font.init(path, 64.0f);
     //mffo_font_alloc(&font, "/usr/share/fonts/TTF/FiraSans-Bold.ttf");
     
     glEnable(GL_TEXTURE_2D);

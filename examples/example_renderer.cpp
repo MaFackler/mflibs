@@ -118,7 +118,7 @@ void my_render_bitmap(unsigned int bitmap_id, float x, float y, float w, float h
     glDisable(GL_BLEND);
 }
 
-void mfui_button(mffo_font * font)
+void mfui_button(mf::font::Font * font)
 {
     int width = 100;
     int height = 50;
@@ -128,7 +128,7 @@ void mfui_button(mffo_font * font)
     mfgl_set_color(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
-void render_text(mffo_font *font, const char *text) {
+void render_text(mf::font::Font *font, const char *text) {
 
     float x = 0;
     for (int i = 0; i < strlen(text); ++i) {
@@ -185,13 +185,13 @@ int main() {
     planets[1].color = v3{0.3f, 0.3f, 0.3f};
 #endif
 
-    mffo_font font;
+    mf::font::Font font;
 #ifdef _WIN32
     const char *path = "c:/windows/fonts/arialbd.ttf";
 #else
     const char *path = "/usr/share/fonts/ubuntu/Ubuntu-B.ttf";
 #endif
-    mffo_font_init(&font, path, 128.0f);
+    font.init(path, 128.0f);
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

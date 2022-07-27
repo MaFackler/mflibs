@@ -1,5 +1,4 @@
-#ifndef MF_FONT_H
-#define MF_FONT_H
+#pragma once
 
 #include "mf.h"
 #ifdef _WIN32
@@ -10,7 +9,9 @@
 #include FT_FREETYPE_H
 #endif
 
-typedef struct {
+namespace mf { namespace font {
+
+struct FontChar {
     float width;
     float height;
     float xbearing;
@@ -20,22 +21,22 @@ typedef struct {
     float u1;
     float v0;
     float v1;
-} mffo_font_char;
+};
 
-typedef struct {
+struct Font {
     float ascent;
     float descent;
     float linegap;
     unsigned char *data;
-    mffo_font_char characters[256];
-} mffo_font;
+    FontChar characters[256];
+
+    int init(const char *path, float size);
+};
 
 #define FONT_ATLAS_DIM 1024
 
 // TODO: memory
 static char ttf_buffer[1<<25];
-
-int mffo_font_init(mffo_font *font, const char *path, float size);
 
 #ifdef _WIN32
 #else
@@ -45,12 +46,12 @@ void mffo__font_load_chars(mffo_font *font, FT_Face &face);
 
 #ifdef MF_FONT_IMPLEMENTATION
 #ifdef _WIN32
-int mffo_font_init(mffo_font *font, const char *path, float size) {
+int Font::init(const char *path, float size) {
     stbtt_fontinfo stbfontinfo;
     const unsigned char *ptr = (const unsigned char *) &ttf_buffer[0];
 
     int w, h, xoffset, yoffset;
-    font->data = (unsigned char *) malloc(FONT_ATLAS_DIM * FONT_ATLAS_DIM * sizeof(int));
+    this->data = (unsigned char *) malloc(FONT_ATLAS_DIM * FONT_ATLAS_DIM * sizeof(int));
     fread(ttf_buffer, 1, 1<<25, fopen(path, "rb"));
 
     int offset = stbtt_GetFontOffsetForIndex(ptr, 0);
@@ -59,13 +60,13 @@ int mffo_font_init(mffo_font *font, const char *path, float size) {
     int xatlas = 0;
     int yatlas = 0;
     int max_height = 0;
-    memset(font->data, 100, FONT_ATLAS_DIM * FONT_ATLAS_DIM * sizeof(int));
+    memset(this->data, 100, FONT_ATLAS_DIM * FONT_ATLAS_DIM * sizeof(int));
     float scale = stbtt_ScaleForPixelHeight(&stbfontinfo, size);
     int ascent, descent, linegap;
     stbtt_GetFontVMetrics(&stbfontinfo, &ascent, &descent, &linegap);
-    font->ascent = ascent * scale;
-    font->descent = descent * scale;
-    font->linegap = (float) linegap * scale;
+    this->ascent = ascent * scale;
+    this->descent = descent * scale;
+    this->linegap = (float) linegap * scale;
     for (unsigned char c = 0; c < 128; c++) {
         // load character glyph 
         unsigned char *bitmap;
@@ -75,7 +76,7 @@ int mffo_font_init(mffo_font *font, const char *path, float size) {
                                           c, &w, &h, &xoffset, &yoffset);
         int advance_width, lsb;
         stbtt_GetCodepointHMetrics(&stbfontinfo, c, &advance_width, &lsb);
-        mffo_font_char character = {
+        FontChar character = {
             (float) w, (float) h,
             (float) (xoffset), (float) (h + yoffset),
             (float) (advance_width * scale),
@@ -89,7 +90,7 @@ int mffo_font_init(mffo_font *font, const char *path, float size) {
         unsigned char *src = bitmap;
 
         for (int y = 0; y < character.height; ++y) {
-            int *dest = (int*) font->data;
+            int *dest = (int*) this->data;
             dest += (FONT_ATLAS_DIM - yatlas - y - 1) * FONT_ATLAS_DIM;
             dest += xatlas;
             for (int x = 0; x < character.width; ++x) {
@@ -106,7 +107,7 @@ int mffo_font_init(mffo_font *font, const char *path, float size) {
         //character.v1 = (float) (yatlas + character.height) / (float) FONT_ATLAS_DIM,
         character.v1 = (float) (FONT_ATLAS_DIM - yatlas) / (float) FONT_ATLAS_DIM,
         character.v0 = (float) (FONT_ATLAS_DIM - yatlas - character.height) / (float) FONT_ATLAS_DIM,
-        font->characters[c] = character;
+        this->characters[c] = character;
         xatlas += (int) character.width;
     }
     return 0;
@@ -173,4 +174,4 @@ void mffo__font_load_chars(mffo_font *font, FT_Face &face) {
 
 #endif // MF_FONT_IMPLEMENTATION
 
-#endif // MF_FONT_H
+}} // mf::font

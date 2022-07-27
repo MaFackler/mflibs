@@ -58,14 +58,14 @@ struct Character {
 static Character characters[256] = {0};
 
 
-void render_text(mffo_font *font, u32 *tids, mf_vec_float *vertices, u32 vbo, u32 ebo, const char *text, float x, float y)
+void render_text(mf::font::Font *font, u32 *tids, mf_vec_float *vertices, u32 vbo, u32 ebo, const char *text, float x, float y)
 {
     char c = 0;
     mf_vec_clear(*vertices);
     float xc = x;
     float yc = y;
     while ((c = *text++) != 0) {
-        mffo_font_char *ch = &font->characters[c];
+        mf::font::FontChar *ch = &font->characters[c];
         float xmin = xc + ch->xbearing;
         float xmax = xmin + ch->width;
         //float ymin = yc + ch->size.y - ch->size.y;
@@ -107,7 +107,7 @@ void render_text(mffo_font *font, u32 *tids, mf_vec_float *vertices, u32 vbo, u3
 }
 
 
-u32 load_texture(mffo_font *font) {
+u32 load_texture(mf::font::Font *font) {
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     u32 res = 0;
     glGenTextures(1, &res);
@@ -132,10 +132,8 @@ u32 load_texture(mffo_font *font) {
 }
 
 int main() {
-
-
-    mffo_font font = {};
-    mffo_font_init(&font, "/usr/share/fonts/TTF/Hack-Bold.ttf", 48.0f);
+    mf::font::Font font = {};
+    font.init("/usr/share/fonts/TTF/Hack-Bold.ttf", 48.0f);
 
     mfp_platform platform = {};
     mfp_init(&platform);
