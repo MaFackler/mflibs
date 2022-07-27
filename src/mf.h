@@ -1,7 +1,6 @@
 #ifndef MF_H
 #define MF_H
 
-
 #ifdef __cplusplus
 #else
     #include <stdbool.h>
@@ -36,16 +35,21 @@
 #include <string.h>
 
 
+// signed
 typedef int8_t i8;
 typedef int16_t i16;
 typedef int32_t i32;
 typedef int64_t i64;
+// unsinged
 typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
+
+// floating point
 typedef float f32;
 typedef double f64;
+
 
 #define MF_KiloByte(value) (1024 * value)
 #define MF_MegaByte(value) (1024 * (MF_KiloByte(value)))
@@ -67,6 +71,7 @@ typedef double f64;
 
 #define MF_MallocStruct(s) ((s *) MF_Malloc(sizeof(s)))
 #define MF_MallocArray(n, s) ((s *) MF_Malloc(n * sizeof(s)))
+#define MF_OS_NOT_SUPPORTED "Not supported on this os"
 
 
 #if defined(MF_TEST_ACTIVE)

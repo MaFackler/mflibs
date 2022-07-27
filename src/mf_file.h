@@ -1,44 +1,56 @@
-#ifndef MF_FILE_H
-#define MF_FILE_H
-#if defined(WIN32) || defined(_WIN32)
+#pragma once
+#include <mf.h>
+
+namespace mf { namespace file {
+
+#if defined(MF_OS_WINDOWS)
 #else
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <dirent.h>
-#endif
+#endif // MF_OS_
 
-// Allocators
-#ifndef mff_malloc
-    #define mff_malloc malloc
-#endif
+char* read(const char *path, const char *mode, size_t *size);
+char* path_join_create(const char *a, const char *b, char separator);
+void file_copy(const char *src, const char *dest);
+bool is_file(const char *filename);
+u64 get_last_write_time(const char *filename);
 
-#define MF_PATH_SEPARATOR_WINDOWS '\\'
-#define MF_PATH_SEPARATOR_UNIX '/'
+enum class PathItemType {
+    UNKNOWN,
+    FILE,
+    DIRECTORY,
+};
 
-#if defined(WIN32) || defined(_WIN32)
-#define MF_PATH_SEPARATOR MF_PATH_SEPARATOR_WINDOWS
+struct PathItem {
+    char *name;
+    PathItemType type;
+
+    bool is_directory();
+    bool is_file();
+};
+
+struct Directory {
+#if defined(MF_OS_WINDOWS)
+    HANDLE handle;
+    WIN32_FIND_DATAA data;
+    bool firstOne;
+#elif defined(MF_OS_LINUX)
+    DIR *d;
 #else
-#define MF_PATH_SEPARATOR MF_PATH_SEPARATOR_UNIX
+#error MF_OS_NOT_SUPPORTED
 #endif
 
-char* mff_file_read(const char *path, const char *mode, size_t *size);
-char* mf_path_join_create(const char *a, const char *b, char separator);
-void mf_file_copy(const char *src, const char *dest);
-bool mf_is_file(const char *filename);
-uint64_t mf_get_last_write_time(const char *filename);
+    bool open(const char* name, bool recursive);
+    void close();
+    bool next(PathItem *item);
+};
 
-typedef struct mf_path_item mf_path_item;
-typedef struct mf_directory mf_directory;
-bool mf_directory_open(mf_directory *dir, const char* name, bool recursive);
-bool mf_directory_next(mf_directory *dir, mf_path_item *item);
-void mf_directory_close(mf_directory *dir);
-bool mf_path_item_is_directory(mf_path_item *item);
-bool mf_path_item_is_file(mf_path_item *item);
 
-#ifdef MF_FILE_IMPLEMENTATION
+#if defined(MF_FILE_IMPLEMENTATION)
 
-char* mff_file_read(const char *path, const char *mode, size_t *size) {
+char* read(const char *path, const char *mode, size_t *size) {
     FILE *file = fopen(path, mode);
     int bytesToRead = 0;
     fseek(file, 0, SEEK_END);
@@ -51,7 +63,7 @@ char* mff_file_read(const char *path, const char *mode, size_t *size) {
         *size = bytesToRead;
 
     fseek(file, 0, SEEK_SET);
-    char *res = (char *) mff_malloc(bytesToRead);
+    char *res = (char *) malloc(bytesToRead);
     while (bytesToRead > 0) {
         u32 readBytes = fread(res, 1, bytesToRead, file);
         bytesToRead -= readBytes;
@@ -59,17 +71,17 @@ char* mff_file_read(const char *path, const char *mode, size_t *size) {
     return res;
 }
 
-char* mf_path_join_create(const char *a, const char *b, char separator) {
-    char *res = (char *) mff_malloc(strlen(a) + strlen(b) + 2);
+char* path_join_create(const char *a, const char *b, char separator) {
+    char *res = (char *) malloc(strlen(a) + strlen(b) + 2);
     sprintf(res, "%s%c%s", a, separator, b);
     return res;
 }
 
-void mf_file_copy(const char *src, const char *dest) {
-#ifdef WIN32
+void file_copy(const char *src, const char *dest) {
+#if defined(MF_OS_WINDOWS)
     int res = CopyFile(src, dest, 0);
     assert(res != 0);
-#else
+#elif defined(MF_OS_LINUX)
     struct stat st;
     assert(stat(src, &st) == 0);
     int fdSrc = open(src, O_RDONLY);
@@ -92,16 +104,16 @@ void mf_file_copy(const char *src, const char *dest) {
 #endif
 }
 
-bool mf_is_file(const char *filename) {
+bool is_file(const char *filename) {
     bool res = false;
-#ifdef WIN32
+#if defined(MF_OS_WINDOWS)
     WIN32_FIND_DATA data;
     HANDLE handle = FindFirstFile(filename, &data);
     res = handle != INVALID_HANDLE_VALUE;
     if (res && (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
         res = false;
     }
-#else
+#elif defined(MF_OS_LINUX)
     res = access(filename, F_OK) == 0;
     if (res) {
         // TODO: dirty hack to check if its a directory
@@ -115,85 +127,65 @@ bool mf_is_file(const char *filename) {
             }
         }
     }
+#else
+#error "Not supported on this platform"
 #endif
     return res;
 }
 
-uint64_t mf_get_last_write_time(const char *filename) {
+uint64_t get_last_write_time(const char *filename) {
     uint64_t res = 0;
-#ifdef WIN32
+#if defined(MF_OS_WINDOWS)
     WIN32_FILE_ATTRIBUTE_DATA data;
     if (GetFileAttributesEx(filename, GetFileExInfoStandard, &data)) {
         res = data.ftLastWriteTime.dwHighDateTime;
         res = (res << 32);
         res += data.ftLastWriteTime.dwLowDateTime;
     }
-#else
+#elif defined(MF_OS_LINUX)
     struct stat st = {};
     assert(stat(filename, &st) == 0);
     res = st.st_mtime;
+#else
+#error "Not supported on this os"
 #endif
     return res;
 }
 
-enum MF_PathItemType {
-    PATH_ITEM_UNKNOWN,
-    PATH_ITEM_FILE,
-    PATH_ITEM_DIRECTORY,
-};
-
-
-struct mf_path_item {
-    char *name;
-    enum MF_PathItemType type;
-};
-
-struct mf_directory {
-
-#ifdef WIN32
-    HANDLE handle;
-    WIN32_FIND_DATAA data;
-    bool firstOne;
-#else
-    DIR *d;
-#endif
-};
-
-
-
-
-bool mf_directory_open(mf_directory *dir, const char *name, bool recursive) {
+bool Directory::open(const char *name, bool recursive) {
     bool res = false;
-#ifdef WIN32
+#if defined(MF_OS_WINDOWS)
     char buffer[256];
     sprintf(buffer, "%s\\*.*", name);
-    dir->handle = FindFirstFile(buffer, &dir->data);
-    res = dir->handle != INVALID_HANDLE_VALUE;
-    dir->firstOne = true;
+    this->handle = FindFirstFile(buffer, &this->data);
+    res = this->handle != INVALID_HANDLE_VALUE;
+    firstOne = true;
+#elif defined(MF_OS_LINUX)
+    this->d = opendir(name);
+    res = this->d != NULL;
 #else
-    dir->d = opendir(name);
-    res = dir->d != NULL;
+#error MF_OS_NOT_SUPPORTED
 #endif
     return res;
 }
 
-bool mf_directory_next(mf_directory *dir, mf_path_item *item) {
+bool Directory::next(PathItem *item) {
     bool res = false;
-#ifdef WIN32
-    if (dir->firstOne) {
-        dir->firstOne = false;
-        res = dir->handle != INVALID_HANDLE_VALUE;
+#if defined(MF_OS_WINDOWS)
+    if (firstOne) {
+        firstOne = false;
+        res = this->handle != INVALID_HANDLE_VALUE;
     } else {
-        res = FindNextFileA(dir->handle, &dir->data);
+        res = FindNextFileA(this->handle, &this->data);
     }
     if (res) {
-        item->name = dir->data.cFileName;
-        item->type = PATH_ITEM_FILE;
-        if (dir->data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-            item->type = PATH_ITEM_DIRECTORY;
+        item->name = data.cFileName;
+        item->type = PathItemType::FILE;
+        if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            item->type = PathItemType::DIRECTORY;
         }
     }
-#else
+#elif defined(MF_OS_LINUX)
     struct dirent *dire;
     dire = readdir(dir->d);
     while (dire != NULL && strcmp(dire->d_name, ".") == 0
@@ -217,43 +209,44 @@ bool mf_directory_next(mf_directory *dir, mf_path_item *item) {
         }
         res = true;
     }
-
+#else
+#error MF_OS_NOT_SUPPORTED
 #endif
     return res;
 }
 
-void mf_directory_close(mf_directory *dir) {
-#ifdef WIN32
-    FindClose(dir->handle);
+void Directory::close() {
+#if defined(MF_OS_WINDOWS)
+    FindClose(this->handle);
+#elif defined(MF_OS_LINUX)
+    closedir(this->d);
 #else
-    closedir(dir->d);
+#error MF_OS_NOT_SUPPORTED
 #endif
 }
 
 inline
-bool mf_path_item_is_directory(mf_path_item *item) {
-    return item->type == PATH_ITEM_DIRECTORY;
+bool PathItem::is_directory() {
+    return this->type == PathItemType::DIRECTORY;
 }
 
 inline
-bool mf_path_item_is_file(mf_path_item *item) {
-    return item->type == PATH_ITEM_FILE;
+bool PathItem::is_file() {
+    return this->type == PathItemType::FILE;
 }
-#endif
 
-#endif // MF_FILE_IMPLEMENTATION
        
-#ifdef MF_TEST_ACTIVE
+#if defined(MF_TEST_ACTIVE)
 
-TEST("mff_file_read empty file") {
+TEST("read - empty file") {
     size_t size = 0;
-    char *contents = mff_file_read("tests/data/testfile_empty.txt", "rb", &size);
+    char *contents = read("tests/data/testfile_empty.txt", "rb", &size);
     MFT_CHECK_SIZET(size, 0);
 }
 
-TEST("mff_file_read") {
+TEST("read") {
     size_t size = 0;
-    char *contents = mff_file_read("tests/data/testfile.txt", "rb", &size);
+    char *contents = read("tests/data/testfile.txt", "rb", &size);
 #if defined(MF_OS_WINDOWS)
     MFT_CHECK_SIZET(size, 5);
     MFT_CHECK_STRINGN(contents, "abc", 3);
@@ -266,30 +259,33 @@ TEST("mff_file_read") {
 #endif
 }
 
-TEST("mf_path_join_create") {
-    char *res = mf_path_join_create("home", "mf", MF_PATH_SEPARATOR_UNIX);
+TEST("path_join_create") {
+#if defined(MF_OS_LINUX)
+    char *res = path_join_create("home", "mf", "/");
     MFT_CHECK_STRING(res, "home/mf");
     free(res);
+#endif
 }
 
-TEST("mf_is_file") {
-    MFT_CHECK(mf_is_file("./src/mf.h"));
-    MFT_CHECK(mf_is_file("src/mf.h"));
-    MFT_CHECK(!mf_is_file("src/mfnot.h"));
+TEST("is_file") {
+    MFT_CHECK(is_file("./src/mf.h"));
+    MFT_CHECK(is_file("src/mf.h"));
+    MFT_CHECK(!is_file("src/mfnot.h"));
 }
 
-#if 0
-TEST("mf_directory") {
-    mf_directory dir;
-    mf_path_item item;
-    mf_directory_open(&dir, "src", false);
-    int counter = 0;
-    while(mf_directory_next(&dir, &item)) {
-        counter++;
-    }
-    MFT_CHECK_INT(counter, 9);
-}
+//TEST("mf_directory") {
+//    mf_directory dir;
+//    mf_path_item item;
+//    mf_directory_open(&dir, "src", false);
+//    int counter = 0;
+//    while(mf_directory_next(&dir, &item)) {
+//        counter++;
+//    }
+//    MFT_CHECK_INT(counter, 9);
+//}
 
 #endif // MF_TEST_ACTIVE
-#endif // MF_FILE_H
 
+#endif // MF_FILE_IMPLEMENTATION
+
+}} // mf::file
