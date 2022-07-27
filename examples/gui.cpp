@@ -15,6 +15,9 @@
 #define MF_OPENGL_IMPLEMENTATION
 #include "mf_opengl.h"
 
+using mf::math::m4;
+typedef mf::math::v2<u32> v2;
+
 
 const char *VS_SRC = R"(
 #version 330 core
@@ -43,10 +46,6 @@ void main()
 })";
 
 
-struct v2 {
-    unsigned int x;
-    unsigned int y;
-};
 
 struct Character {
     u32 texture_id;
@@ -145,7 +144,7 @@ int main() {
     mfgl_shader_program_use(program);
 
     //auto projection = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f);
-	mfm_m4 projection = mfm_m4_ortho(0.0f, 800.0f, 0.0f, 600.0f, 0.0f, 100.0f);	
+	m4 projection = m4::create_ortho(0.0f, 800.0f, 0.0f, 600.0f, 0.0f, 100.0f);	
     u32 location_projection = mfgl_shader_uniform_location(program, "projection");
     mfgl_shader_uniform_4fv(location_projection, 1, (float *) &projection.m[0]);
 

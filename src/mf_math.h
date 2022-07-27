@@ -1,19 +1,21 @@
-#ifndef MF_MATH_H
-#define MF_MATH_H
+#pragma once
+#include <mf.h>
+
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+namespace mf { namespace math {
 
-inline float mfm_to_rad(float degree) {
+
+inline f32 to_rad(f32 degree) {
     return degree * (M_PI / 180);
 }
 
-inline float mfm_to_degree(float rad) {
+inline f32 to_degree(f32 rad) {
     return rad * (180 / M_PI);
 }
 
-template <typename T>
-inline T mf_clamp(T x, T min, T max) {
+MF_Generici T clamp(T x, T min, T max) {
     double res = x;
     if (x < min) {
         res = min;
@@ -24,41 +26,31 @@ inline T mf_clamp(T x, T min, T max) {
     return res;
 }
 
-float mfm_lerp(float a, float b, float t);
-
-typedef struct
-{
-    float x;
-    float y;
-} mfm_v2;
-
-
-float mfm_v2_distance(mfm_v2 a, mfm_v2 b);
-float mfm_v2_distance_squared(mfm_v2 a, mfm_v2 b);
-float mfm_v2_length(mfm_v2 a);
-mfm_v2 mfm_v2_normalize(mfm_v2 a);
-mfm_v2 mfm_v2_subtract(mfm_v2 a, mfm_v2 b);
-mfm_v2 mfm_v2_mul(mfm_v2 a, mfm_v2 b);
-mfm_v2 mfm_v2_mul(mfm_v2 a, float b);
-mfm_v2 mfm_v2_div(mfm_v2 a, mfm_v2 b);
-mfm_v2 mfm_v2_div(mfm_v2 a, float b);
-
-
-
-typedef struct
-{
-    int x;
-    int y;
-
-} mfm_v2i;
-
-
-bool mfm_v2_is_equal(mfm_v2 a, mfm_v2 b);
-
-mfm_v2i mfm_v2i_add(mfm_v2i a, mfm_v2i b);
 
 template <typename T>
-union mfm_v3
+struct v2 {
+    T x;
+    T y;
+
+    f32 distance(v2<T> b);
+    f32 distance_squared(v2<T> b);
+    f32 length();
+    v2<T> normalize();
+
+    inline v2<T> operator+(v2<T> b);
+    inline v2<T> operator-(v2<T> b);
+    inline v2<T> operator*(v2<T> b);
+    inline v2<T> operator/(v2<T> b);
+    inline bool operator==(v2<T> b);
+    inline v2<T> operator*(T b);
+    inline v2<T> operator/(T b);
+};
+
+
+
+
+template <typename T>
+union v3
 {
     struct {
         T x;
@@ -70,319 +62,307 @@ union mfm_v3
         T g;
         T b;
     };
+
+    inline static v3<T> create_255_to_1(i32 r, i32 g, i32 b);
+    inline static v3<T> v3_lerp(v3<T> a, v3<T> b, f32 t);
+    inline v3<T> operator+(v3<T> b);
+    inline v3<T> operator-(v3<T> b);
+    inline v3<T> operator*(v3<T> b);
+    inline v3<T> operator/(v3<T> b);
+    inline v3<T> operator*(T b);
+    inline v3<T> operator/(T b);
+
+    f32 length();
+    f32 length_squared();
+    f32 dot(v3<T> b);
+    v3<T> normalize();
+    v3<T> cross(v3<T> b);
+    v3<T> negate();
+    bool near_zero();
 };
 
-typedef struct
-{
-    float r;
-    float g;
-    float b;
-    float a;
-} mfm_v4;
-
-typedef struct
-{
-    int x;
-    int y;
-    int z;
-} mfm_v3i;
-
-
 template <typename T>
-mfm_v3<T> mfm_v3_255_to_1(int r, int g, int b);
-
-template <typename T>
-float mfm_v3_length(mfm_v3<T> a);
-template <typename T>
-float mfm_v3_length_squared(mfm_v3<T> a);
-template <typename T>
-mfm_v3<T> mfm_v3_lerp(mfm_v3<T> a, mfm_v3<T> b, float t);
-template <typename T>
-mfm_v3<T> mfm_v3_add(mfm_v3<T> a, mfm_v3<T> b);
-template <typename T>
-mfm_v3<T> mfm_v3_sub(mfm_v3<T> a, mfm_v3<T> b);
-template <typename T>
-mfm_v3<T> mfm_v3_mul(mfm_v3<T> a, float b);
-template <typename T>
-mfm_v3<T> mfm_v3_mul(mfm_v3<T> a, mfm_v3<T> b);
-template <typename T>
-mfm_v3<T> mfm_v3_div(mfm_v3<T> a, float b);
-template <typename T>
-float mfm_v3_dot(mfm_v3<T> a, mfm_v3<T> b);
-template <typename T>
-mfm_v3<T> mfm_v3_normalize(mfm_v3<T> a);
-template <typename T>
-mfm_v3<T> mfm_v3_cross(mfm_v3<T> a, mfm_v3<T> b);
-template <typename T>
-mfm_v3<T> mfm_v3_negate(mfm_v3<T> a);
-template <typename T>
-bool mfm_v3_near_zero(mfm_v3<T> a);
-
-
-union mfm_rect
-{
-    struct {
-        float x;
-        float y;
-        float width;
-        float height;
-    };
-    struct {
-        mfm_v2 xy;
-        float __ignore3;
-        float __ignore4;
-    };
-    float e[4];
+struct v4 {
+    T r;
+    T g;
+    T b;
+    T a;
 };
 
-union mfm_m4
-{
+template <typename T>
+union Rect {
     struct {
-        float m[16];
+        T x;
+        T y;
+        T width;
+        T height;
     };
+    struct {
+        v2<T> xy;
+        T __ignore3;
+        T __ignore4;
+    };
+    T e[4];
 };
 
-inline mfm_m4 mfm_m4_identity();
-inline mfm_m4 mfm_m4_perspective(float fov, float aspect, float nearr, float farr);
-template <typename T>
-inline mfm_m4 mfm_m4_look_at(mfm_v3<T> eye, mfm_v3<T> center, mfm_v3<T> up);
+union m4 {
+    struct {
+        f32 m[16];
+    };
+
+    static inline m4 create_identity() {
+        m4 res = {};
+        res.m[0 * 4 + 0] = 1.0f;
+        res.m[1 * 4 + 1] = 1.0f;
+        res.m[2 * 4 + 2] = 1.0f;
+        res.m[3 * 4 + 3] = 1.0f;
+        return res;
+    }
+    static inline m4 create_ortho(float left, float right, float bottom, float top, float nearr, float farr) {
+        m4 res = {};
+
+        res.m[0 * 4 + 0] = 2.0f / (right - left);
+        res.m[1 * 4 + 1] = 2.0f / (top - bottom);
+        res.m[2 * 4 + 2] = 2.0f / (nearr - farr);
+        res.m[2 * 4 + 2] = 2.0f / nearr;
+        res.m[3 * 4 + 3] = 1.0f;
+
+        res.m[3 * 4 + 0] = (left + right) / (left - right);
+        res.m[3 * 4 + 1] = (bottom + top) / (bottom - top);
+        res.m[3 * 4 + 2] = (farr + nearr) / (nearr - farr);
+
+        return res;
+    }
+    static inline m4 create_perspective(f32 fov, f32 aspect, f32 nearr, f32 farr) {
+        m4 res = {};
+
+#if 0 
+        // without aspect
+        float s = 1.0f / tanf(fov * (M_PI / 360.0f));
+        res.m[0 * 4 + 0] = s;
+        res.m[1 * 4 + 1] = s;
+
+        res.m[2 * 4 + 2] = -farr / (farr - nearr);
+        res.m[2 * 4 + 3] = -1.0f;
+
+        res.m[3 * 4 + 2] = -(farr * nearr) / (farr - nearr);
+#else
+        float c = 1.0f / (tanf(fov * (M_PI / 360.0f)));
+        res.m[0 * 4 + 0] = c / aspect;
+        res.m[1 * 4 + 1] =  c;
+
+        res.m[2 * 4 + 2] = (nearr + farr) / (nearr - farr);
+        res.m[2 * 4 + 3] = -1.0f;
+
+        res.m[2 * 4 + 2] = (2.0f * farr * nearr) / (nearr - farr);
+#endif
+        return res;
+    }
+    static inline m4 create_look_at(v3<f32> eye, v3<f32> center, v3<f32> up) {
+        v3<f32> zaxis = (center - eye).normalize();
+        v3<f32> xaxis = zaxis.cross(up).normalize();
+        v3<f32> yaxis = xaxis.cross(zaxis);
+
+        m4 res = {
+            xaxis.x, xaxis.y, xaxis.z, -xaxis.dot(eye),
+            yaxis.x, yaxis.y, yaxis.z, -yaxis.dot(eye),
+            zaxis.x, zaxis.y, zaxis.z, -zaxis.dot(eye),
+        };
+        return res;
+    }
+};
+
+
 
 
 #ifdef MF_MATH_IMPLEMENTATION
 
-float mfm_lerp(float a, float b, float t)
-{
-    float res = a + (b - a) * t;
+
+template <typename T>
+inline f32 v2<T>::distance(v2<T> b) {
+    float res = sqrt(this->distance_squared(b));
     return res;
 }
 
-float mfm_v2_distance(mfm_v2 a, mfm_v2 b)
-{
-    float res = sqrt(mfm_v2_distance_squared(a, b));
-    return res;
-}
-
-float mfm_v2_distance_squared(mfm_v2 a, mfm_v2 b)
-{
-    float sx = (b.x - a.x) * (b.x - a.x);
-    float sy = (b.y - a.y) * (b.y - a.y);
+MF_Generic inline f32 v2<T>::distance_squared(v2<T> b) {
+    float sx = (b.x - this->x) * (b.x - this->x);
+    float sy = (b.y - this->y) * (b.y - this->y);
     float res = sx + sy;
     return res;
 }
 
-float mfm_v2_length(mfm_v2 a)
-{
-    float res = sqrt(a.x * a.x + a.y * a.y);
-    return res;
-}
 
-mfm_v2 mfm_v2_normalize(mfm_v2 a)
-{
-    mfm_v2 res = {0};
-    float length = mfm_v2_length(a);
-    res.x = a.x / length;
-    res.y = a.y / length;
-    return res;
-}
-
-mfm_v2 mfm_v2_subtract(mfm_v2 a, mfm_v2 b)
-{
-    mfm_v2 res = {0};
-    res.x = a.x - b.x;
-    res.y = a.y - b.y;
-    return res;
-}
-
-mfm_v2 mfm_v2_mul(mfm_v2 a, mfm_v2 b)
-{
-    mfm_v2 res = {0};
-    res.x = a.x * b.x;
-    res.y = a.x * b.y;
-    return res;
-}
-
-mfm_v2 mfm_v2_mul(mfm_v2 a, float b)
-{
-    mfm_v2 res = {0};
-    res.x = a.x * b;
-    res.y = a.y * b;
-    return res;
-}
-
-mfm_v2 mfm_v2_div(mfm_v2 a, mfm_v2 b)
-{
-    mfm_v2 res = {0};
-    res.x = a.x / b.x;
-    res.y = a.y / b.y;
-    return res;
-}
-
-mfm_v2 mfm_v2_div(mfm_v2 a, float b)
-{
-    mfm_v2 res = {0};
-    res.x = a.x / b;
-    res.y = a.y / b;
-    return res;
-}
-
-// mfm_v2
-inline
-bool mfm_v2_is_equal(mfm_v2 a, mfm_v2 b)
-{
-    bool res = a.x == b.x && a.y == b.y;
-    return res;
-}
-
-mfm_v2i mfm_v2i_add(mfm_v2i a, mfm_v2i b)
-{
-    mfm_v2i res;
-    res.x = a.x + b.x;
-    res.y = a.y + b.y;
+MF_Generici f32 v2<T>::length() {
+    float res = sqrt(this->x * this->x + this->y * this->y);
     return res;
 }
 
 
-// mfm_v3
+MF_Generici v2<T> v2<T>::normalize() {
+    v2 res = {0};
+    f32 length = this->length();
+    res.x = this->x / length;
+    res.y = this->y / length;
+    return res;
+}
 
-template <typename T>
-mfm_v3<T> mfm_v3_255_to_1(int r, int g, int b) {
-    mfm_v3<T> res;
+MF_Generici v2<T> v2<T>::operator+(v2<T> b) {
+    v2 res = {0};
+    res.x = this->x + b.x;
+    res.y = this->y + b.y;
+    return res;
+}
+
+MF_Generici v2<T> v2<T>::operator-(v2<T> b) {
+    v2 res = {0};
+    res.x = this->x - b.x;
+    res.y = this->y - b.y;
+    return res;
+}
+
+MF_Generici v2<T> v2<T>::operator*(v2<T> b) {
+    v2 res = {0};
+    res.x = this->x * b.x;
+    res.y = this->x * b.y;
+    return res;
+}
+
+MF_Generici v2<T> v2<T>::operator*(T b) {
+    v2 res = {0};
+    res.x = this->x * b;
+    res.y = this->x * b;
+    return res;
+}
+
+MF_Generici v2<T> v2<T>::operator/(v2<T> b) {
+    v2 res = {0};
+    res.x = this->x / b.x;
+    res.y = this->y / b.y;
+    return res;
+}
+
+MF_Generici v2<T> v2<T>::operator/(T b) {
+    v2 res = {0};
+    res.x = this->x / b;
+    res.y = this->y / b;
+    return res;
+}
+
+MF_Generici bool v2<T>::operator==(v2<T> b) {
+    bool res = this->x == b.x && this->y == b.y;
+    return res;
+}
+
+
+
+// v3
+
+MF_Generici v3<T> v3<T>::create_255_to_1(i32 r, i32 g, i32 b) {
+    v3<T> res;
     res.x = r / 255.0f;
     res.y = g / 255.0f;
     res.z = b / 255.0f;
     return res;
 }
 
-template <typename T>
-float mfm_v3_length(mfm_v3<T> a) {
-    float res = 0;
-    res = sqrt(mfm_v3_length_squared(a));
+MF_Generici f32 v3<T>::length() {
+    f32 res = 0;
+    res = sqrt(this->length_squared());
     return res;
 }
 
-template <typename T>
-float mfm_v3_length_squared(mfm_v3<T> a) {
-    float res = (a.x * a.x) + (a.y * a.y) + (a.z * a.z);
+MF_Generici f32 v3<T>::length_squared() {
+    float res = (this->x * this->x) + (this->y * this->y) + (this->z * this->z);
     return res;
 }
 
 template <typename T>
 inline
-float mfm_v3_lerp(float a, float b, float t)
+float v3_lerp(float a, float b, float t)
 {
     float res = a + (b - a) * t;
     return res;
 }
 
-template <typename T>
-inline
-mfm_v3<T> mfm_v3_add(mfm_v3<T> a, mfm_v3<T> b)
-{
-    mfm_v3<T> res;
-    res.x = a.x + b.x;
-    res.y = a.y + b.y;
-    res.z = a.z + b.z;
+MF_Generici v3<T> v3<T>::operator+(v3<T> b) {
+    v3<T> res;
+    res.x = this->x + b.x;
+    res.y = this->y + b.y;
+    res.z = this->z + b.z;
     return res;
 }
 
-template <typename T>
-inline
-mfm_v3<T> mfm_v3_sub(mfm_v3<T> a, mfm_v3<T> b)
-{
-    mfm_v3<T> res;
-    res.x = a.x - b.x;
-    res.y = a.y - b.y;
-    res.z = a.z - b.z;
+MF_Generici v3<T> v3<T>::operator-(v3<T> b) {
+    v3<T> res;
+    res.x = this->x - b.x;
+    res.y = this->y - b.y;
+    res.z = this->z - b.z;
     return res;
 }
 
-template <typename T>
-inline
-mfm_v3<T> mfm_v3_mul(mfm_v3<T> a, float b)
-{
-    mfm_v3<T> res;
-    res.x = a.x * b;
-    res.y = a.y * b;
-    res.z = a.z * b;
+MF_Generici v3<T> v3<T>::operator*(v3<T> b) {
+    v3<T> res;
+    res.x = this->x * b.x;
+    res.y = this->y * b.y;
+    res.z = this->z * b.z;
     return res;
 }
 
-template <typename T>
-mfm_v3<T> mfm_v3_mul(mfm_v3<T> a, mfm_v3<T> b)
-{
-    mfm_v3<T> res;
-    res.x = a.x * b.x;
-    res.y = a.y * b.y;
-    res.z = a.z * b.z;
+MF_Generici v3<T> v3<T>::operator*(T b) {
+    v3<T> res;
+    res.x = this->x * b;
+    res.y = this->y * b;
+    res.z = this->z * b;
     return res;
 }
 
-template <typename T>
-mfm_v3<T> mfm_v3_div(mfm_v3<T> a, float b)
-{
-    mfm_v3<T> res;
-    res.x = a.x / b;
-    res.y = a.y / b;
-    res.z = a.z / b;
+MF_Generici v3<T> v3<T>::operator/(T b) {
+    v3<T> res;
+    res.x = this->x / x;
+    res.y = this->y / y;
+    res.z = this->z / z;
     return res;
 }
 
-template <typename T>
-float mfm_v3_dot(mfm_v3<T> a, mfm_v3<T> b)
-{
+MF_Generici f32 v3<T>::dot(v3<T> b) {
     float res = 0;
-    res = a.x * b.x + a.y * b.y + a.z * b.z;
+    res = this->x * b.x + this->y * b.y + this->z * b.z;
     return res;
 }
 
-template <typename T>
-mfm_v3<T> mfm_v3_normalize(mfm_v3<T> a)
+MF_Generici v3<T> v3<T>::normalize()
 {
-    mfm_v3<T> res = {};
-    float length = mfm_v3_length(a);
-    res.x = a.x / length;
-    res.y = a.y / length;
-    res.z = a.z / length;
+    v3<T> res = {};
+    float length = this->length();
+    res.x = this->x / length;
+    res.y = this->y / length;
+    res.z = this->z / length;
     return res;
 }
 
-template <typename T>
-mfm_v3<T> mfm_v3_cross(mfm_v3<T> a, mfm_v3<T> b)
-{
-    mfm_v3<T> res = {};
-    res.x = a.y * b.z - a.z * b.y;
-    res.y = a.z * b.x - a.x * b.z;
-    res.z = a.x * b.y - a.y * b.x;
+MF_Generici v3<T> v3<T>::cross(v3<T> b) {
+    v3<T> res = {};
+    res.x = this->y * b.z - this->z * b.y;
+    res.y = this->z * b.x - this->x * b.z;
+    res.z = this->x * b.y - this->y * b.x;
     return res;
 }
 
-template <typename T>
-mfm_v3<T> mfm_v3_negate(mfm_v3<T> a)
-{
-    mfm_v3<T> res = {};
-    res.x = -a.x;
-    res.y = -a.y;
-    res.z = -a.z;
+MF_Generici v3<T> v3<T>::negate() {
+    v3<T> res = {};
+    res.x = -this->x;
+    res.y = -this->y;
+    res.z = -this->z;
     return res;
 }
 
-template <typename T>
-bool mfm_v3_near_zero(mfm_v3<T> a)
-{
-    const double s = 1e-8;
-    return ((fabs(a.x) < s) && (fabs(a.y) < s) && (fabs(a.z) < s));
+MF_Generici bool v3<T>::near_zero() {
+    const f64 s = 1e-8;
+    return ((fabs(this->x) < s) && (fabs(this->y) < s) && (fabs(this->z) < s));
 }
 
-template <typename T>
-inline
-mfm_v3<T> mfm_v3_lerp(mfm_v3<T> a, mfm_v3<T> b, float t)
-{
-    mfm_v3<T> res = mfm_v3_add(a, mfm_v3_mul(mfm_v3_sub(b, a), t));
-    return res;
-}
-
-inline
-mfm_rect mfm_rect_margin_x(mfm_rect r, float value)
+#if 0
+Rect mfm_rect_margin_x(mfm_rect r, float value)
 {
     mfm_rect res = r;
     res.x += value;
@@ -427,310 +407,92 @@ mfm_rect mfm_rect_margin(mfm_rect r, float left, float top, float right, float b
     res.height -= (bottom + top);
     return res;
 }
-
-
-
-#ifdef __cplusplus
-
-// Vector2
-
-inline
-mfm_v2 operator-(mfm_v2 a, mfm_v2 b)
-{
-    return mfm_v2_subtract(a, b);
-}
-
-inline
-mfm_v2 operator*(mfm_v2 a, mfm_v2 b)
-{
-    return mfm_v2_mul(a, b);
-}
-
-inline
-mfm_v2 operator*(mfm_v2 a, float b)
-{
-    return mfm_v2_mul(a, b);
-}
-
-inline
-mfm_v2 operator/(mfm_v2 a, mfm_v2 b)
-{
-    return mfm_v2_div(a, b);
-}
-
-inline
-mfm_v2 operator/(mfm_v2 a, float b)
-{
-    return mfm_v2_div(a, b);
-}
-
-inline
-bool operator==(mfm_v2 a, mfm_v2 b)
-{
-    return mfm_v2_is_equal(a, b);
-}
-
-inline
-bool operator!=(mfm_v2 a, mfm_v2 b)
-{
-    return !mfm_v2_is_equal(a, b);
-}
-
-inline
-mfm_v2i operator+(mfm_v2i a, mfm_v2i b)
-{
-    return mfm_v2i_add(a, b);
-}
-
-inline
-mfm_v2i& operator+=(mfm_v2i& a, mfm_v2i& b)
-{
-    a = a + b;
-    return a;
-}
-
-// Vector 3
-template <typename T>
-inline
-mfm_v3<T> operator+(mfm_v3<T> a, mfm_v3<T> b)
-{
-    return mfm_v3_add(a, b);
-}
-
-template <typename T>
-inline
-mfm_v3<T> operator-(mfm_v3<T> a, mfm_v3<T> b)
-{
-    return mfm_v3_sub(a, b);
-}
-
-template <typename T>
-inline
-mfm_v3<T> operator*(mfm_v3<T> a, float b)
-{
-    return mfm_v3_mul(a, b);
-}
-
-template <typename T>
-inline
-mfm_v3<T> operator*(float b, mfm_v3<T> a)
-{
-    return mfm_v3_mul(a, b);
-}
-
-template <typename T>
-inline
-mfm_v3<T> operator*(mfm_v3<T> a, double b)
-{
-    return mfm_v3_mul(a, b);
-}
-
-template <typename T>
-inline
-mfm_v3<T> operator*(double b, mfm_v3<T> a)
-{
-    return mfm_v3_mul(a, b);
-}
-
-template <typename T>
-inline
-mfm_v3<T> operator*(mfm_v3<T> a, mfm_v3<T> b)
-{
-    return mfm_v3_mul(a, b);
-}
-
-template <typename T>
-inline
-mfm_v3<T> operator/(mfm_v3<T> a, T b)
-{
-    return mfm_v3_div(a, b);
-}
-
-mfm_m4 mfm_m4_identity()
-{
-    mfm_m4 res = {};
-    res.m[0 * 4 + 0] = 1.0f;
-    res.m[1 * 4 + 1] = 1.0f;
-    res.m[2 * 4 + 2] = 1.0f;
-    res.m[3 * 4 + 3] = 1.0f;
-    return res;
-}
-
-inline mfm_m4 mfm_m4_ortho(float left, float right, float bottom, float top, float nearr, float farr) {
-	mfm_m4 res = {};
-
-    res.m[0 * 4 + 0] = 2.0f / (right - left);
-    res.m[1 * 4 + 1] = 2.0f / (top - bottom);
-    res.m[2 * 4 + 2] = 2.0f / (nearr - farr);
-    res.m[2 * 4 + 2] = 2.0f / nearr;
-    res.m[3 * 4 + 3] = 1.0f;
-
-    res.m[3 * 4 + 0] = (left + right) / (left - right);
-    res.m[3 * 4 + 1] = (bottom + top) / (bottom - top);
-    res.m[3 * 4 + 2] = (farr + nearr) / (nearr - farr);
-
-    return res;
-}
-
-inline mfm_m4 mfm_m4_perspective(float fov, float aspect, float nearr, float farr)
-{
-    mfm_m4 res = {};
-
-#if 0 
-    // without aspect
-    float s = 1.0f / tanf(fov * (M_PI / 360.0f));
-    res.m[0 * 4 + 0] = s;
-    res.m[1 * 4 + 1] = s;
-
-    res.m[2 * 4 + 2] = -farr / (farr - nearr);
-    res.m[2 * 4 + 3] = -1.0f;
-
-    res.m[3 * 4 + 2] = -(farr * nearr) / (farr - nearr);
-#else
-    float c = 1.0f / (tanf(fov * (M_PI / 360.0f)));
-    res.m[0 * 4 + 0] = c / aspect;
-    res.m[1 * 4 + 1] =  c;
-
-    res.m[2 * 4 + 2] = (nearr + farr) / (nearr - farr);
-    res.m[2 * 4 + 3] = -1.0f;
-
-    res.m[2 * 4 + 2] = (2.0f * farr * nearr) / (nearr - farr);
 #endif
-    return res;
-}
 
-template <typename T>
-inline mfm_m4 mfm_m4_look_at(mfm_v3<T> eye, mfm_v3<T> center, mfm_v3<T> up)
-{
-    mfm_v3<T> zaxis = mfm_v3_normalize(center - eye);
-    mfm_v3<T> xaxis = mfm_v3_normalize(mfm_v3_cross(zaxis, up));
-    mfm_v3<T> yaxis = mfm_v3_cross(xaxis, zaxis);
 
-    mfm_m4 res = {
-        xaxis.x, xaxis.y, xaxis.z, -mfm_v3_dot(xaxis, eye),
-        yaxis.x, yaxis.y, yaxis.z, -mfm_v3_dot(yaxis, eye),
-        zaxis.x, zaxis.y, zaxis.z, -mfm_v3_dot(zaxis, eye),
-    };
-    return res;
-}
 
-#endif
 #endif
 
 #ifdef MF_TEST_ACTIVE
 
-TEST("mf_clamp") {
-    MFT_CHECK(mf_clamp(1.0, 0.0, 100.0) == 1.0);
-    MFT_CHECK(mf_clamp(1.0, 2.0, 100.0) == 2.0);
-    MFT_CHECK(mf_clamp(110.0, 0.0, 100.0) == 100.0);
+TEST("clamp") {
+    MFT_CHECK(clamp(1.0, 0.0, 100.0) == 1.0);
+    MFT_CHECK(clamp(1.0, 2.0, 100.0) == 2.0);
+    MFT_CHECK(clamp(110.0, 0.0, 100.0) == 100.0);
 }
 
 
-TEST("Vector 2 is equal")
-{
-    mfm_v2 v1{2.0f, 3.0f};
-    mfm_v2 v2{2.0f, 3.0f};
+TEST("v2::operator==") {
+    v2<f32> v1{2.0f, 3.0f};
+    v2<f32> v2{2.0f, 3.0f};
 
     MFT_CHECK(v1 == v2);
-    MFT_CHECK(mfm_v2_is_equal(v1, v2));
 }
 
-TEST("Vector 2 distance")
-{
-    mfm_v2 v1{-7, -4};
-    mfm_v2 v2{17, 6.5};
-    float res = mfm_v2_distance(v1, v2);
+TEST("v2::distance") {
+    v2<f32> v1{-7, -4};
+    v2<f32> v2{17, 6.5};
+    f32 res = v1.distance(v2);
     MFT_CHECK_FLOAT(res, 26.196374);
 }
 
-TEST("Vector 2 normalize and lenght")
-{
-    mfm_v2 v1{1, 2};
-    mfm_v2 res = mfm_v2_normalize(v1);
-    MFT_CHECK_FLOAT(mfm_v2_length(res), 1.0f);
+TEST("v2::normalize/length") {
+    v2<f32> v1{1, 2};
+    v2<f32> res = v1.normalize();
+    MFT_CHECK_FLOAT(res.length(), 1.0f);
 }
 
-TEST("Vector 2 int add and add assign")
-{
-    mfm_v2i v1{2, 3};
-    mfm_v2i v2{2, 3};
+TEST("v2<i32>::operator+") {
+    v2<i32> v1{2, 3};
+    v2<i32> v2{2, 3};
 
-    mfm_v2i res = v1 + v2;
+    auto res = v1 + v2;
     MFT_CHECK_INT(res.x, 4);
     MFT_CHECK_INT(res.y, 6);
 
-    v1 += v2;
+    v1 = v1 + v2;
     MFT_CHECK_INT(v1.x, 4);
     MFT_CHECK_INT(v1.y, 6);
 }
 
-TEST("Vector 255 to 1")
-{
-    mfm_v3<float> res = mfm_v3_255_to_1<float>(128, 0, 255);
+TEST("v3<f32>::create_255_to_1") {
+    v3<f32> res = v3<f32>::create_255_to_1(128, 0, 255);
 
     MFT_CHECK_FLOAT(res.x, 0.5019f);
     MFT_CHECK_FLOAT(res.y, 0.0f);
     MFT_CHECK_FLOAT(res.z, 1.0f);
 }
 
-TEST("Vector 3 add")
-{
-    mfm_v3<float> v1{1.0f, 2.0f, 3.0f};
-    mfm_v3<float> v2{4.0f, 5.0f, 6.0f};
+TEST("v3::operator+") {
+    v3<f32> v1{1.0f, 2.0f, 3.0f};
+    v3<f32> v2{4.0f, 5.0f, 6.0f};
 
-    {
-        mfm_v3<float> res = v1 + v2;
-        MFT_CHECK_FLOAT(res.x, 5.0f);
-        MFT_CHECK_FLOAT(res.y, 7.0f);
-        MFT_CHECK_FLOAT(res.z, 9.0f);
-    }
-
-    {
-        mfm_v3<float> res = mfm_v3_add(v1, v2);
-        MFT_CHECK_FLOAT(res.x, 5.0f);
-        MFT_CHECK_FLOAT(res.y, 7.0f);
-        MFT_CHECK_FLOAT(res.z, 9.0f);
-    }
+    v3<f32> res = v1 + v2;
+    MFT_CHECK_FLOAT(res.x, 5.0f);
+    MFT_CHECK_FLOAT(res.y, 7.0f);
+    MFT_CHECK_FLOAT(res.z, 9.0f);
 }
 
-TEST("Vector 3 sub")
-{
-    mfm_v3<float> v1{1.0f, 2.0f, 3.0f};
-    mfm_v3<float> v2{4.0f, 5.0f, 6.0f};
+TEST("v3::operator-") {
+    v3<f32> v1{1.0f, 2.0f, 3.0f};
+    v3<f32> v2{4.0f, 5.0f, 6.0f};
 
-    {
-        mfm_v3<float> res = v1 - v2;
-        MFT_CHECK_FLOAT(res.x, -3.0f);
-        MFT_CHECK_FLOAT(res.y, -3.0f);
-        MFT_CHECK_FLOAT(res.z, -3.0f);
-    }
-
-    {
-        mfm_v3<float> res = mfm_v3_sub(v1, v2);
-        MFT_CHECK_FLOAT(res.x, -3.0f);
-        MFT_CHECK_FLOAT(res.y, -3.0f);
-        MFT_CHECK_FLOAT(res.z, -3.0f);
-    }
+    v3<f32> res = v1 - v2;
+    MFT_CHECK_FLOAT(res.x, -3.0f);
+    MFT_CHECK_FLOAT(res.y, -3.0f);
+    MFT_CHECK_FLOAT(res.z, -3.0f);
 }
 
-TEST("Vector 3 mul")
+TEST("v3::operator*")
 {
-    mfm_v3<float> v1{1.0f, 2.0f, 3.0f};
+    v3<f32> v1{1.0f, 2.0f, 3.0f};
 
-    {
-        mfm_v3<float> res = v1 * 2.0f;
-        MFT_CHECK_FLOAT(res.x, 2.0f);
-        MFT_CHECK_FLOAT(res.y, 4.0f);
-        MFT_CHECK_FLOAT(res.z, 6.0f);
-    }
-
-    {
-        mfm_v3<float> res = mfm_v3_mul(v1, 2.0f);
-        MFT_CHECK_FLOAT(res.x, 2.0f);
-        MFT_CHECK_FLOAT(res.y, 4.0f);
-        MFT_CHECK_FLOAT(res.z, 6.0f);
-    }
+    v3<f32> res = v1 * 2.0f;
+    MFT_CHECK_FLOAT(res.x, 2.0f);
+    MFT_CHECK_FLOAT(res.y, 4.0f);
+    MFT_CHECK_FLOAT(res.z, 6.0f);
 }
 
 #endif // MF_TEST_ACTIVE
-#endif // MF_MATH_H
+
+}} // mf::math

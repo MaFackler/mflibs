@@ -50,6 +50,9 @@ typedef uint64_t u64;
 typedef float f32;
 typedef double f64;
 
+#define MF_Generic template <typename T>
+#define MF_Generici MF_Generic inline
+
 
 #define MF_KiloByte(value) (1024 * value)
 #define MF_MegaByte(value) (1024 * (MF_KiloByte(value)))

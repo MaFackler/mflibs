@@ -10,7 +10,8 @@
 #include <mf_random.h>
 #include <limits>
 
-typedef mfm_v3<double> v3;
+typedef mf::math::v3<f64> v3;
+using mf::math::clamp;
 
 
 double T_MAX = std::numeric_limits<double>::infinity();
@@ -92,7 +93,7 @@ v3 v3_random_min_max(double min, double max) {
 v3 random_in_unit_sphere() {
     while (true) {
         v3 p = v3_random_min_max(-1, 1);
-        if (mfm_v3_length_squared(p) >= 1) continue;
+        if (p.length_squared() >= 1) continue;
         return p;
     }
 }
@@ -100,7 +101,7 @@ v3 random_in_unit_sphere() {
 v3 random_in_unit_disk() {
     while (true) {
         v3 p = v3{mf::random::f64_range(-1, 1), mf::random::f64_range(-1, 1), 0};
-        if (mfm_v3_length_squared(p) >= 1) continue;
+        if (p.length_squared() >= 1) continue;
         return p;
     }
 }
@@ -108,19 +109,19 @@ v3 random_in_unit_disk() {
 
 void camera_init(camera *c, v3 lookfrom, v3 lookat, v3 vup, double vfov, double aspect_ratio, double aperture, double focus_dist) {
 
-    double theta = mfm_to_rad(vfov);
+    double theta = mf::math::to_rad(vfov);
     double h = tan(theta/2);
     double viewport_height = 2.0 * h;
     double viewport_width = aspect_ratio * viewport_height;
 
-    c->w = mfm_v3_normalize(lookfrom - lookat);
-    c->u = mfm_v3_normalize(mfm_v3_cross(vup, c->w));
-    c->v = mfm_v3_cross(c->w, c->u);
+    c->w = (lookfrom - lookat).normalize();
+    c->u = (vup.cross(c->w)).normalize();
+    c->v = c->w.cross(c->u);
 
     c->origin = lookfrom;
-    c->horizontal = focus_dist * viewport_width * c->u;
-    c->vertical = focus_dist * viewport_height * c->v;
-    c->lower_left_corner = c->origin - c->horizontal / 2.0 - c->vertical / 2.0 - focus_dist * c->w;
+    c->horizontal = c->u * focus_dist * viewport_width;
+    c->vertical = c->v * focus_dist * viewport_height;
+    c->lower_left_corner = c->origin - c->horizontal / 2.0 - c->vertical / 2.0 - c->w * focus_dist;
     c->lens_radius = aperture / 2;
 }
 
@@ -131,9 +132,9 @@ struct ray {
 
 ray camera_get_ray(camera *c, double s, double t) {
     //ray r = {c->origin, c->lower_left_corner + c->horizontal * u + c->vertical * v - c->origin};
-    v3 rd = c->lens_radius * random_in_unit_disk();
+    v3 rd = random_in_unit_disk() * c->lens_radius;
     v3 offset = c->u * rd.x + c->v * rd.y;
-    return {c->origin + offset, c->lower_left_corner + s * c->horizontal + t * c->vertical - c->origin - offset};
+    return {c->origin + offset, c->lower_left_corner + c->horizontal * s + c->vertical * t - c->origin - offset};
 }
 
 
@@ -152,8 +153,8 @@ struct hit_record {
 };
 
 inline void hit_record_set_face_normal(hit_record *h, ray *r, v3 outward_normal) {
-    h->front_face = mfm_v3_dot(r->direction, outward_normal) < 0;
-    h->normal = h->front_face ? outward_normal : mfm_v3_negate(outward_normal);
+    h->front_face = r->direction.dot(outward_normal) < 0;
+    h->normal = h->front_face ? outward_normal : outward_normal.negate();
 }
 
 
@@ -165,9 +166,9 @@ struct sphere {
 
 bool sphere_hit(sphere *s, ray *r, double t_min, double t_max, hit_record *record) {
     v3 oc = r->origin - s->center;
-    double a = mfm_v3_length_squared(r->direction);
-    double half_b = mfm_v3_dot(oc, r->direction);
-    double c = mfm_v3_length_squared(oc) - s->radius * s->radius;
+    double a = r->direction.length_squared();
+    double half_b = oc.dot(r->direction);
+    double c = oc.length_squared() - s->radius * s->radius;
     double discriminant = half_b * half_b - a * c;
 
     if (discriminant < 0) {
@@ -237,9 +238,9 @@ void write_color_old(v3 c, int samples_per_pixel) {
     g *= scale;
     b *= scale;
 
-    int out_r = 256 * mf_clamp(r, 0.0, 0.999);
-    int out_g = 256 * mf_clamp(g, 0.0, 0.999);
-    int out_b = 256 * mf_clamp(b, 0.0, 0.999);
+    int out_r = 256 * clamp(r, 0.0, 0.999);
+    int out_g = 256 * clamp(g, 0.0, 0.999);
+    int out_b = 256 * clamp(b, 0.0, 0.999);
     printf("%d %d %d\n", out_r, out_g, out_b);
 }
 
@@ -256,9 +257,9 @@ void write_color(v3 c, int samples_per_pixel) {
     c.r = sqrt(scale * c.r);
     c.g = sqrt(scale * c.g);
     c.b = sqrt(scale * c.b);
-    i32 out_r = (int) (255.999 * mf_clamp(c.r, 0.0, 0.999));
-    i32 out_g = (int) (255.999 * mf_clamp(c.g, 0.0, 0.999));
-    i32 out_b = (int) (255.999 * mf_clamp(c.b, 0.0, 0.999));
+    i32 out_r = (int) (255.999 * clamp(c.r, 0.0, 0.999));
+    i32 out_g = (int) (255.999 * clamp(c.g, 0.0, 0.999));
+    i32 out_b = (int) (255.999 * clamp(c.b, 0.0, 0.999));
     printf("%d %d %d\n", out_r, out_g, out_b);
 }
 #endif
@@ -266,28 +267,28 @@ void write_color(v3 c, int samples_per_pixel) {
 
 
 v3 reflect(v3 a, v3 b) {
-    return a - b * mfm_v3_dot(a, b) * 2.0;
+    return a - b * a.dot(b) * 2.0;
 }
 
 v3 refract(v3 a, v3 b, double etai_over_etat) {
-    double cos_thata = fmin(mfm_v3_dot(mfm_v3_negate(a), b), 1.0f);
-    v3 r_out_perp = etai_over_etat * (a + cos_thata * b);
-    v3 r_out_parallel = -sqrt(fabs(1.0f - mfm_v3_length_squared(r_out_perp))) * b;
+    double cos_theta = fmin(a.negate().dot(b), 1.0f);
+    v3 r_out_perp = (a + b * cos_theta) * etai_over_etat;
+    v3 r_out_parallel = b.negate() * sqrt(fabs(1.0f - r_out_perp.length_squared()));
     return r_out_perp + r_out_parallel;
 }
 
 typedef bool (*scatter_func)(ray *r, hit_record *rec, material *m, v3 *attenuation, ray *scattered);
 
 bool scatter_mirror(ray *r, hit_record *rec, material *m, v3 *attenuation, ray *scattered) {
-    v3 reflected = reflect(mfm_v3_normalize(r->direction), rec->normal);
+    v3 reflected = reflect(r->direction.normalize(), rec->normal);
     *scattered = ray{rec->point, reflected + (random_in_unit_sphere() * m->metal.fuzz)};
     *attenuation = m->metal.color;
-    return mfm_v3_dot(scattered->direction, rec->normal) > 0;
+    return scattered->direction.dot(rec->normal) > 0;
 }
 
 bool scatter_lambertian(ray *r, hit_record *rec, material *m, v3 *attenuation, ray *scattered) {
     v3 scatter_direction = rec->point + rec->normal + random_in_unit_sphere();
-    if (mfm_v3_near_zero(scatter_direction))
+    if (scatter_direction.near_zero())
         scatter_direction = rec->normal;
     *scattered = ray{rec->point, scatter_direction};
     *attenuation = m->lambertian.color;
@@ -303,8 +304,8 @@ double reflectance(double cosine, double ref_idx) {
 bool scatter_dialectric(ray *r, hit_record *rec, material *m, v3 *attenuation, ray *scattered) {
     *attenuation = v3{1.0, 1.0, 1.0};
     double refraction_ratio = rec->front_face ? (1.0/m->dialectic.ir) : m->dialectic.ir;
-    v3 unit_direction = mfm_v3_normalize(r->direction);
-    double cos_theta = fmin(mfm_v3_dot(mfm_v3_negate(unit_direction), rec->normal), 1.0);
+    v3 unit_direction = r->direction.normalize();
+    double cos_theta = fmin(unit_direction.normalize().dot(rec->normal), 1.0);
     double sin_theta = sqrt(1.0 - cos_theta * cos_theta);
 
     bool cannot_refract = refraction_ratio * sin_theta > 1.0;
@@ -342,7 +343,7 @@ v3 ray_color(ray r, world *myworld, int depth) {
         }
         return v3{0};
     }
-    v3 unit_direction = mfm_v3_normalize(r.direction);
+    v3 unit_direction = r.direction.normalize();
     double t = 0.5 * (unit_direction.y + 1.0f);
     return v3{1.0f, 1.0f, 1.0f} * (1.0f-t) + v3{0.5, 0.7f, 1.0f} * t;
 }
@@ -357,7 +358,7 @@ void init_random_world(world *myworld) {
             double choose_mat = random_double();
             v3 center{a + 0.9 * random_double(), 0.2, b + 0.9 * random_double()};
 
-            if (mfm_v3_length(center - v3{4, 0.2, 0}) > 0.9) {
+            if ((center - v3{4, 0.2, 0}).length() > 0.9) {
                 if (choose_mat < 0.8) {
                     material material_temp = material_create_lambertian(v3_random());
                     auto material_temp_id = world_add_material(myworld, material_temp);

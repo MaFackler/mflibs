@@ -9,8 +9,9 @@
 #define MF_MATH_IMPLEMENTATION
 #include "mf_math.h"
 
-typedef mfm_v3<float> v3;
-typedef mfm_v4 v4;
+typedef mf::math::v3<f32> v3;
+typedef mf::math::v4<f32> v4;
+using mf::math::m4;
 typedef unsigned int u32;
 
 const char *VS_SRC = R"(
@@ -80,14 +81,14 @@ int main() {
     mfgl_shader_program_use(program);
 
     u32 location_transform = mfgl_shader_uniform_location(program, "transform");
-    mfm_m4 transform = mfm_m4_identity();
+    m4 transform = m4::create_identity();
     mfgl_shader_uniform_4fv(location_transform, 1, &transform.m[0]);
 
     u32 location_perspective = mfgl_shader_uniform_location(program, "perspective");
-    mfm_m4 perspective = mfm_m4_perspective(60.0f, 16.0f/9.0f, 0.0001f, 100);
+    m4 perspective = m4::create_perspective(60.0f, 16.0f/9.0f, 0.0001f, 100);
     mfgl_shader_uniform_4fv(location_perspective, 1, (float *) &perspective.m);
 
-    mfm_m4 view = mfm_m4_look_at<float>({0.0f, 0.0f, 20.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
+    m4 view = m4::create_look_at({0.0f, 0.0f, 20.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
     u32 location_view = mfgl_shader_uniform_location(program, "view");
     mfgl_shader_uniform_4fv(location_view, 1, (float *) view.m);
     mfgl_error_check();

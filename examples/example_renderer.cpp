@@ -21,8 +21,8 @@
 #define MF_TIME_IMPLEMENTATION
 #include "mf_time.h"
 
-typedef mfm_v2 v2;
-typedef mfm_v3<float> v3;
+typedef mf::math::v2<f32> v2;
+typedef mf::math::v3<f32> v3;
 
 // F = G * (m1 * m2 / (r * r) )
 //#define G_CONST 0.0000000000674f
@@ -92,17 +92,15 @@ struct Planet
 };
 
 
-v2 calc_acceleration_to(Planet &p1, Planet &p2)
-{
-    v2 force_direction = mfm_v2_normalize(p2.pos - p1.pos);
-    float distance_squared = mfm_v2_distance_squared(p2.pos, p1.pos);
+v2 calc_acceleration_to(Planet &p1, Planet &p2) {
+    v2 force_direction = (p2.pos - p1.pos).normalize();
+    f32 distance_squared = (p2.pos).distance_squared(p1.pos);
     v2 force = force_direction * ((G_CONST * p1.mass * p2.mass) / distance_squared);
     v2 res = force / p1.mass;
     return res;
 }
 
-void my_render_bitmap(unsigned int bitmap_id, float x, float y, float w, float h)
-{
+void my_render_bitmap(unsigned int bitmap_id, float x, float y, float w, float h) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_TEXTURE_2D);
