@@ -1,73 +1,16 @@
-#pragma once
-#include <mf.h>
-
-
-#ifdef __cplusplus
-#define mf_inline inline
-#else
-#include <stdbool.h>
-#ifndef _POSIX_C_SOURCE
-#define _POSIX_C_SOURCE 199309L
-#endif // _POSIX_C_SOURCE
-#define mf_inline
-#endif // __cplusplus
-
-#include <string.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <time.h>
-#include <assert.h>
-
-#ifdef _WIN32
-#else
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
-#endif // WIN32
 
-#ifdef MF_PLATFORM_USE_OPENGL
-#ifdef __linux__
-#include <GL/glx.h>
-#include <GL/glext.h>
-#else // WINDOWS
-
-
-#endif
-
-#endif // MF_PLATFORM_USE_OPENGL
+typedef Window X11Window;
 
 namespace mf { namespace platform {
 
-u64 _get_ticks();
-
-// TODO: remove
-//void mfp__end(mfp_platform *platform);
-//u64 _get_ticks();
-
-
-
-
-#ifdef MF_PLATFORM_IMPLEMENTATION
-
-// TODO: whats a good practice so i dont have to redefine this every time?
-#define MFP_Assert(expr) if (!(expr)) {*(int *) 0 = 0; }
-#define MFP_ArrayLength(arr) (sizeof(arr) / sizeof(arr[0]))
-
-#include <stdio.h>
-
-#ifdef __linux__
-// LINUX PLATFORM
-
-#ifdef MF_PLATFORM_USE_OPENGL
-typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, int, const int*);
-#endif
-
-typedef struct
-{
+struct OsLinux {
     Display *display;
     int screen;
-    Window root;
-    Window window;
+    X11Window root;
+    X11Window x11_window;
     //// NOTE visual is also a member of XVisualInfo in this case both members have to be set
     //// a application with OpenGl uses XVisualInfo and a xlib application just uses visual
     //// TODO: just use XVisualInfo
@@ -76,203 +19,182 @@ typedef struct
     Colormap colormap;
     i32 depth;
 
+    // TODO: is there a better way?
     void *graphicHandle;
-} mfp_x11;
+};
 
+struct Platform: IPlatform {
+    OsLinux os;
 
-mf_inline
-mfp_x11 *mfp__get_x11(mfp_platform *platform)
-{
-    return (mfp_x11 *) platform->os; 
+    void init(); 
+    void destroy() {};
+
+    virtual void window_create(const char *title, i32 x, i32 y, i32 w, i32 h);
+    virtual void window_close();
+
+    virtual void begin();
+    virtual void end();
+
+    u64 _get_ticks();
+    void _dispatch_xkey(XKeyEvent *event, bool down);
+    void _dispatch_key(ButtonState *state, bool down);
+};
+
+void Platform::init() {
+    this->os.display = XOpenDisplay(NULL);
+    this->os.screen = DefaultScreen(this->os.display);
+    this->os.root = RootWindow(this->os.display, this->os.screen);
+
+    this->os.depth = XDefaultDepth(this->os.display, this->os.screen);
+    this->os.visual = XDefaultVisual(this->os.display, this->os.screen);
+    this->os.colormap = XDefaultColormap(this->os.display, this->os.screen);
 }
 
-u64 mfp__get_time_micro()
-{
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    u64 cycles = ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
-    return cycles;
-}
-
-#ifdef MF_PLATFORM_USE_OPENGL
-void mfp__init_opengl(mfp_platform *platform)
-{
-    mfp_x11 *x11 = mfp__get_x11(platform);
-    static int visualAttribs[] = {
-      GLX_X_RENDERABLE    , True,
-      GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
-      GLX_RENDER_TYPE     , GLX_RGBA_BIT,
-      GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
-      GLX_RED_SIZE        , 8,
-      GLX_GREEN_SIZE      , 8,
-      GLX_BLUE_SIZE       , 8,
-      GLX_ALPHA_SIZE      , 8,
-      GLX_DEPTH_SIZE      , 24,
-      GLX_STENCIL_SIZE    , 8,
-      GLX_DOUBLEBUFFER    , True,
-      //GLX_SAMPLE_BUFFERS  , 1,
-      //GLX_SAMPLES         , 4,
-      None
-    };
-    i32 fbCount = 0;
-    GLXFBConfig *fbc = glXChooseFBConfig(x11->display, x11->screen, visualAttribs, &fbCount);
-
-    MFP_Assert(fbc);
-    i32 fbIndex = -1;
-    //i32 bestSampleBuffers = 0;
-    i32 bestSamples = 0;
-
-    for (i32 i = 0; i < fbCount; ++i)
-    {
-        XVisualInfo *vi = glXGetVisualFromFBConfig(x11->display, fbc[i]);
-        i32 sampleBuffers = 0;
-        i32 samples = 0;
-        glXGetFBConfigAttrib(x11->display, fbc[i], GLX_SAMPLE_BUFFERS, &sampleBuffers);
-        glXGetFBConfigAttrib(x11->display, fbc[i], GLX_SAMPLES, &samples);
-        if (sampleBuffers && samples > bestSamples)
-        {
-            fbIndex = i;
-            bestSamples = samples;
-        }
-        XFree(vi);
-    }
-    MFP_Assert(fbIndex >= 0);
-    
-    int attribs[] = {
-        GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
-        GLX_CONTEXT_MINOR_VERSION_ARB, 0,
-        None
-    };
-    
-    x11->vi = glXGetVisualFromFBConfig(x11->display, fbc[fbIndex]);
-    x11->visual = x11->vi->visual;
-    x11->colormap = XCreateColormap(x11->display,
-                                        x11->root,
-                                        x11->vi->visual,
-                                        AllocNone);
-
-    x11->graphicHandle = malloc(sizeof(GLXContext));
-
-
-    glXCreateContextAttribsARBProc createContext = (glXCreateContextAttribsARBProc)glXGetProcAddress((const GLubyte*)"glXCreateContextAttribsARB");
-    MFP_Assert(createContext);
-    //*((GLXContext *) x11->graphicHandle) = glXCreateContext(x11->display, x11->vi, 0, GL_TRUE);
-
-    //*((GLXContext *) x11->graphicHandle) = glXCreateContextAttribsARBProc(x11->display, fbc[fbIndex], 0, True, attribs);
-    GLXContext context = createContext(x11->display, fbc[fbIndex], 0, True, attribs);
-    //GLXContext glxContext = glXCreateContext(x11->display, x11->vi, NULL, GL_TRUE);
-    bool success = glXMakeCurrent(x11->display, x11->window, context);
-    MFP_Assert(success);
-
-    *((GLXContext *) x11->graphicHandle) = context;
-
-    i32 major = 0;
-    i32 minor = 0;
-    glXQueryVersion(x11->display, &major, &minor);
-
-    // TODO: version??
-    //MF_Assert(major == 3);
-}
-#endif
-
-
-void mfp_init(mfp_platform *platform)
-{
-    platform->os = malloc(sizeof(mfp_x11));
-    mfp_x11 *plat = (mfp_x11 *) platform->os;
-    plat->display = XOpenDisplay(NULL);
-    plat->screen = DefaultScreen(plat->display);
-    plat->root = RootWindow(plat->display, plat->screen);
-
-    plat->depth = XDefaultDepth(plat->display, plat->screen);
-    plat->visual = XDefaultVisual(plat->display, plat->screen);
-    plat->colormap = XDefaultColormap(plat->display, plat->screen);
-    
-    mfp_timer *timer = &platform->timer;
-#ifdef MF_WINDOWS
-    timer->time = mfp__get_time_micro();
-#endif
-
-}
-
-
-void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i32 width, i32 height)
-{
-    MFP_Assert(!platform->window.isOpen);
-    mfp_x11 *x11 = mfp__get_x11(platform);
-    platform->window.x = x;
-    platform->window.y = y;
-    platform->window.width = width;
-    platform->window.height = height;
-    platform->window.title = title;
+void Platform::window_create(const char *title, i32 x, i32 y, i32 w, i32 h) {
+    this->window.x = x;
+    this->window.y = y;
+    this->window.width = w;
+    this->window.height = h;
+    this->window.title = title;
     XSetWindowAttributes windowAttributes;
     windowAttributes.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask |
         StructureNotifyMask | PointerMotionMask | EnterWindowMask | LeaveWindowMask |
         ButtonPressMask | ButtonReleaseMask;
 
-    windowAttributes.colormap = x11->colormap;
+    windowAttributes.colormap = this->os.colormap;
 
     // TODO: multi monitor setup: x coordinate is always relative root
     // window so the window will launch on the left monitor not the fouces one
-    x11->window = XCreateWindow(x11->display,
-                                x11->root,
-                                platform->window.x,
-                                platform->window.y,
-                                platform->window.width,
-                                platform->window.height,
-                                0,
-                                x11->depth,
-                                InputOutput,
-                                x11->visual,
-                                CWColormap | CWEventMask,
-                                &windowAttributes);
+    this->os.x11_window = XCreateWindow(this->os.display,
+                                     this->os.root,
+                                     this->window.x,
+                                     this->window.y,
+                                     this->window.width,
+                                     this->window.height,
+                                     0,
+                                     this->os.depth,
+                                     InputOutput,
+                                     this->os.visual,
+                                     CWColormap | CWEventMask,
+                                     &windowAttributes);
 
 
-    XMapWindow(x11->display, x11->window);
-    if (platform->window.title)
-        XStoreName(x11->display, x11->window, platform->window.title); 
+    XMapWindow(this->os.display, this->os.x11_window);
+    if (this->window.title)
+        XStoreName(this->os.display, this->os.x11_window, this->window.title); 
 
-    platform->window.isOpen = true;
-#ifdef MF_PLATFORM_USE_OPENGL
-    mfp__init_opengl(platform);
-#endif
+    this->window.isOpen = true;
 }
 
-
-void mfp__dispatch_key(mfp_input *input, ButtonState *state, bool down)
-{
-    state->pressed = !state->down && down;
-    state->released = state->down && !down;
-    state->down = down;
+void Platform::window_close() {
+    XDestroyWindow(this->os.display, this->os.x11_window);
+    XCloseDisplay(this->os.display);
+    this->window.isOpen = false;
 }
 
-void mfp__dispatch_xkey(mfp_input *input, XKeyEvent *event, bool down)
-{
+void Platform::begin() {
+    if (this->timer.ticks == 0) {
+        this->timer.ticks = this->_get_ticks();
+    }
+    XEvent event;
+
+    for (u32 i = 0; i < MF_ArrayLength(this->input.keys); ++i) {
+        ButtonState *state = &this->input.keys[i];
+        state->pressed = false;
+        state->released = false;
+    }
+
+    while(XPending(this->os.display)) {
+        XNextEvent(this->os.display, &event);
+        switch (event.type) {
+            case KeyPress: {
+                this->_dispatch_xkey(&event.xkey, true);
+            } break;
+            case KeyRelease: {
+                // NOTE: xserver sends release and press if key is hold down
+                // this will ignore those events
+                if (XEventsQueued(this->os.display, QueuedAfterReading)) {
+                    XEvent next;
+                    XPeekEvent(this->os.display, &next);
+                    if (next.type == KeyPress && next.xkey.time == event.xkey.time) {
+                        if (this->input.enableKeyRepeat)
+                            this->_dispatch_xkey(&event.xkey, false);
+                        else
+                            continue;
+                    }
+                } 
+                this->_dispatch_xkey(&event.xkey, false);
+            } break;
+            case ConfigureNotify: {
+            //XConfigureEvent xce = event.xconfigure;
+
+            // TODO: 
+            //if (xce.width != input->width ||
+            //    xce.height != input->height)
+            //{
+            //    input->width = xce.width;
+            //    input->height = xce.height;
+            //}
+            } break;
+            case EnterNotify:
+            case LeaveNotify:
+            case MotionNotify: {
+                XMotionEvent xme = event.xmotion;
+                this->input.mouseX = xme.x;
+                this->input.mouseY = this->window.height - xme.y;
+            } break;
+            case ButtonPress: {
+                //XButtonEvent xbe = event.xbutton;
+                this->input.mouseLeft.down = true;
+            } break;
+            case ButtonRelease: {
+                this->input.mouseLeft.released = true;
+                this->input.mouseLeft.pressed = this->input.mouseLeft.down;
+                this->input.mouseLeft.down = false;
+            } break;
+        }
+    }
+}
+
+void Platform::end() {
+    u64 ticks = _get_ticks();
+    this->timer.deltaSec = (float) (ticks - this->timer.ticks) / 1000.0f;
+    this->timer.ticks = ticks;
+    this->timer.fps = (1.0f / this->timer.deltaSec);
+
+    if (this->custom_end) {
+        this->custom_end(this);
+    }
+}
+
+u64 Platform::_get_ticks() {
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC_RAW, &now);
+    u64 res = ((u64) now.tv_sec * 1000) + ((u64) now.tv_nsec / 1000000);
+    return res;
+}
+
+void Platform::_dispatch_xkey(XKeyEvent *event, bool down) {
     KeySym sym = XLookupKeysym(event, 0);
-    if (sym >= XK_space && sym <= XK_asciitilde)
-    {
-        ButtonState *state = &input->keys[sym];
-        mfp__dispatch_key(input, state, down);
-        if (state->pressed)
-        {
+    if (sym >= XK_space && sym <= XK_asciitilde) {
+        ButtonState *state = &this->input.keys[sym];
+        this->_dispatch_key(state, down);
+        if (state->pressed) {
             // handle text input
             char buffer[16] = {};
             u32 amount = 0;
             KeySym key;
             amount = XLookupString(event, buffer, sizeof(buffer), &key, 0);
-            memcpy(&input->text[input->textLength], buffer, amount);
-            input->textLength += amount;
-            MFP_Assert(input->textLength < 256);
-            input->text[input->textLength] = 0;
+            memcpy(&this->input.text[this->input.textLength], buffer, amount);
+            this->input.textLength += amount;
+            MF_Assert(this->input.textLength < 256);
+            this->input.text[this->input.textLength] = 0;
         } else if (state->down) {
-            input->downKeysBuffer[input->downKeysBufferSize++] = sym;
+            this->input.downKeysBuffer[this->input.downKeysBufferSize++] = sym;
         }
-    }
-    else
-    {
+    } else {
         char mysym = 0;
-        switch (sym)
-        {
+        switch (sym) {
             case XK_BackSpace:
                 mysym = MF_KEY_BACKSPACE;
                 break;
@@ -318,125 +240,28 @@ void mfp__dispatch_xkey(mfp_input *input, XKeyEvent *event, bool down)
                 break;
             default:
                 break;
-        }
-        if (mysym != 0)
-        {
-            ButtonState *state = &input->keys[(i32)mysym];
-            mfp__dispatch_key(input, state, down);
+        } if (mysym != 0) {
+            ButtonState *state = &this->input.keys[(i32)mysym];
+            this->_dispatch_key(state, down);
         }
     }
-
 }
 
-
-u64 _get_ticks() {
-    struct timespec now;
-    clock_gettime(CLOCK_MONOTONIC_RAW, &now);
-    u64 res = ((u64) now.tv_sec * 1000) + ((u64) now.tv_nsec / 1000000);
-    return res;
+void Platform::_dispatch_key(ButtonState *state, bool down) {
+    state->pressed = !state->down && down;
+    state->released = state->down && !down;
+    state->down = down;
 }
-void mfp_begin(mfp_platform *platform)
+#if 0
+
+u64 mfp__get_time_micro()
 {
-    if (platform->timer.ticks == 0)
-    {
-        platform->timer.ticks = _get_ticks();
-    }
-    XEvent event;
-    mfp_input *input = &platform->input;
-
-    for (u32 i = 0; i < MFP_ArrayLength(input->keys); ++i)
-    {
-        ButtonState *state = &input->keys[i];
-        state->pressed = false;
-        state->released = false;
-    }
-
-    mfp_x11* x11 = mfp__get_x11(platform);
-
-    while(XPending(x11->display))
-    {
-        XNextEvent(x11->display, &event);
-        switch (event.type)
-        {
-            case KeyPress:
-            {
-                mfp__dispatch_xkey(input, &event.xkey, true);
-            } break;
-            case KeyRelease:
-            {
-                // NOTE: xserver sends release and press if key is hold down
-                // this will ignore those events
-                if (XEventsQueued(x11->display, QueuedAfterReading))
-                {
-                    XEvent next;
-                    XPeekEvent(x11->display, &next);
-                    if (next.type == KeyPress && next.xkey.time == event.xkey.time)
-                    {
-                        if (input->enableKeyRepeat)
-                            mfp__dispatch_xkey(input, &event.xkey, false);
-                        else
-                            continue;
-                    }
-                } 
-                mfp__dispatch_xkey(input, &event.xkey, false);
-            } break;
-            case ConfigureNotify:
-            {
-            //XConfigureEvent xce = event.xconfigure;
-
-            // TODO: 
-            //if (xce.width != input->width ||
-            //    xce.height != input->height)
-            //{
-            //    input->width = xce.width;
-            //    input->height = xce.height;
-            //}
-            } break;
-            case EnterNotify:
-            case LeaveNotify:
-            case MotionNotify:
-            {
-                XMotionEvent xme = event.xmotion;
-                input->mouseX = xme.x;
-                input->mouseY = platform->window.height - xme.y;
-            } break;
-            case ButtonPress:
-            {
-                //XButtonEvent xbe = event.xbutton;
-                input->mouseLeft.down = true;
-            } break;
-            case ButtonRelease:
-            {
-                input->mouseLeft.released = true;
-                input->mouseLeft.pressed = input->mouseLeft.down;
-                input->mouseLeft.down = false;
-            } break;
-        }
-
-    }
-
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    u64 cycles = ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
+    return cycles;
 }
 
-void mfp_end(mfp_platform *platform, bool swapBuffers=true)
-{
-    mfp__end(platform);
-#ifdef MF_PLATFORM_USE_OPENGL
-    if (swapBuffers) {
-        mfp_x11 *x11 = mfp__get_x11(platform);
-        glXSwapBuffers(x11->display, x11->window);
-    }
-#endif
-}
-
-
-void mfp_window_close(mfp_platform *platform)
-{
-    mfp_window *window = &platform->window;
-    mfp_x11 *x11 = mfp__get_x11(platform);
-    XDestroyWindow(x11->display, x11->window);
-    XCloseDisplay(x11->display);
-    window->isOpen = false;
-}
 
 void mfp_window_toggle_fullscreen(mfp_platform *platform)
 {
@@ -467,58 +292,6 @@ void mfp_window_toggle_fullscreen(mfp_platform *platform)
     //XMoveResizeWindow(x11->display, x11->window, 0, 0, platform->window.width, platform->window.height);
 }
 
-void mfp_destroy(mfp_platform *platform)
-{
-}
-
-#else
-
-struct PlatformWindows {
-} ;
-
-
-
-PlatformWindows *mfp__get_win(Platform *platform)
-{
-    return (PlatformWindows *) platform->os; 
-}
-
-void mfp_init(Platform *platform)
-{
-    platform->os = malloc(sizeof(PlatformWindows));
-}
-
-void mfp_begin(Platform *platform)
-{
-
-}
-
-
-void mfp_window_toggle_fullscreen(Platform *platform)
-{
-    void *dummy = platform;
-    assert(dummy);
-}
-
-mf_inline
-
-
-
-
-
-
-void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i32 width, i32 height)
-{
-}
-
-void mfp_window_close(mfp_platform *platform)
-{
-    assert(platform);
-}
-
-
 #endif
-
-#endif // MF_PLATFORM_IMPLEMENTATION
 
 }}

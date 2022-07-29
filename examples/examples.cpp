@@ -61,7 +61,7 @@ int main() {
     examples.push_back(&tetris);
     examples.push_back(&planets);
 
-    u32 example_index = 0;
+    int example_index = 0;
     examples[example_index]->init(p);
 
     bool running = true;
@@ -70,11 +70,14 @@ int main() {
 
         if (p.input.keys['2'].pressed) {
             examples[example_index]->shutdown(p);
-            example_index = example_index++;
+            example_index++;
             if (example_index >= examples.size()) {
                 example_index = 0;
             }
             examples[example_index]->init(p);
+        }
+        if (p.input.keys[MF_KEY_ESCAPE].pressed) {
+            running = false;
         }
 
         examples[example_index]->update(p);
@@ -82,7 +85,7 @@ int main() {
         glClearColor(0.1f, 0.1f, 0.1f, 0.1f);
         glClear(GL_COLOR_BUFFER_BIT);
         examples[example_index]->render(p);
-        p.end(true);
+        p.end();
     }
 
     p.window_close();

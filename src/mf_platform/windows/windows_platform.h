@@ -109,30 +109,21 @@ void Platform::end(bool swapBuffers) {
     this->input.mouseLeft.pressed = false;
     this->input.mouseWheelDelta = 0.0f;
 
-#ifdef _WIN32
     static LARGE_INTEGER frequency;
     if (frequency.QuadPart == 0) {
         QueryPerformanceFrequency(&frequency);
     }
-#endif
 
-    // update time
     Timer *timer = &this->timer;
     u64 ticks = _get_ticks();
 
-#ifdef _WIN32
     timer->deltaSec = ((float) ticks - (float) timer->ticks) / (float) frequency.QuadPart;
-#else
-    timer->deltaSec = (float) (ticks - timer->ticks) / 1000.0f;
-#endif
     timer->ticks = ticks;
     timer->fps = (1.0f / timer->deltaSec);
 
     if (swapBuffers) {
         SwapBuffers(dc);
     }
-
-
 }
 
 u64 Platform::_get_ticks() {

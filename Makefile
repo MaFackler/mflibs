@@ -14,7 +14,7 @@ ifeq ($(OS),Windows_NT)
 	objects=/Fd$(OUTDIR)/ /Fo:$(addsuffix .obj, $(1))
 endif
 
-HEADERS=$(wildcard src/*.h)
+HEADERS=$(wildcard src/**/*.h)
 TESTS=$(wildcard tests/*.cpp)
 
 all:  build $(OUTDIR)/runtests $(OUTDIR)/examples

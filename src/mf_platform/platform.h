@@ -71,6 +71,8 @@ enum mfp_MessageType {
     MFP_MESSAGE_WINDOW_SIZE,
 };
 typedef void (*mfp_MessageCallbackFunc)(mfp_MessageType);
+
+typedef void (*FuncCustomEnd)(void *);
 struct IPlatform {
     void *os;
     mfp_MessageCallbackFunc callback;
@@ -86,13 +88,18 @@ struct IPlatform {
     virtual void window_close() = 0;
 
     virtual void begin() = 0;
-    virtual void end(bool swapBuffers) = 0;
+    virtual void end() = 0;
+
+    // NOTE: custom end routine which will be called by end()
+    // needed for graphic apis
+    FuncCustomEnd custom_end = NULL;
 };
+
+}}
 
 #if defined(MF_OS_WINDOWS)
 #include <mf_platform/windows/windows_platform.h>
 #else
-#error MF_OS_NOT_SUPPORTED
+#include <mf_platform/linux/linux_platform.h>
 #endif
 
-}}

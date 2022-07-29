@@ -1,11 +1,6 @@
 #pragma once
 #include <mf.h>
 
-#include <stdio.h>
-#define _USE_MATH_DEFINES
-#include <cmath>
-#include <math.h>
-
 namespace mf { namespace gl {
 
 // NOTE: opengl code should be included by platform

@@ -11,7 +11,7 @@ namespace mf { namespace file {
 #include <dirent.h>
 #endif // MF_OS_
 
-char* read(const char *path, const char *mode, size_t *size);
+char* file_read(const char *path, const char *mode, size_t *size);
 char* path_join_create(const char *a, const char *b, char separator);
 void file_copy(const char *src, const char *dest);
 bool is_file(const char *filename);
@@ -50,7 +50,7 @@ struct Directory {
 
 #if defined(MF_FILE_IMPLEMENTATION)
 
-char* read(const char *path, const char *mode, size_t *size) {
+char* file_read(const char *path, const char *mode, size_t *size) {
     FILE *file = fopen(path, mode);
     int bytesToRead = 0;
     fseek(file, 0, SEEK_END);
@@ -187,25 +187,25 @@ bool Directory::next(PathItem *item) {
     }
 #elif defined(MF_OS_LINUX)
     struct dirent *dire;
-    dire = readdir(dir->d);
+    dire = readdir(this->d);
     while (dire != NULL && strcmp(dire->d_name, ".") == 0
            || dire != NULL && strcmp(dire->d_name, "..") == 0) {
-        dire = readdir(dir->d);
+        dire = readdir(this->d);
     }
     if (dire) {
         if (strcmp(dire->d_name, "..") == 0) {
-            dire = readdir(dir->d);
+            dire = readdir(this->d);
         }
         item->name = dire->d_name;
         switch (dire->d_type) {
             case DT_DIR: {
-                item->type = PATH_ITEM_DIRECTORY;
+                item->type = PathItemType::DIRECTORY;
             } break;
             case DT_REG: {
-                item->type = PATH_ITEM_FILE;
+                item->type = PathItemType::FILE;
             } break;
             default:
-                item->type =PATH_ITEM_UNKNOWN;
+                item->type =PathItemType::UNKNOWN;
         }
         res = true;
     }
@@ -240,13 +240,13 @@ bool PathItem::is_file() {
 
 TEST("read - empty file") {
     size_t size = 0;
-    char *contents = read("tests/data/testfile_empty.txt", "rb", &size);
+    char *contents = file_read("tests/data/testfile_empty.txt", "rb", &size);
     MFT_CHECK_SIZET(size, 0);
 }
 
 TEST("read") {
     size_t size = 0;
-    char *contents = read("tests/data/testfile.txt", "rb", &size);
+    char *contents = file_read("tests/data/testfile.txt", "rb", &size);
 #if defined(MF_OS_WINDOWS)
     MFT_CHECK_SIZET(size, 5);
     MFT_CHECK_STRINGN(contents, "abc", 3);
@@ -261,7 +261,7 @@ TEST("read") {
 
 TEST("path_join_create") {
 #if defined(MF_OS_LINUX)
-    char *res = path_join_create("home", "mf", "/");
+    char *res = path_join_create("home", "mf", '/');
     MFT_CHECK_STRING(res, "home/mf");
     free(res);
 #endif
