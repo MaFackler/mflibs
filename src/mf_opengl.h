@@ -125,6 +125,12 @@ void set_color_rgb_255(i32 r, i32 g, i32 b) {
 }
 
 void viewport_bottom_up(u32 width, u32 height) {
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glMatrixMode(GL_TEXTURE);
+    glLoadIdentity();
+    glMatrixMode(GL_COLOR);
+    glLoadIdentity();
     glMatrixMode(GL_PROJECTION);
     f32 mat[] =
     {
@@ -138,6 +144,13 @@ void viewport_bottom_up(u32 width, u32 height) {
 }
 
 void viewport_top_down(u32 width, u32 height) {
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glMatrixMode(GL_TEXTURE);
+    glLoadIdentity();
+    glMatrixMode(GL_COLOR);
+    glLoadIdentity();
+    glMatrixMode(GL_PROJECTION);
     glMatrixMode(GL_PROJECTION);
     f32 mat[] = {
         2.0f/width, 0, 0, 0,

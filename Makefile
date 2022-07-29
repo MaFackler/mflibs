@@ -17,33 +17,35 @@ endif
 HEADERS=$(wildcard src/*.h)
 TESTS=$(wildcard tests/*.cpp)
 
-all:  build $(OUTDIR)/runtests examples
+all:  build $(OUTDIR)/runtests $(OUTDIR)/examples
 
 build:
 	mkdir build
 
-examples: $(OUTDIR)/example-platform $(OUTDIR)/example-renderer $(OUTDIR)/tetris $(OUTDIR)/debug $(OUTDIR)/craft $(OUTDIR)/gui $(OUTDIR)/ray
 
-$(OUTDIR)/craft: examples/craft.cpp $(HEADERS)
+$(OUTDIR)/examples: examples/examples.cpp
 	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
 
-$(OUTDIR)/debug: examples/debug.cpp $(HEADERS)
-	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
-
-$(OUTDIR)/example-platform: examples/example_platform.cpp $(HEADERS)
-	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
-
-$(OUTDIR)/example-renderer: examples/example_renderer.cpp $(HEADERS)
-	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
-
-$(OUTDIR)/tetris: examples/tetris.cpp $(HEADERS)
-	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
-
-$(OUTDIR)/gui: examples/gui.cpp $(HEADERS)
-	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
-
-$(OUTDIR)/ray: examples/ray.cpp $(HEADERS)
-	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $<
+# $(OUTDIR)/craft: examples/craft.cpp $(HEADERS)
+# 	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
+# 
+# $(OUTDIR)/debug: examples/debug.cpp $(HEADERS)
+# 	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
+# 
+# $(OUTDIR)/example-platform: examples/example_platform.cpp $(HEADERS)
+# 	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
+# 
+# $(OUTDIR)/example-renderer: examples/example_renderer.cpp $(HEADERS)
+# 	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
+# 
+# $(OUTDIR)/tetris: examples/tetris.cpp $(HEADERS)
+# 	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
+# 
+# $(OUTDIR)/gui: examples/gui.cpp $(HEADERS)
+# 	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
+# 
+# $(OUTDIR)/ray: examples/ray.cpp $(HEADERS)
+# 	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $<
 
 
 $(OUTDIR)/runtests: $(HEADERS) $(TESTS)

@@ -1,22 +1,7 @@
-#define MF_IMPLEMENTATION
-#include <mf.h>
-#define MF_VECTOR_IMPLEMENTATION 
-#include <mf_vector.h>
-#define MF_MATH_IMPLEMENTATION
-#include <mf_math.h>
-#define MF_PLATFORM_USE_OPENGL
-#define MF_PLATFORM_IMPLEMENTATION
-#include <mf_platform.h>
-#define MF_OPENGL_IMPLEMENTATION
-#include <mf_opengl.h>
 #define MF_RENDERER_IMPLEMENTATION
 #include <mf_renderer.h>
-#define MF_TIME_IMPLEMENTATION
-#include <mf_time.h>
 
-using namespace mf::gl;
-typedef mf::math::v3<f32> v3;
-
+namespace example_tetris {
 
 static v3 BLACK{0.0f, 0.0f, 0.0f};
 static v3 GRAY{0.2f, 0.2f, 0.2f};
@@ -445,7 +430,7 @@ bool PieceAdvance(GameState *state)
     return res;
 }
 
-void GameStateUpdate(mfp_input *input, GameState *state, float deltaSec)
+void GameStateUpdate(Input *input, GameState *state, float deltaSec)
 {
 
     if (state->phase == GAME_OVER)
@@ -547,51 +532,46 @@ void GameStateRender(GameState* state, mfr_renderer *renderer, u32 renderHeight)
     }
 }
 
-int main()
-{
-    mfp_platform platform = {};
-    mfp_input &input = platform.input;
-    mfp_window &window = platform.window;
-    mfp_init(&platform);
-    mfp_window_open(&platform, "Tetris", 0, 0, 1600, 900);
-
+struct ExampleTetris: IExample {
     mfr_renderer renderer = {};
-    mfr_init(&renderer, MF_MegaByte(4));
-    renderer.set_color = set_color;
-    renderer.render_rect = draw_rect;
-    renderer.render_clear = clear;
-    viewport_bottom_up(window.width, window.height);
-
     GameState state;
-    GameStateInit(&state);
 
-    u32 boardWidth = GetBoardWidth(&state);
-    i32 marginLeft = (window.width - boardWidth) * 0.5;
-    mfr_set_offset(&renderer, marginLeft, 0.0f);
+    void init(IPlatform &p);
+    void update(IPlatform &p);
+    void render(IPlatform &p);
+    void shutdown(IPlatform &p);
+};
 
+void ExampleTetris::init(IPlatform &p) {
+    mfr_init(&this->renderer, MF_MegaByte(4));
+    this->renderer.set_color = set_color;
+    this->renderer.render_rect = draw_rect;
+    this->renderer.render_clear = clear;
+    viewport_bottom_up(p.window.width, p.window.height);
 
-    while (window.isOpen)
-    {
-        mfp_begin(&platform);
+    GameStateInit(&this->state);
 
-        if (input.keys['q'].down)
-        {
-            window.isOpen = false;
-        }
+    u32 boardWidth = GetBoardWidth(&this->state);
+    i32 marginLeft = (p.window.width - boardWidth) * 0.5;
+    mfr_set_offset(&this->renderer, marginLeft, 0.0f);
+}
 
-        SetColor(&renderer, BACKGROUND_LIGHT);
-        mfr_push_clear(&renderer);
+void ExampleTetris::update(IPlatform &p) {
+    GameStateUpdate(&p.input, &this->state, p.timer.deltaSec);
+}
 
-        GameStateUpdate(&input, &state, platform.timer.deltaSec);
-        GameStateRender(&state, &renderer, window.height);
+void ExampleTetris::render(IPlatform &p) {
+    SetColor(&renderer, BACKGROUND_LIGHT);
+    mfr_push_clear(&renderer);
+    GameStateRender(&state, &renderer, p.window.height);
 
-        mf::time::sleep_ms(16);
-        mfr_flush(&renderer);
-        mfp_end(&platform);
+    mf::time::sleep_ms(16);
+    mfr_flush(&renderer);
+}
 
-    }
+void ExampleTetris::shutdown(IPlatform &p) {
+    mfr_destroy(&this->renderer);
+    GameStateDestroy(&this->state);
+}
 
-    mfr_destroy(&renderer);
-    mfp_window_close(&platform);
-    mfp_destroy(&platform);
 }
