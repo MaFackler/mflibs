@@ -1,3 +1,7 @@
+#pragma once
+
+namespace mf { namespace platform {
+
 struct Platform;
 static Platform* g_platform = NULL;
 
@@ -13,7 +17,7 @@ struct Platform: IPlatform {
     void window_create(const char *title, i32 x, i32 y, i32 w, i32 h);
     void window_close();
     void begin();
-    void Platform::end(bool swapBuffers);
+    void end();
 
     u64 _get_ticks();
     void _get_client_rect();
@@ -100,7 +104,7 @@ void Platform::begin() {
     }
 }
     
-void Platform::end(bool swapBuffers) {
+void Platform::end() {
     // reset input
     this->input.textLength = 0;
     this->input.text[0] = 0;
@@ -121,9 +125,7 @@ void Platform::end(bool swapBuffers) {
     timer->ticks = ticks;
     timer->fps = (1.0f / timer->deltaSec);
 
-    if (swapBuffers) {
-        SwapBuffers(dc);
-    }
+    SwapBuffers(dc);
 }
 
 u64 Platform::_get_ticks() {
@@ -300,3 +302,4 @@ LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM 
     return res;
 }
 
+}} // mf::platform

@@ -66,7 +66,6 @@ struct Timer {
     float fps;
 };
 
-
 enum mfp_MessageType {
     MFP_MESSAGE_WINDOW_SIZE,
 };
@@ -74,7 +73,6 @@ typedef void (*mfp_MessageCallbackFunc)(mfp_MessageType);
 
 typedef void (*FuncCustomEnd)(void *);
 struct IPlatform {
-    void *os;
     mfp_MessageCallbackFunc callback;
 
     Input input;
