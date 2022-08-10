@@ -1,7 +1,7 @@
 #pragma once
 #include <mf.h>
 
-namespace mf { namespace file {
+namespace mf {
 
 #if defined(MF_OS_WINDOWS)
 #else
@@ -26,10 +26,11 @@ enum class PathItemType {
 struct PathItem {
     char *name;
     PathItemType type;
-
-    bool is_directory();
-    bool is_file();
 };
+
+bool path_item_is_directory(PathItem *item);
+bool path_item_is_file(PathItem *item);
+
 
 struct Directory {
 #if defined(MF_OS_WINDOWS)
@@ -41,11 +42,11 @@ struct Directory {
 #else
 #error MF_OS_NOT_SUPPORTED
 #endif
-
-    bool open(const char* name, bool recursive);
-    void close();
-    bool next(PathItem *item);
 };
+
+bool directory_open(Directory *directory, const char* name, bool recursive);
+void directory_close(Directory *directory);
+bool directory_next(PathItem *item);
 
 
 #if defined(MF_FILE_IMPLEMENTATION)
@@ -152,36 +153,36 @@ uint64_t get_last_write_time(const char *filename) {
     return res;
 }
 
-bool Directory::open(const char *name, bool recursive) {
+bool directory_open(Directory *directory, const char *name, bool recursive) {
     bool res = false;
 #if defined(MF_OS_WINDOWS)
     char buffer[256];
     sprintf(buffer, "%s\\*.*", name);
-    this->handle = FindFirstFile(buffer, &this->data);
-    res = this->handle != INVALID_HANDLE_VALUE;
-    firstOne = true;
+    directory->handle = FindFirstFile(buffer, &directory->data);
+    res = directory->handle != INVALID_HANDLE_VALUE;
+    directory->firstOne = true;
 #elif defined(MF_OS_LINUX)
-    this->d = opendir(name);
-    res = this->d != NULL;
+    directory->d = opendir(name);
+    res = directory->d != NULL;
 #else
 #error MF_OS_NOT_SUPPORTED
 #endif
     return res;
 }
 
-bool Directory::next(PathItem *item) {
+bool directory_next(Directory *directory, PathItem *item) {
     bool res = false;
 #if defined(MF_OS_WINDOWS)
-    if (firstOne) {
-        firstOne = false;
-        res = this->handle != INVALID_HANDLE_VALUE;
+    if (directory->firstOne) {
+        directory->firstOne = false;
+        res = directory->handle != INVALID_HANDLE_VALUE;
     } else {
-        res = FindNextFileA(this->handle, &this->data);
+        res = FindNextFileA(directory->handle, &directory->data);
     }
     if (res) {
-        item->name = data.cFileName;
+        item->name = directory->data.cFileName;
         item->type = PathItemType::FILE;
-        if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+        if (directory->data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
             item->type = PathItemType::DIRECTORY;
         }
     }
@@ -215,24 +216,24 @@ bool Directory::next(PathItem *item) {
     return res;
 }
 
-void Directory::close() {
+void directory_close(Directory *directory) {
 #if defined(MF_OS_WINDOWS)
-    FindClose(this->handle);
+    FindClose(directory->handle);
 #elif defined(MF_OS_LINUX)
-    closedir(this->d);
+    closedir(directory->d);
 #else
 #error MF_OS_NOT_SUPPORTED
 #endif
 }
 
 inline
-bool PathItem::is_directory() {
-    return this->type == PathItemType::DIRECTORY;
+bool path_item_is_directory(PathItem *item) {
+    return item->type == PathItemType::DIRECTORY;
 }
 
 inline
-bool PathItem::is_file() {
-    return this->type == PathItemType::FILE;
+bool path_item_is_file(PathItem *item) {
+    return item->type == PathItemType::FILE;
 }
 
        
@@ -288,4 +289,4 @@ TEST("is_file") {
 
 #endif // MF_FILE_IMPLEMENTATION
 
-}} // mf::file
+}
