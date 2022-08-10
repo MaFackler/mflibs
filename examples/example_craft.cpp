@@ -69,14 +69,14 @@ void ExampleCraft::init(IPlatform &p, Renderer2D &r) {
     shader_program_use(this->program);
 
     u32 location_transform = shader_uniform_location(this->program, "transform");
-    m4 transform = m4::create_identity();
+    m4 transform = mf::m4_create_identity();
     shader_uniform_4fv(location_transform, 1, &transform.m[0]);
 
     u32 location_perspective = shader_uniform_location(this->program, "perspective");
-    m4 perspective = m4::create_perspective(60.0f, 16.0f/9.0f, 0.0001f, 100);
+    m4 perspective = mf::m4_create_perspective(60.0f, 16.0f/9.0f, 0.0001f, 100);
     shader_uniform_4fv(location_perspective, 1, (float *) &perspective.m);
 
-    m4 view = m4::create_look_at({0.0f, 0.0f, 20.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
+    m4 view = mf::m4_create_look_at({0.0f, 0.0f, 20.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
     u32 location_view = shader_uniform_location(this->program, "view");
     shader_uniform_4fv(location_view, 1, (float *) view.m);
     error_check();

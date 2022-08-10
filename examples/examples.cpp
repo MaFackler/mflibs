@@ -19,10 +19,10 @@
 #define MF_FONT_IMPLEMENTATION
 #include "mf_font.h"
 
-typedef mf::math::v2<f32> v2;
-typedef mf::math::v3<f32> v3;
-typedef mf::math::v4<f32> v4;
-using mf::math::m4;
+typedef mf::v2<f32> v2;
+typedef mf::v3<f32> v3;
+typedef mf::v4<f32> v4;
+using mf::m4;
 using mf::renderer::Renderer2D;
 using namespace mf::gl;
 using namespace mf::platform;

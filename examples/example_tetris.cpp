@@ -6,8 +6,8 @@ namespace example_tetris {
 static v3 BLACK{0.0f, 0.0f, 0.0f};
 static v3 GRAY{0.2f, 0.2f, 0.2f};
 
-static v3 BACKGROUND_LIGHT = v3::create_255_to_1(0xfb, 0xf1, 0xc7);
-static v3 BACKGROUND_GRAY = v3::create_255_to_1(0x3c, 0x38, 0x36);
+static v3 BACKGROUND_LIGHT = mf::v3_create_255_to_1<f32>(0xfb, 0xf1, 0xc7);
+static v3 BACKGROUND_GRAY = mf::v3_create_255_to_1<f32>(0x3c, 0x38, 0x36);
 
 
 struct Piece
@@ -100,33 +100,33 @@ u8 Piece7[] = {
 };
 
 static v3 colors[] = {
-    v3::create_255_to_1(0xfb, 0x49, 0x34), // red
-    v3::create_255_to_1(0xb8, 0xbb, 0x26), // green
-    v3::create_255_to_1(0x93, 0xa5, 0x98), // blue
-    v3::create_255_to_1(0xfa, 0xbd, 0x2f), // yellow
-    v3::create_255_to_1(0x8e, 0xc0, 0x7c), // aqua
-    v3::create_255_to_1(0xd3, 0x86, 0x9b), // purple
-    v3::create_255_to_1(0xeb, 0xdb, 0xb2), // gray/white
+    mf::v3_create_255_to_1<f32>(0xfb, 0x49, 0x34), // red
+    mf::v3_create_255_to_1<f32>(0xb8, 0xbb, 0x26), // green
+    mf::v3_create_255_to_1<f32>(0x93, 0xa5, 0x98), // blue
+    mf::v3_create_255_to_1<f32>(0xfa, 0xbd, 0x2f), // yellow
+    mf::v3_create_255_to_1<f32>(0x8e, 0xc0, 0x7c), // aqua
+    mf::v3_create_255_to_1<f32>(0xd3, 0x86, 0x9b), // purple
+    mf::v3_create_255_to_1<f32>(0xeb, 0xdb, 0xb2), // gray/white
 };
 
 static v3 colorsLight[] = {
-    v3::create_255_to_1(0xcc, 0x24, 0x1d), // red
-    v3::create_255_to_1(0x98, 0x97, 0x1a), // green
-    v3::create_255_to_1(0x45, 0x85, 0x88), // blue
-    v3::create_255_to_1(0xd7, 0x99, 0x21), // yellow
-    v3::create_255_to_1(0x68, 0x9d, 0x6a), // aqua
-    v3::create_255_to_1(0xb1, 0x62, 0x86), // purple
-    v3::create_255_to_1(0xa8, 0x99, 0x84), // gray/white
+    mf::v3_create_255_to_1<f32>(0xcc, 0x24, 0x1d), // red
+    mf::v3_create_255_to_1<f32>(0x98, 0x97, 0x1a), // green
+    mf::v3_create_255_to_1<f32>(0x45, 0x85, 0x88), // blue
+    mf::v3_create_255_to_1<f32>(0xd7, 0x99, 0x21), // yellow
+    mf::v3_create_255_to_1<f32>(0x68, 0x9d, 0x6a), // aqua
+    mf::v3_create_255_to_1<f32>(0xb1, 0x62, 0x86), // purple
+    mf::v3_create_255_to_1<f32>(0xa8, 0x99, 0x84), // gray/white
 };
 
 static v3 colorsDark[] = {
-    v3::create_255_to_1(0xcc, 0x24, 0x1d), // red
-    v3::create_255_to_1(0x98, 0x97, 0x1a), // green
-    v3::create_255_to_1(0x45, 0x85, 0x88), // blue
-    v3::create_255_to_1(0xd7, 0x99, 0x21), // yellow
-    v3::create_255_to_1(0x68, 0x9d, 0x6a), // aqua
-    v3::create_255_to_1(0xb1, 0x62, 0x86), // purple
-    v3::create_255_to_1(0xa8, 0x99, 0x84), // gray/white
+    mf::v3_create_255_to_1<f32>(0xcc, 0x24, 0x1d), // red
+    mf::v3_create_255_to_1<f32>(0x98, 0x97, 0x1a), // green
+    mf::v3_create_255_to_1<f32>(0x45, 0x85, 0x88), // blue
+    mf::v3_create_255_to_1<f32>(0xd7, 0x99, 0x21), // yellow
+    mf::v3_create_255_to_1<f32>(0x68, 0x9d, 0x6a), // aqua
+    mf::v3_create_255_to_1<f32>(0xb1, 0x62, 0x86), // purple
+    mf::v3_create_255_to_1<f32>(0xa8, 0x99, 0x84), // gray/white
 };
 
 static Piece piecesDef[] = {
