@@ -36,17 +36,9 @@ void my_render_bitmap(unsigned int bitmap_id, float x, float y, float w, float h
 
 struct ExamplePlanets: IExample {
 
-    mfr_renderer renderer = {};
     Planet planets[2];
 
-    void init(IPlatform &p) {
-        this->renderer.set_color = set_color;
-        this->renderer.render_rect = draw_rect;
-        this->renderer.render_clear = clear;
-        this->renderer.render_circle = draw_circle;
-        this->renderer.render_bitmap = my_render_bitmap;
-        mfr_init(&renderer, 1024 * 1024 * 1024);
-
+    void init(IPlatform &p, Renderer2D &r) {
         glEnable(GL_TEXTURE_2D);
 
         planets[0].pos.x = 800;
@@ -67,6 +59,10 @@ struct ExamplePlanets: IExample {
         Planet &p1 = planets[0];
         Planet &p2 = planets[1];
 
+        if (p.input.keys['S'].down) {
+            p1.pos.y -= 1.0f;
+        }
+
         v2 acceleration = calc_acceleration_to(p2, p1);
         p2.velocity.x += acceleration.x * p.timer.deltaSec;
         p2.velocity.y += acceleration.y * p.timer.deltaSec;
@@ -77,26 +73,23 @@ struct ExamplePlanets: IExample {
         }
     }
 
-    void render(IPlatform &p) {
+    void render(IPlatform &p, Renderer2D &r) {
         viewport_bottom_up(p.window.width, p.window.height);
         // Render
         // clear
-        mfr_set_color(&renderer, 0.1f, 0.1f, 0.1f, 1.0f);
-        mfr_push_clear(&renderer);
+        r.set_color(0.1f, 0.1f, 0.1f, 1.0f);
+        r.push_clear();
         // rectangle
         //mfr_set_offset(&renderer, 10.0f, 0.0f);
         //mfr_push_rect(&renderer, 10, 10, 30, 30);
-        //
-        for (auto &p: planets)
-        {
-            mfr_set_color(&renderer, p.color.x, p.color.y, p.color.z, 1.0f);
-            mfr_push_circle(&renderer, p.pos.x, p.pos.y, p.radius);
+        for (auto &planet: planets) {
+            r.set_color(planet.color.x, planet.color.y, planet.color.z, 1.0f);
+            r.push_circle(planet.pos.x, planet.pos.y, planet.radius);
+            //r.push_rect(planet.pos.x, planet.pos.y, planet.radius, planet.radius);
         }
-        mfr_flush(&renderer);
     }
 
     void shutdown(IPlatform &p) {
-        mfr_destroy(&this->renderer);
     }
 };
 

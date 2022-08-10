@@ -247,37 +247,36 @@ void PrintPiece(Piece *piece, u8 direction)
     }
 }
 
-void SetColor(mfr_renderer *renderer, v3 color)
-{
-    mfr_set_color(renderer, color.x, color.y, color.z, 1.0f);
+void SetColor(Renderer2D &r, v3 color) {
+    r.set_color(color.x, color.y, color.z, 1.0f);
 }
 
 
-void DrawRect(mfr_renderer *renderer, i32 col, i32 row, u8 colorValue, u32 blockSize)
+void DrawRect(Renderer2D &r, i32 col, i32 row, u8 colorValue, u32 blockSize)
 {
     float fx = col * blockSize;
     float fy = (row - 1) * blockSize;
-    SetColor(renderer, colors[colorValue - 1]);
-    mfr_push_rect(renderer, fx, fy, blockSize, blockSize);
+    SetColor(r, colors[colorValue - 1]);
+    r.push_rect(fx, fy, blockSize, blockSize);
 
     i32 thickness = 2;
     // light
-    SetColor(renderer, colorsLight[colorValue - 1]);
-    mfr_push_rect(renderer, fx, fy + blockSize - thickness, blockSize, thickness);
+    SetColor(r, colorsLight[colorValue - 1]);
+    r.push_rect(fx, fy + blockSize - thickness, blockSize, thickness);
 
-    SetColor(renderer, colorsLight[colorValue - 1]);
-    mfr_push_rect(renderer, fx + blockSize - thickness, fy, thickness, blockSize);
+    SetColor(r, colorsLight[colorValue - 1]);
+    r.push_rect(fx + blockSize - thickness, fy, thickness, blockSize);
 
     // dark
-    SetColor(renderer, colorsDark[colorValue - 1]);
-    mfr_push_rect(renderer, fx, fy, blockSize, thickness);
+    SetColor(r, colorsDark[colorValue - 1]);
+    r.push_rect(fx, fy, blockSize, thickness);
 
-    SetColor(renderer, colorsDark[colorValue - 1]);
-    mfr_push_rect(renderer, fx, fy, thickness, blockSize);
+    SetColor(r, colorsDark[colorValue - 1]);
+    r.push_rect(fx, fy, thickness, blockSize);
 }
 
 
-void DrawPiece(mfr_renderer *renderer, Piece *piece, i32 col, i32 row, u8 direction, u32 amountRows, u32 blockSize)
+void DrawPiece(Renderer2D &r, Piece *piece, i32 col, i32 row, u8 direction, u32 amountRows, u32 blockSize)
 {
     row = amountRows - row;
     for (size_t y = 0; y < piece->dim; ++y)
@@ -287,7 +286,7 @@ void DrawPiece(mfr_renderer *renderer, Piece *piece, i32 col, i32 row, u8 direct
             u8 value = piece->get(x, y, direction);
             if (value)
             {
-                DrawRect(renderer, col + x, row - y, value, blockSize);
+                DrawRect(r, col + x, row - y, value, blockSize);
             }
         }
     }
@@ -505,72 +504,59 @@ void GameStateUpdate(Input *input, GameState *state, float deltaSec)
 
 }
 
-void GameStateRender(GameState* state, mfr_renderer *renderer, u32 renderHeight)
+void GameStateRender(GameState* state, Renderer2D &r, u32 renderHeight)
 {
     u32 width = GetBoardWidth(state);
     u32 height = GetBoardHeight(state);
     u32 borderWidth = 5;
 
-    SetColor(renderer, BACKGROUND_GRAY);
-    mfr_push_rect(renderer, 0, 0, width, renderHeight);
-    SetColor(renderer, BLACK);
-    mfr_push_rect(renderer, -(float)borderWidth, 0, borderWidth, renderHeight);
-    mfr_push_rect(renderer, width, 0, borderWidth, renderHeight);
+    SetColor(r, BACKGROUND_GRAY);
+    r.push_rect(0, 0, width, renderHeight);
+    SetColor(r, BLACK);
+    r.push_rect(-(float)borderWidth, 0, borderWidth, renderHeight);
+    r.push_rect(width, 0, borderWidth, renderHeight);
     Piece* piece = &piecesDef[state->currentPieceIndex];
-    DrawPiece(renderer, piece, state->col, state->row, state->direction, state->numBlocksY, state->blockSize);
+    DrawPiece(r, piece, state->col, state->row, state->direction, state->numBlocksY, state->blockSize);
 
-    for (size_t y = 0; y < state->numBlocksY; ++y)
-    {
-        for (size_t x = 0; x < state->numBlocksX; ++x)
-        {
+    for (size_t y = 0; y < state->numBlocksY; ++y) {
+        for (size_t x = 0; x < state->numBlocksX; ++x) {
             u8 value = GetBoardValue(state, y, x);
-            if (value > 0)
-            {
-                DrawRect(renderer, x, state->numBlocksY - y, value, state->blockSize);
+            if (value > 0) {
+                DrawRect(r, x, state->numBlocksY - y, value, state->blockSize);
             }
         }
     }
 }
 
 struct ExampleTetris: IExample {
-    mfr_renderer renderer = {};
     GameState state;
 
-    void init(IPlatform &p);
+    void init(IPlatform &p, Renderer2D &r);
     void update(IPlatform &p);
-    void render(IPlatform &p);
+    void render(IPlatform &p, Renderer2D &r);
     void shutdown(IPlatform &p);
 };
 
-void ExampleTetris::init(IPlatform &p) {
-    mfr_init(&this->renderer, MF_MegaByte(4));
-    this->renderer.set_color = set_color;
-    this->renderer.render_rect = draw_rect;
-    this->renderer.render_clear = clear;
+void ExampleTetris::init(IPlatform &p, Renderer2D &r) {
     viewport_bottom_up(p.window.width, p.window.height);
-
     GameStateInit(&this->state);
 
     u32 boardWidth = GetBoardWidth(&this->state);
     i32 marginLeft = (p.window.width - boardWidth) * 0.5;
-    mfr_set_offset(&this->renderer, marginLeft, 0.0f);
+    r.set_offset(marginLeft, 0.0f);
 }
 
 void ExampleTetris::update(IPlatform &p) {
     GameStateUpdate(&p.input, &this->state, p.timer.deltaSec);
 }
 
-void ExampleTetris::render(IPlatform &p) {
-    SetColor(&renderer, BACKGROUND_LIGHT);
-    mfr_push_clear(&renderer);
-    GameStateRender(&state, &renderer, p.window.height);
-
-    mf::time::sleep_ms(16);
-    mfr_flush(&renderer);
+void ExampleTetris::render(IPlatform &p, Renderer2D &r) {
+    SetColor(r, BACKGROUND_LIGHT);
+    r.push_clear();
+    GameStateRender(&state, r, p.window.height);
 }
 
 void ExampleTetris::shutdown(IPlatform &p) {
-    mfr_destroy(&this->renderer);
     GameStateDestroy(&this->state);
 }
 

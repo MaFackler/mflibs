@@ -121,7 +121,7 @@ void Platform::end() {
     Timer *timer = &this->timer;
     u64 ticks = _get_ticks();
 
-    timer->deltaSec = ((float) ticks - (float) timer->ticks) / (float) frequency.QuadPart;
+    timer->deltaSec = (ticks - timer->ticks) / (float) frequency.QuadPart;
     timer->ticks = ticks;
     timer->fps = (1.0f / timer->deltaSec);
 

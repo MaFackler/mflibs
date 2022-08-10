@@ -7,13 +7,13 @@ struct ExampleCraft : IExample {
     u32 vao;
     u32 vb;
 
-    void init(IPlatform &p);
+    void init(IPlatform &p, Renderer2D &r);
     void update(IPlatform &p);
-    void render(IPlatform &p);
+    void render(IPlatform &p, Renderer2D &r);
     void shutdown(IPlatform &p);
 };
 
-void ExampleCraft::init(IPlatform &p) {
+void ExampleCraft::init(IPlatform &p, Renderer2D &r) {
     const char *VS_SRC = R"(
 #version 460 core
     layout (location = 0) in vec3 aPosition;
@@ -92,7 +92,7 @@ void ExampleCraft::update(IPlatform &p) {
     }
 }
 
-void ExampleCraft::render(IPlatform &p) {
+void ExampleCraft::render(IPlatform &p, Renderer2D &r) {
     shader_program_use(this->program);
     glDrawElements(GL_TRIANGLES, MF_ArrayLength(this->indices), GL_UNSIGNED_INT, 0);
 }
