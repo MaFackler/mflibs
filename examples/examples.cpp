@@ -16,6 +16,8 @@
 #include "mf_time.h"
 #define MF_RENDERER_IMPLEMENTATION
 #include "mf_renderer.h"
+#define MF_FONT_IMPLEMENTATION
+#include "mf_font.h"
 
 typedef mf::math::v2<f32> v2;
 typedef mf::math::v3<f32> v3;
@@ -43,6 +45,9 @@ struct Vertex {
 
 
 int main() {
+
+    //mf::Font font;
+    //mf::font_init(&font, "foo", 7.0f);
     Platform p = {};
 
     const int width = 1600;
