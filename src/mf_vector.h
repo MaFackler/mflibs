@@ -1,5 +1,6 @@
 #ifndef MF_VECTOR_H
 #define MF_VECTOR_H
+#define vec(T) T*
 
 /* USAGE
 
