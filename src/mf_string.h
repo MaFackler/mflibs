@@ -1,6 +1,36 @@
 #ifndef MF_STRING_H
 #define MF_STRING_H
 #include <ctype.h>
+#include <assert.h>
+
+
+struct mf_str {
+    char *data;
+    size_t size;
+    size_t capacity;
+};
+
+#define mf_str_stack(n) mf_str{(char *) alloca(n), 0, n}
+inline mf_str mf_str_new(size_t n);
+inline void mf_str_free(mf_str s);
+
+#ifdef MF_STRING_IMPLEMENTATION
+
+mf_str mf_str_new(size_t n) {
+    mf_str res;
+    res.data = (char *) calloc(n, 1);
+    res.size = 0;
+    res.capacity = n;
+    return res;
+}
+
+inline void mf_str_free(mf_str s) {
+    free(s.data);
+}
+
+#endif
+
+#if 0
 
 // Allocators
 #ifndef mf_str_malloc
@@ -13,14 +43,12 @@
     #define mf_str_realloc realloc
 #endif
 
-struct mf_str {
-    char *data;
-    u32 size;
-};
+
 
 #define mf_str_stack(size) mf_str{(char *) alloca(size), size}
 
 void mf_str_free(char *a);
+char* mf_str_new(size_t n) {
 char* mf_str_new(const char* fmt, ...);
 bool mf_str_endswith(const char* a, const char* b);
 bool mf_str_is_substrn(const char* a, const char* b, size_t n);
@@ -41,6 +69,18 @@ void mf_strcpy(char* dest, const char* source);
 // char buffer utilities
 void mf_to_cbuf(char *buf, u32 a);
 void mf_cbuf_rfill(char *buf, size_t len, char c, size_t n);
+
+// TODO: figure out a good naming for c strings (char *) and selfmade strings mf_string
+struct mf_string {
+    char *data;
+    u32 size;
+    u32 capacity;
+};
+
+mf_string mf_string_new(size_t capacity);
+
+
+
 
 #define mf_strcat strcat
 #define mf_strncat strncat
@@ -70,6 +110,8 @@ char* mf_str_new(const char* fmt, ...) {
     char* res = mf_strdup(&buffer[0]);
     return res;
 }
+
+
 
 bool mf_str_endswith(const char* a, const char* b) {
     size_t aSize = strlen(a);
@@ -227,6 +269,14 @@ void mf_strcpy(char* dest, const char* source) {
     strcpy(dest, source);
 }
 
+mf_string mf_string_new(size_t capacity) {
+    mf_string res;
+    res.data = mf_str_new(size);
+    res.capacity = size;
+    res.size = 0;
+    return res;
+}
+
 #endif //MF_STRING_IMPLEMENTATION
 
 #ifdef MF_TEST_ACTIVE
@@ -286,5 +336,6 @@ TEST("mf_to_cbuf") {
 }
 
 #endif
+#endif 
 
 #endif // MF_STRING_H

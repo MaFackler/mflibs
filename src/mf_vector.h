@@ -57,10 +57,10 @@ template <typename T> i32 mf_vec_index(T *v, T ele);
 // TODO: mf_vec_addn
 
 #define mf_vec_add(v) \
-    (mf__stretchy_check_and_resize(v), &(v)[mf__get_vec_header(v)->size++])
+    (mf__stretchy_check_and_resize(v), &(v[mf__get_vec_header(v)->size++]))
 
 #define mf_vec_push(v, e) \
-    *mf_vec_add(v) = e
+    *mf_vec_add(v) = (e)
 
 #define mf_vec_delete(v, i) \
     memmove(state.windows + i, state.windows + i + 1, mf_vec_size(v) - i - 1); \
