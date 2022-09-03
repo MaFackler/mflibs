@@ -3,11 +3,17 @@
 #include <ctype.h>
 #include <assert.h>
 
+#define S(d) mf_strview {d, strlen(d)}
+
+struct mf_strview {
+    const char *data; 
+    u64 size;
+};
 
 struct mf_str {
     char *data;
-    size_t size;
-    size_t capacity;
+    u64 size;
+    u64 capacity;
 };
 
 #define mf_str_stack(n) mf_str{(char *) alloca(n), 0, n}
