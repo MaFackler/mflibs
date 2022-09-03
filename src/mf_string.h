@@ -13,6 +13,13 @@
     #define mf_str_realloc realloc
 #endif
 
+struct mf_str {
+    char *data;
+    u32 size;
+};
+
+#define mf_str_stack(size) mf_str{(char *) alloca(size), size}
+
 void mf_str_free(char *a);
 char* mf_str_new(const char* fmt, ...);
 bool mf_str_endswith(const char* a, const char* b);

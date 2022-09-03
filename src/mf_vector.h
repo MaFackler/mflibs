@@ -35,18 +35,21 @@ typedef struct {
 
 
 
-#define mf__get_stretchy_header(v) (((mf__stretchy_header *) (v)) - 1)
-#define mf_vec_size(v) ((v) ? mf__get_stretchy_header(v)->size : 0)
-#define mf__stretchy_capacity(v) ((v) ? mf__get_stretchy_header(v)->capacity : 0)
-#define mf__stretchy_full(v) (mf_vec_size(v) == mf__stretchy_capacity(v))
-#define mf_vec_clear(v) ((v) ? (mf__get_stretchy_header(v)->size = 0) : 0)
-#define mf_vec_destroy(v) ((v) ? (free(mf__get_stretchy_header(v)), (v) = NULL) : 0)
-#define mf_vec_end(v) v[mf__get_stretchy_header(v)->size]
-#define mf_vec_last(v) v[mf__get_stretchy_header(v)->size - 1]
+#define mf__get_vec_header(v) (((mf__stretchy_header *) (v)) - 1)
+#define mf_vec_size(v) ((v) ? mf__get_vec_header(v)->size : 0)
+#define mf__vec_capacity(v) ((v) ? mf__get_vec_header(v)->capacity : 0)
+#define mf__vec_full(v) (mf_vec_size(v) == mf__vec_capacity(v))
+#define mf_vec_clear(v) ((v) ? (mf__get_vec_header(v)->size = 0) : 0)
+#define mf_vec_destroy(v) ((v) ? (free(mf__get_vec_header(v)), (v) = NULL) : 0)
+#define mf_vec_end(v) v[mf__get_vec_header(v)->size]
+#define mf_vec_last(v) v[mf__get_vec_header(v)->size - 1]
 #define mf_vec_safe_index_ptr(v, i) arr != NULL ? &arr[i] : NULL
 
+template <typename T> i32 mf_vec_index(T *v, T ele);
+
+
 #define mf__stretchy_check_and_resize(v) \
-	(mf__stretchy_full(v) ? mf__stretchy_grow((void **) &v, sizeof(*(v))) : 0)
+	(mf__vec_full(v) ? mf__stretchy_grow((void **) &v, sizeof(*(v))) : 0)
 
 #define mf_vec_for(v) \
     for (auto it = &v[0]; mf_vec_size(v) > 0 && it != &mf_vec_end(v); it++)
@@ -54,10 +57,15 @@ typedef struct {
 // TODO: mf_vec_addn
 
 #define mf_vec_add(v) \
-    (mf__stretchy_check_and_resize(v), &(v)[mf__get_stretchy_header(v)->size++])
+    (mf__stretchy_check_and_resize(v), &(v)[mf__get_vec_header(v)->size++])
 
 #define mf_vec_push(v, e) \
     *mf_vec_add(v) = e
+
+#define mf_vec_delete(v, i) \
+    memmove(state.windows + i, state.windows + i + 1, mf_vec_size(v) - i - 1); \
+    mf__get_vec_header(v)->size--;
+
 
 
 inline int mf__stretchy_grow(void **v, size_t elementSize) {
@@ -66,7 +74,7 @@ inline int mf__stretchy_grow(void **v, size_t elementSize) {
     mf__stretchy_header *header;
 
     if (*v) {
-        header = (mf__stretchy_header *) realloc(mf__get_stretchy_header(*v), bytesToAlloc);
+        header = (mf__stretchy_header *) realloc(mf__get_vec_header(*v), bytesToAlloc);
     } else {
         header = (mf__stretchy_header *) malloc(bytesToAlloc);
         header->size = 0;
@@ -76,6 +84,16 @@ inline int mf__stretchy_grow(void **v, size_t elementSize) {
 	return 0;
 }
 
+template <typename T>
+i32 mf_vec_index(T *v, T ele) {
+    for(i32 i = 0; i < mf_vec_size(v); ++i) {
+        if (v[i] == ele) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 #endif // MF_VECTOR_IMPLEMENTATION
 
 #ifdef MF_TEST_ACTIVE
@@ -83,19 +101,19 @@ inline int mf__stretchy_grow(void **v, size_t elementSize) {
 TEST("mf_vec") {
     mf_vec_int arr = NULL;
     MFT_CHECK_INT(mf_vec_size(arr), 0);
-    MFT_CHECK_INT(mf__stretchy_capacity(arr), 0);
+    MFT_CHECK_INT(mf__vec_capacity(arr), 0);
 
     mf_vec_push(arr, 1);
     MFT_CHECK_INT(mf_vec_size(arr), 1);
-    MFT_CHECK_INT(mf__stretchy_capacity(arr), 2);
+    MFT_CHECK_INT(mf__vec_capacity(arr), 2);
 
     mf_vec_push(arr, 2);
     MFT_CHECK_INT(mf_vec_size(arr), 2);
-    MFT_CHECK_INT(mf__stretchy_capacity(arr), 2);
+    MFT_CHECK_INT(mf__vec_capacity(arr), 2);
 
     *mf_vec_add(arr) = 3;
     MFT_CHECK_INT(mf_vec_size(arr), 3);
-    MFT_CHECK_INT(mf__stretchy_capacity(arr), 6);
+    MFT_CHECK_INT(mf__vec_capacity(arr), 6);
 
     MFT_CHECK_INT(arr[0], 1);
     MFT_CHECK_INT(arr[1], 2);
