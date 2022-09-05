@@ -63,7 +63,7 @@ template <typename T> i32 mf_vec_index(T *v, T ele);
     (*mf_vec_add(v) = (e), mf_vec_size(v) - 1)
 
 #define mf_vec_delete(v, i) \
-    (memmove(v + i, v + i + 1, (mf_vec_size(v) - i - 1) * sizeof(*v)), mf__get_vec_header(v)->size--)
+    (memmove(v + i, v + i + 1, (mf_vec_size(v) - i - 1) * sizeof(*v)), &v[--(mf__get_vec_header(v)->size)])
 
 
 inline int mf__stretchy_grow(void **v, size_t elementSize) {

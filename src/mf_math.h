@@ -14,7 +14,7 @@ inline float mfm_to_degree(float rad) {
 
 template <typename T>
 inline T mf_clamp(T x, T min, T max) {
-    double res = x;
+    T res = x;
     if (x < min) {
         res = min;
     }

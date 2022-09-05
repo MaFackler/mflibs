@@ -32,6 +32,8 @@ mf_str mf_str_new(size_t n) {
 
 inline void mf_str_free(mf_str s) {
     free(s.data);
+    s.size = 0;
+    s.capacity = 0;
 }
 
 #endif
