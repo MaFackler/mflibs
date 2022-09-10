@@ -18,6 +18,7 @@ struct mf_str {
 
 #define mf_str_stack(n) mf_str{(char *) alloca(n), 0, n}
 inline mf_str mf_str_new(size_t n);
+inline mf_str mf_str_new(const char *s);
 inline void mf_str_free(mf_str s);
 
 #ifdef MF_STRING_IMPLEMENTATION
@@ -27,6 +28,16 @@ mf_str mf_str_new(size_t n) {
     res.data = (char *) calloc(n, 1);
     res.size = 0;
     res.capacity = n;
+    return res;
+}
+
+inline mf_str mf_str_new(const char *s) {
+    u64 len = strlen(s);
+    mf_str res = mf_str_new(len + 1);
+    memcpy(res.data, s, len);
+    res.data[len] = 0;
+    res.size = len;
+    res.capacity = len + 1;
     return res;
 }
 
