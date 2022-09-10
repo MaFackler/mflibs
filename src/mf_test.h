@@ -309,9 +309,12 @@ i32 mft_run()
 {
     bool collectionFailure = false;
 
+#if 0 
     printf("\n=============================================\n");
     printf("Found %d TestCases\n", __mft_collection.index);
     printf("=============================================\n\n");
+#endif
+    //printf("\n---------- Found %d TestCases ---------->\n", __mft_collection.index);
 
     for (size_t i = 0; i < __mft_collection.index; ++i)
     {
@@ -332,9 +335,12 @@ i32 mft_run()
         mft__test_case_destroy(item);
     }
 
+    //printf("<----------");
     mft__set_color(collectionFailure ? MFT_COLOR_LIGHT_RED : MFT_COLOR_LIGHT_GREEN);
-    printf("\n================ %s =================\n", _RESULT_TEXT(collectionFailure));
+    //printf("\n================ %s =================\n", _RESULT_TEXT(collectionFailure));
+    //printf("%s", _RESULT_TEXT(collectionFailure));
     mft__reset_color();
+    //printf("---------->\n");
 
     return collectionFailure;
 }
