@@ -56,7 +56,7 @@ $(OUTDIR)/runtests: $(HEADERS) $(TESTS)
 $(TESTS_BIN): $(TESTS)
 
 build/%: tests/%.cpp $(HEADERS)
-	$(CC) -I./src/ $< -o $@
+	$(CC) -ggdb -I./src/ $< -o $@
 
 .PHONY: test
 test: $(TESTS_BIN)

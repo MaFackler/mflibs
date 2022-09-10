@@ -1,4 +1,3 @@
-#define MF_IMPLEMENTATION
 #include "mf.h"
 #define MF_PLATFORM_USE_OPENGL
 #define MF_PLATFORM_IMPLEMENTATION

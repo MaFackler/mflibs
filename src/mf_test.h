@@ -7,10 +7,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <signal.h>
 
 #ifdef _WIN32
 #include <windows.h>
 #endif
+#include <mf.h>
 
 #ifndef MFT_AMOUNT_TESTCASES
 #define MFT_AMOUNT_TESTCASES 1024
@@ -98,9 +100,9 @@ static mft__test_collection __mft_collection = {};
 #define MFT_CHECK_CHAR(a, b) mft__check_char(testCase, __LINE__, a, b)
 #define MFT_CHECK_INT(a, b) mft__check_int(testCase, __LINE__, a, b)
 #define MFT_CHECK_SIZET(a, b) mft__check_sizet(testCase, __LINE__, a, b)
-#define MFT_CHECK_STRINGN(a, b, c) mft__check_strn(testCase, __LINE__, a, b, c)
-#define MFT_CHECK_STRING(a, b) mft__check_strn(testCase, __LINE__, a, b, strlen(a));
-
+#define MFT_CHECK_STRINGN(a, b, c) mft__check_strn(testCase, __LINE__, a, b, c, c)
+#define MFT_CHECK_STRING(a, b) mft__check_strn(testCase, __LINE__, a, b, strlen(a), strlen(b))
+#define MFT_CHECK_U64(a, b) mft__check_u64(testCase, __LINE__, a, b)
 
 
 
@@ -209,13 +211,16 @@ inline void mft__check_sizet(mft__test_case *testCase, u32 line, size_t actual, 
         mft__on_check_error(testCase, line, "size_t %d != %d", actual, expected);
 }
 
-inline void mft__check_strn(mft__test_case *testCase, u32 line, char *actual, const char *expected, u32 size)
+inline void mft__check_strn(mft__test_case *testCase, u32 line, char *actual, const char *expected, u32 actual_size, u32 expected_size)
 {
     if (actual == NULL || expected == NULL)
         mft__on_check_error(testCase, line, "STRN actual or expected is NULL");
     else
     {
-        for (u32 i = 0; i < size; ++i)
+        if (actual_size != expected_size) {
+            mft__on_check_error(testCase, line, "%.*s (%d) != %.*s (%d) different length", actual_size, actual, actual_size, expected_size, expected, expected_size);
+        }
+        for (u32 i = 0; i < actual_size; ++i)
         {
             char a = actual[i];
             char e = expected[i];
@@ -225,11 +230,16 @@ inline void mft__check_strn(mft__test_case *testCase, u32 line, char *actual, co
                     a = ' ';
                 if (e == '\n')
                     e = ' ';
-                mft__on_check_error(testCase, line, "%.*s != %.*s at index %d", size, actual, size, expected, i);
+                mft__on_check_error(testCase, line, "%.*s != %.*s at index %d", actual_size, actual, expected_size, expected, i);
                 break;
             }
         }
     }
+}
+
+inline void mft__check_u64(mft__test_case *testCase, u32 line, u64 actual, u64 expected) {
+    if (actual != expected)
+        mft__on_check_error(testCase, line, "u64 %d != %d", actual, expected);
 }
 
 
@@ -304,10 +314,23 @@ void mft__reset_color()
     mft__set_color(MFT_COLOR_DARK_WHITE);
 }
 
+void onSegfault(int signal, siginfo_t *si, void *arg) {
+    // TODO: better reporting
+    mft__set_color(MFT_COLOR_LIGHT_RED);
+    printf("GOT SEGFAULT\n");
+    mft__reset_color();
+    exit(0);
+}
 
 i32 mft_run()
 {
     bool collectionFailure = false;
+    struct sigaction sa = {};
+    sigemptyset(&sa.sa_mask);
+    sa.sa_sigaction = onSegfault;
+    sa.sa_flags = SA_SIGINFO;
+
+    sigaction(SIGSEGV, &sa, NULL);
 
 #if 0 
     printf("\n=============================================\n");

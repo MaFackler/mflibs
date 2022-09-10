@@ -1,4 +1,3 @@
-#define MF_IMPLEMENTATION
 #include <mf.h>
 #define MF_VECTOR_IMPLEMENTATION 
 #include <mf_vector.h>

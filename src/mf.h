@@ -82,9 +82,7 @@ typedef uint64_t u64;
 void mf_sleep_ms(int value);
 void mf_print(const char *fmt, ...);
 
-
-
-
+u64 mf_next_power_of_2(u64 a);
 
 
 
@@ -97,7 +95,6 @@ u32 mf_random_int(u32 min, u32 max);
 double mf_random_double(double min, double max);
 
 
-#ifdef MF_IMPLEMENTATION
 
 void mf_sleep_ms(int value)
 {
@@ -123,6 +120,18 @@ void mf_print(const char *fmt, ...)
     printf("\n");
 #endif
     va_end(args);
+}
+
+u64 mf_next_power_of_2(u64 a) {
+    u64 n = a + 1;
+    u64 res = 0;
+    while (res == 0) {
+        if ((n & (n - 1)) == 0) {
+            res = n;
+        }
+        n++;
+    }
+    return res;
 }
 
 
@@ -191,6 +200,5 @@ double mf_random_double(double min, double max)
 }
 
 
-#endif // MF_IMPLEMENTATION
 
 #endif // MF_H
