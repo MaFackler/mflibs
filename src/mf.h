@@ -78,7 +78,6 @@ typedef uint64_t u64;
     MF_FormatStringN(varName, 1024, format, __VA_ARGS__)
 
 
-
 // general
 void mf_sleep_ms(int value);
 void mf_print(const char *fmt, ...);
@@ -193,19 +192,5 @@ double mf_random_double(double min, double max)
 
 
 #endif // MF_IMPLEMENTATION
-
-#ifdef MF_TEST_ACTIVE
-
-TEST("MF_Max") {
-    MFT_CHECK_INT(MF_Max(-1, 10), 10);
-    MFT_CHECK_INT(MF_Max(1, 10), 10);
-}
-
-TEST("MF_Min") {
-    MFT_CHECK_INT(MF_Min(-1, 10), -1);
-    MFT_CHECK_INT(MF_Min(1, 10), 1);
-}
-
-#endif
 
 #endif // MF_H

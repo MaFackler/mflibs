@@ -1,4 +1,3 @@
-#ifdef MF_TEST_ACTIVE
 #ifndef MF_TEST_H
 #define MF_TEST_H
 #include <assert.h>
@@ -343,4 +342,3 @@ i32 mft_run()
 #undef _RESULT_TEXT
 
 #endif // MF_TEST_H
-#endif // MF_TEST_ACTIVE

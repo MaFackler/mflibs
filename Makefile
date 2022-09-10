@@ -16,6 +16,8 @@ endif
 
 HEADERS=$(wildcard src/*.h)
 TESTS=$(wildcard tests/*.cpp)
+TESTS_BIN=$(basename $(TESTS))
+TESTS_BIN=$(subst tests/, build/, $(basename $(TESTS)))
 
 all:  build $(OUTDIR)/runtests examples ray
 
@@ -51,9 +53,17 @@ $(OUTDIR)/runtests: $(HEADERS) $(TESTS)
 
 
 
-test: $(OUTDIR)/runtests
-	./$<
+$(TESTS_BIN): $(TESTS)
 
+build/%: tests/%.cpp $(HEADERS)
+	$(CC) -I./src/ $< -o $@
+
+.PHONY: test
+test: $(TESTS_BIN)
+	@for t in $(TESTS_BIN); do ./$$t; done
+
+tdd:
+	ag -l | entr -c -s "make test"
 
 .PHONY: run
 run:
