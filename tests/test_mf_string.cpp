@@ -1,31 +1,49 @@
-#include <mf_test_def.h>
-
 #define MF_STRING_IMPLEMENTATION
 #define MF_STRING_DEFAULT_SIZE 16
 #include <mf_string.h>
 
-#define ASSERT_MF_STR(s, expected, size, capactity) \
-    MFT_CHECK_U64(mf_str_size(s), size); \
-    MFT_CHECK_U64(mf_str_capacity(s), capactity); \
-    MFT_CHECK_CHAR(s[mf_str_size(s)], '\0'); \
-    MFT_CHECK_STRING(s, expected); \
+void mft_check(mf_str s, const char *content, u64 size, u64 capacity);
+#include <mf_test_def.h>
 
-TEST("mf_str_new") {
+
+void mft_check(mf_str s, const char *content, u64 size, u64 capacity) {
+    if (mf_str_size(s) != size || mf_str_capacity(s) != capacity || strcmp(s, content) != 0) {
+        mft_test_error("mf_str differs %s != %s", s, content);
+    }
+}
+
+
+TEST("mf_str_new empty") {
+    mf_str s = mf_str_new();
+    CHECK(s, "", 0, 16);
+}
+
+TEST("mf_str manipulation") {
     mf_str s = mf_str_new("hello");
-    ASSERT_MF_STR(s, "hello", 5, 16);
+
+    CHECK(s, "hello", 5, 16);
 
     mf_str_append(&s, "mflib");
-    ASSERT_MF_STR(s, "hellomflib", 10, 16);
+    CHECK(s, "hellomflib", 10, 16);
 
     mf_str_append(&s, "12345");
-    ASSERT_MF_STR(s, "hellomflib12345", 15, 16);
+    CHECK(s, "hellomflib12345", 15, 16);
 
     // FORCE RESIZE
     mf_str_append(&s, "-");
-    ASSERT_MF_STR(s, "hellomflib12345-", 16, 32);
+    CHECK(s, "hellomflib12345-", 16, 32);
 }
 
-#undef ASSERT_MF_STR
+TEST("mf_str_new_format") {
+    mf_str s = mf_str_new_format("%s/%s", "mf", "libs");
+    CHECK(s, "mf/libs");
+}
+
+TEST("mf_str_append on empty") {
+    mf_str s = mf_str_new();
+    mf_str_append(&s, "appended");
+    CHECK(s, "appended");
+}
 
 #if 0
 

@@ -13,13 +13,17 @@
 #include <windows.h>
 #endif
 #include <mf.h>
+#define MF_STRING_IMPLEMENTATION
+#include <mf_string.h>
+#define MF_VECTOR_IMPLEMENTATION
+#include <mf_vector.h>
 
 #ifndef MFT_AMOUNT_TESTCASES
 #define MFT_AMOUNT_TESTCASES 1024
 #endif
 
-typedef uint32_t u32;
-typedef int32_t i32;
+#define MFT_FLOAT_DIFF 0.0001f
+#define MFT_DOUBLE_DIFF 0.0001
 
 /* USAGE
 
@@ -27,26 +31,24 @@ typedef int32_t i32;
 
 #include "test_other_stuff.cpp"
 
-TEST("Example")
-{
-    MFT_CHECK(1 == 1);
+TEST("Example") {
+    CHECK(1 == 1);
     int a = 2;
     int *aa = &a;
     int *ab = &a;
-    MFT_CHECK_PTR(aa, ab);
-    MFT_CHECK_FLOAT(1.0f, 1.00000001f);
-    MFT_CHECK_FLOAT('a', 'a');
-    MFT_CHECK_FLOAT(1, 1);
+    CHECK(aa, ab);
+    CHECK(1.0f, 1.00000001f);
+    CHECK('a', 'a');
+    CHECK(1, 1);
 }
 
 
-TEST("STRING")
-{
+TEST("STRING") {
     char buffer[256];
     buffer[0] = 'a';
     buffer[1] = 'b';
     buffer[2] = 'c';
-    MFT_CHECK_STRINGN(&buffer[0], "abc", 3);
+    CHECK(&buffer[0], "abc", 3);
 }
 
 
@@ -68,19 +70,122 @@ struct mft__test_case
     const char *name;
     const char *file;
     i32 line;
+    i32 check_line;
     void (*func)(mft__test_case *testCase);
     bool failure;
-    char *output;
+    mf_str output;
 
 };
 
 struct mft__test_collection
 {
-    mft__test_case testCases[MFT_AMOUNT_TESTCASES];
-    u32 index;
+    mft__test_case *test_cases = NULL;
+    u32 current_item;
 };
 
 static mft__test_collection __mft_collection = {};
+
+mft__test_case* mft_get_current_test_case() {
+    return &__mft_collection.test_cases[__mft_collection.current_item];
+}
+
+inline void mft_test_error(const char *fmt, ...);
+
+void mft_check(int a, int b);
+void mft_check(bool cond);
+void mft_check(float a, float b);
+void mft_check(double a, double b);
+void mft_check(const char *actual, const char *expected, size_t n);
+void mft_check(const char *actual, const char *expected);
+
+// NOTE: all compare/check functions
+// Int32 
+void mft_check(int a, int b) {
+    if (a != b) {
+        mft_test_error("Int32 failure %d != %d\n", a, b);
+    }
+}
+
+// Bool
+void mft_check(bool cond) {
+    if (!cond) {
+        mft_test_error("Is not True");
+    }
+}
+
+// Float
+void mft_check(float a, float b) {
+    // TODO: good float compare
+    if (abs(a - b) > MFT_FLOAT_DIFF) {
+        mft_test_error("Float failure %f != %f\n", a, b);
+    }
+}
+
+// Double
+void mft_check(double a, double b) {
+    // TODO: good float compare
+    if (abs(a - b) > MFT_DOUBLE_DIFF) {
+        mft_test_error("Double failure %f != %f\n", a, b);
+    }
+}
+
+// String
+
+bool mft__check_string_null(const char *actual, const char *expected) {
+    if (actual == NULL && expected == NULL) {
+        mft_test_error("String failure \"\" != \"\"");
+        return true;
+    } else if (actual == NULL) {
+        mft_test_error("String failure \"\" != \"%s\"", expected);
+        return true;
+    } else if (expected == NULL) {
+        mft_test_error("String failure \"%s\" != \"\"", actual);
+        return true;
+    }
+    return false;
+}
+
+void mft__check_string(const char *actual, size_t actual_size, const char *expected, size_t expected_size) {
+    if (actual_size != expected_size) {
+        mft_test_error("%.*s (%d) != %.*s (%d) different length", actual_size, actual, actual_size, expected_size, expected, expected_size);
+    }
+    for (u32 i = 0; i < actual_size; ++i)
+    {
+        char a = actual[i];
+        char e = expected[i];
+        if (a != e) {
+            if (a == '\n')
+                a = ' ';
+            if (e == '\n')
+                e = ' ';
+            mft_test_error("%.*s != %.*s at index %d",
+                           actual_size, actual,
+                           expected_size, expected,
+                           i);
+            break;
+        }
+    }
+}
+
+void mft_check(const char *actual, const char *expected, size_t n) {
+    if (!mft__check_string_null(actual, expected)) {
+        mft__check_string(actual, n, expected, n);
+    }
+}
+
+void mft_check(const char *actual, const char *expected) {
+    if (!mft__check_string_null(actual, expected)) {
+        mft__check_string(actual, strlen(actual), expected, strlen(expected));
+    }
+}
+
+#define CHECK(...) mft__check(__LINE__, __VA_ARGS__)
+
+template <typename... Args> void mft__check(u64 line, Args... args) {
+    auto testCase = mft_get_current_test_case();
+    testCase->check_line = line;
+    mft_check(args...);
+}
 
 
 // TEST CASE DEFINITION
@@ -91,77 +196,42 @@ static mft__test_collection __mft_collection = {};
 #define TEST(name) TEST_CASE_(name, __COUNTER__)
 
 
-// TEST CHECKS
-#define MFT_CHECK(condition) mft__check(testCase, __LINE__, condition)
-#define MFT_CHECK_TRUE(a) MFT_CHECK(a == true);
-#define MFT_CHECK_FALSE(a) MFT_CHECK(a == false);
-#define MFT_CHECK_PTR(a, b) mft__check_ptr(testCase, __LINE__, a, b)
-#define MFT_CHECK_FLOAT(a, b) mft__check_float(testCase, __LINE__, a, b)
-#define MFT_CHECK_CHAR(a, b) mft__check_char(testCase, __LINE__, a, b)
-#define MFT_CHECK_INT(a, b) mft__check_int(testCase, __LINE__, a, b)
-#define MFT_CHECK_SIZET(a, b) mft__check_sizet(testCase, __LINE__, a, b)
-#define MFT_CHECK_STRINGN(a, b, c) mft__check_strn(testCase, __LINE__, a, b, c, c)
-#define MFT_CHECK_STRING(a, b) mft__check_strn(testCase, __LINE__, a, b, strlen(a), strlen(b))
-#define MFT_CHECK_U64(a, b) mft__check_u64(testCase, __LINE__, a, b)
-
-
-
-mft__test_case *mft__test_case_push(mft__test_collection *collection, const char *name, void (*func)(mft__test_case *testCase), const char *file, i32 line)
-{
-
-    assert(collection->index < MFT_AMOUNT_TESTCASES);
-    mft__test_case *res = &collection->testCases[collection->index++];
+mft__test_case *mft__test_case_push(mft__test_collection *collection, const char *name, void (*func)(mft__test_case *testCase), const char *file, i32 line) {
+    mft__test_case *res = mf_vec_add(collection->test_cases);
     res->name = name;
     res->func = func;
     res->file = file;
     res->line = line;
+    res->output = mf_str_new();
     return res;
 }
 
-void mft__test_case_destroy(mft__test_case *tc)
-{
+void mft__test_case_destroy(mft__test_case *tc) {
     if (tc->output)
-        free(tc->output);
+        mf_str_free(tc->output);
 }
 
-char* mft__strdup(const char *s)
-{
-    size_t len = strlen(s);
-    char *res = (char *) malloc(len + 1);
-    memcpy(res, s, len);
-    res[len] = 0;
-    return res;
-}
 
-inline void mft__on_check_error(mft__test_case *testCase, i32 lineNr, const char *fmt, ...)
-{
+inline void mft_test_error(const char *fmt, ...) {
+    auto testCase = mft_get_current_test_case(); 
+
     va_list args;
     va_start(args, fmt);
     FILE *fp = fopen(testCase->file, "r");
-    testCase->line = lineNr;
+    testCase->line = testCase->check_line;
     testCase->failure = true;
     char line[256];
     char outbuffer[1024];
     char msgbuffer[1024];
     vsprintf(msgbuffer, fmt, args);
     i32 i = 0;
-    while (fgets(line, sizeof(line), fp))
-    {
+    while (fgets(line, sizeof(line), fp)) {
         i++;
-        if (i == lineNr)
-        {
+        if (i == testCase->check_line) {
             line[strlen(line) - 1] = 0;  // remove new line
             sprintf(&outbuffer[0], "%s\t%s\n", line, msgbuffer);
-            if (testCase->output)
-            {
-                char buffer[1024] = {};
-                sprintf(&buffer[0], "%s%s", testCase->output, &outbuffer[0]);
-                testCase->output = mft__strdup(&buffer[0]);
-            }
-            else
-            {
-                testCase->output = mft__strdup(&outbuffer[0]);
-            }
+
+            mf_str_append(&testCase->output, &outbuffer[0]);
             break;
         }
     }
@@ -169,84 +239,10 @@ inline void mft__on_check_error(mft__test_case *testCase, i32 lineNr, const char
     fclose(fp);
 }
 
-inline void mft__check(mft__test_case *testCase, u32 line, bool condition)
-{
-    if (!condition)
-        mft__on_check_error(testCase, line, "Is not true");
-}
-
-inline
-void mft__check_ptr(mft__test_case *testCase, u32 line, void *ptr1, void *ptr2)
-{
-    if (ptr1 != ptr2)
-        mft__on_check_error(testCase, line, "Pointer differs");
-}
-
-inline
-void mft__check_float(mft__test_case *testCase, u32 line, float actual, float expected)
-{
-    char buffer[1024];
-    sprintf(&buffer[0], "%f != %f", actual, expected);
-    // TODO whats a good precision
-    if (fabs(actual - expected) > 0.001f )
-        mft__on_check_error(testCase, line, &buffer[0]);
-}
-
-inline void mft__check_char(mft__test_case *testCase, u32 line, char actual, char expected)
-{
-    if (actual != expected)
-        mft__on_check_error(testCase, line, "%c != %c", actual, expected);
-}
-
-
-inline void mft__check_int(mft__test_case *testCase, u32 line, i32 actual, i32 expected)
-{
-    if (actual != expected)
-        mft__on_check_error(testCase, line, "i32 %d != %d", actual, expected);
-}
-
-inline void mft__check_sizet(mft__test_case *testCase, u32 line, size_t actual, size_t expected)
-{
-    if (actual != expected)
-        mft__on_check_error(testCase, line, "size_t %d != %d", actual, expected);
-}
-
-inline void mft__check_strn(mft__test_case *testCase, u32 line, char *actual, const char *expected, u32 actual_size, u32 expected_size)
-{
-    if (actual == NULL || expected == NULL)
-        mft__on_check_error(testCase, line, "STRN actual or expected is NULL");
-    else
-    {
-        if (actual_size != expected_size) {
-            mft__on_check_error(testCase, line, "%.*s (%d) != %.*s (%d) different length", actual_size, actual, actual_size, expected_size, expected, expected_size);
-        }
-        for (u32 i = 0; i < actual_size; ++i)
-        {
-            char a = actual[i];
-            char e = expected[i];
-            if (a != e)
-            {
-                if (a == '\n')
-                    a = ' ';
-                if (e == '\n')
-                    e = ' ';
-                mft__on_check_error(testCase, line, "%.*s != %.*s at index %d", actual_size, actual, expected_size, expected, i);
-                break;
-            }
-        }
-    }
-}
-
-inline void mft__check_u64(mft__test_case *testCase, u32 line, u64 actual, u64 expected) {
-    if (actual != expected)
-        mft__on_check_error(testCase, line, "u64 %d != %d", actual, expected);
-}
-
 
 #define _RESULT_TEXT(failure) (failure ? "FAILURE" : "SUCCESS")
 
-enum mft__terminal_color
-{
+enum mft__terminal_color {
     MFT_COLOR_DARK_BLUE=1,
     MFT_COLOR_DARK_GREEN,
     MFT_COLOR_DARK_CYAN,
@@ -295,12 +291,9 @@ void mft__set_color(enum mft__terminal_color color)
         97, // TERMINAL_COLOR_LIGHT_WHITE
     };
 
-    if (color == MFT_COLOR_DARK_WHITE)
-    {
+    if (color == MFT_COLOR_DARK_WHITE) {
         printf("\033[0m");
-    }
-    else
-    {
+    } else {
         u32 value = colorValues[color];
         printf("\033[1;%dm", value);
     }
@@ -309,8 +302,7 @@ void mft__set_color(enum mft__terminal_color color)
 
 }
 
-void mft__reset_color()
-{
+void mft__reset_color() {
     mft__set_color(MFT_COLOR_DARK_WHITE);
 }
 
@@ -339,16 +331,15 @@ i32 mft_run()
 #endif
     //printf("\n---------- Found %d TestCases ---------->\n", __mft_collection.index);
 
-    for (size_t i = 0; i < __mft_collection.index; ++i)
-    {
-        mft__test_case *item = &__mft_collection.testCases[i];
+    for (size_t i = 0; i < mf_vec_size(__mft_collection.test_cases); ++i) {
+        mft__test_case *item = &__mft_collection.test_cases[i];
+        __mft_collection.current_item = i;
         item->func(item);
 
         printf("%s:%d: '%s'  ", item->file, item->line, item->name);
         mft__set_color(item->failure ? MFT_COLOR_LIGHT_RED : MFT_COLOR_LIGHT_GREEN);
         printf("%s\n", _RESULT_TEXT(item->failure));
-        if (item->failure)
-        {
+        if (item->failure) {
             printf("%s\n", item->output);
         }
         mft__reset_color();
