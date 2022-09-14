@@ -7,6 +7,14 @@
 #define MF_STRING_DEFAULT_SIZE 256
 #endif  // MF_STRING_DEFAULT_SIZE
 
+
+#define S(a) mf_strview { a, strlen(a) }
+
+struct mf_strview {
+    const char *data;
+    u64 size;
+};
+
 typedef char* mf_str;
 
 struct mf__str_header {
@@ -35,7 +43,7 @@ inline mf_str mf__str_from_header(mf__str_header *header) {
     return res;
 }
 
-inline mf__str_header* __get_mf_str_header(mf_str s) {
+inline mf__str_header* mf__str_get_header(mf_str s) {
     return ((mf__str_header *) s) -1;
 }
 
@@ -103,7 +111,7 @@ mf_str mf_str_new_format(const char *fmt, ...) {
 }
 
 void mf_str_free(mf_str s) {
-    mf__str_header *header = __get_mf_str_header(s);
+    mf__str_header *header = mf__str_get_header(s);
     header->size = 0;
     header->capacity = 0;
     free(header);
@@ -111,18 +119,18 @@ void mf_str_free(mf_str s) {
 
 
 u64 mf_str_size(mf_str s) {
-    mf__str_header *header = __get_mf_str_header(s);
+    mf__str_header *header = mf__str_get_header(s);
     return header->size;
 }
 
 u64 mf_str_capacity(mf_str s) {
-    mf__str_header *header = __get_mf_str_header(s);
+    mf__str_header *header = mf__str_get_header(s);
     return header->capacity;
 }
 
 void mf_str_append(mf_str *s, const char *b) {
     u64 len = strlen(b);
-    mf__str_header *header = __get_mf_str_header(*s);
+    mf__str_header *header = mf__str_get_header(*s);
     header = __mf_str_check_and_adjust_size(header, len);
     memcpy(&(*s)[header->size], b, len);
     header->size += len;
