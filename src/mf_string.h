@@ -58,7 +58,7 @@ inline mf__str_header* mf__str_alloc_size(u64 size) {
     size = mf_next_power_of_2(size);
     size = MF_Max(size, MF_STRING_DEFAULT_SIZE);
     MF_Assert((size & (size - 1)) == 0);
-    mf__str_header *header = (mf__str_header *) malloc(sizeof(mf__str_header) + size);
+    mf__str_header *header = (mf__str_header *) calloc(1, sizeof(mf__str_header) + size);
     header->capacity = size;
     header->size = 0;
     return header;
