@@ -45,6 +45,13 @@ TEST("mf_str_append on empty") {
     CHECK(s, "appended");
 }
 
+TEST("mf_str_append loop") {
+    mf_str s = mf_str_new();
+    for (i32 i = 0; i < 1000; ++i) {
+        mf_str_append(&s, "appended");
+    }
+}
+
 #if 0
 
 TEST("mf_string_endswith") {

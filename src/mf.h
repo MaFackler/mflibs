@@ -67,6 +67,8 @@ typedef uint64_t u64;
 #define MF_MallocStruct(s) ((s *) MF_Malloc(sizeof(s)))
 #define MF_MallocArray(n, s) ((s *) MF_Malloc(n * sizeof(s)))
 
+#define MF_MemberOffset(s, m) ((char *) &m - (char *) &s)
+
 
 // TODO: i would like to use it like
 // char *buf = FormatStringN(

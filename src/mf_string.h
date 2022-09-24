@@ -49,9 +49,9 @@ inline mf__str_header* mf__str_get_header(mf_str s) {
 
 inline mf__str_header * mf__str_realloc(mf__str_header *header, u64 size) {
     mf__str_header *res = NULL;
-    res = (mf__str_header *) realloc(header, sizeof(header) + size);
+    res = (mf__str_header *) realloc(header, sizeof(mf__str_header) + size);
     res->capacity = size;
-    return header;
+    return res;
 }
 
 inline mf__str_header* mf__str_alloc_size(u64 size) {
@@ -67,7 +67,7 @@ inline mf__str_header* mf__str_alloc_size(u64 size) {
 inline mf__str_header*  __mf_str_check_and_adjust_size(mf__str_header *header, i64 n) {
     mf__str_header *res = header;
     if (n != 0) {
-        i64 new_capacity = mf_next_power_of_2(header->size + n);
+        u64 new_capacity = mf_next_power_of_2(header->size + n);
         if (header->capacity != new_capacity) {
             res = mf__str_realloc(header, new_capacity);
         }
@@ -132,6 +132,7 @@ void mf_str_append(mf_str *s, const char *b) {
     u64 len = strlen(b);
     mf__str_header *header = mf__str_get_header(*s);
     header = __mf_str_check_and_adjust_size(header, len);
+    *s = (mf_str) (header + 1);
     memcpy(&(*s)[header->size], b, len);
     header->size += len;
     (*s)[header->size] = 0;
