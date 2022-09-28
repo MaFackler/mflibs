@@ -2,6 +2,8 @@
 #define MF_VECTOR_H
 #define vec(T) T*
 
+template <typename T> using vec = T*;
+
 /* USAGE
 
 // StretchyBuffer
