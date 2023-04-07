@@ -198,6 +198,8 @@ struct mfp_input
     mfp_button_state mouseLeft;
     i32 mouseX;
     i32 mouseY;
+    i32 mouseDx;
+    i32 mouseDy;
 };
 
 struct mfp_window
@@ -429,8 +431,10 @@ void mfp_init(mfp_platform *platform)
     plat->depth = XDefaultDepth(plat->display, plat->screen);
     plat->visual = XDefaultVisual(plat->display, plat->screen);
     plat->colormap = XDefaultColormap(plat->display, plat->screen);
+    XWarpPointer(plat->display, None, plat->root, 0, 0, 0, 0, 0, 0);
+    XUngrabPointer(plat->display, CurrentTime);
+    XFlush(plat->display);
     
-    mfp_timer *timer = &platform->timer;
 #ifdef MF_WINDOWS
     timer->time = mfp__get_time_micro();
 #endif
@@ -639,7 +643,9 @@ void mfp_begin(mfp_platform *platform)
             case MotionNotify:
             {
                 XMotionEvent xme = event.xmotion;
+                input->mouseDx = xme.x - input->mouseX;
                 input->mouseX = xme.x;
+                input->mouseDy = (platform->window.height - xme.y) - input->mouseY;
                 input->mouseY = platform->window.height - xme.y;
             } break;
             case ButtonPress:

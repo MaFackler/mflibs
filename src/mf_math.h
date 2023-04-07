@@ -575,7 +575,7 @@ inline mfm_m4 mfm_m4_ortho(float left, float right, float bottom, float top, flo
 inline mfm_m4 mfm_m4_perspective(float fov, float aspect, float nearr, float farr)
 {
     mfm_m4 res = {};
-
+    //  TODO: this is column-major?
 #if 0 
     // without aspect
     float s = 1.0f / tanf(fov * (M_PI / 360.0f));
@@ -586,7 +586,6 @@ inline mfm_m4 mfm_m4_perspective(float fov, float aspect, float nearr, float far
     res.m[2 * 4 + 3] = -1.0f;
 
     res.m[3 * 4 + 2] = -(farr * nearr) / (farr - nearr);
-#else
     float c = 1.0f / (tanf(fov * (M_PI / 360.0f)));
     res.m[0 * 4 + 0] = c / aspect;
     res.m[1 * 4 + 1] =  c;
@@ -595,6 +594,17 @@ inline mfm_m4 mfm_m4_perspective(float fov, float aspect, float nearr, float far
     res.m[2 * 4 + 3] = -1.0f;
 
     res.m[2 * 4 + 2] = (2.0f * farr * nearr) / (nearr - farr);
+
+#else
+    float c = 1.0f / (tanf(fov * (M_PI / 360.0f)));
+    res.m[0 * 4 + 0] = c / aspect;
+
+    res.m[1 * 4 + 1] = c;
+
+    res.m[2 * 4 + 2] = -((farr + nearr) / (farr - nearr));
+    res.m[2 * 4 + 3] = -((2 * farr * nearr) / (farr - nearr));
+
+    res.m[3 * 4 + 2] = -1;
 #endif
     return res;
 }
@@ -604,12 +614,15 @@ inline mfm_m4 mfm_m4_look_at(mfm_v3<T> eye, mfm_v3<T> center, mfm_v3<T> up)
 {
     mfm_v3<T> zaxis = mfm_v3_normalize(center - eye);
     mfm_v3<T> xaxis = mfm_v3_normalize(mfm_v3_cross(zaxis, up));
-    mfm_v3<T> yaxis = mfm_v3_cross(xaxis, zaxis);
+    mfm_v3<T> yaxis = mfm_v3_normalize(mfm_v3_cross(xaxis, zaxis));
+    // NOTE: negate because Opengl zaxis
+    zaxis = mfm_v3_negate(zaxis);
 
     mfm_m4 res = {
         xaxis.x, xaxis.y, xaxis.z, -mfm_v3_dot(xaxis, eye),
         yaxis.x, yaxis.y, yaxis.z, -mfm_v3_dot(yaxis, eye),
         zaxis.x, zaxis.y, zaxis.z, -mfm_v3_dot(zaxis, eye),
+        0.0f, 0.0f, 0.0f, 1.0f,
     };
     return res;
 }
