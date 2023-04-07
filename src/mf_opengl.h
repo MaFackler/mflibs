@@ -252,7 +252,7 @@ unsigned int mfgl_vertex_buffer_create(float *vertices, int n)
 
 unsigned int mfgl_vertex_buffer_dynamic_create(float *vertices, int n, float **map)
 {
-    u32 vbo;
+    unsigned int vbo;
     glGenBuffers(1, &vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, n * sizeof(float), vertices, GL_DYNAMIC_DRAW);
