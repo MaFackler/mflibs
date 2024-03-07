@@ -2,7 +2,7 @@
 #define MF_VECTOR_H
 #define vec(T) T*
 
-template <typename T> using vec = T*;
+// template <typename T> using vec = T*;
 
 /* USAGE
 
@@ -84,17 +84,6 @@ inline int mf__stretchy_grow(void **v, size_t elementSize) {
 	return 0;
 }
 
-template <typename T>
-i32 mf_vec_index(T *v, T ele) {
-    for(i32 i = 0; i < mf_vec_size(v); ++i) {
-        if (v[i] == ele) {
-            return i;
-        }
-    }
-    return -1;
-}
 
 #endif // MF_VECTOR_IMPLEMENTATION
-
-
 #endif // MF_VECTOR_H

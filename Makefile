@@ -1,8 +1,8 @@
 # TODO: On windows make aways recompiles?
 OUTDIR=build
 CC=g++
-CFLAGS=-g -Isrc
-LIBS=-lX11 -lGL `pkg-config --cflags freetype2` 
+CFLAGS=-g -Isrc `pkg-config --cflags freetype2`
+LIBS=-lX11 -lGL `pkg-config --libs freetype2` 
 OUTPUT=-o 
 objects=
 
@@ -14,12 +14,27 @@ ifeq ($(OS),Windows_NT)
 	objects=/Fd$(OUTDIR)/ /Fo:$(addsuffix .obj, $(1))
 endif
 
-HEADERS=$(wildcard src/*.h)
-TESTS=$(wildcard tests/*.cpp)
-TESTS_BIN=$(basename $(TESTS))
-TESTS_BIN=$(subst tests/, build/, $(basename $(TESTS)))
+define grep_libs
+	grep 'pragma comment(lib' $(1) | sed -r 's/#pragma comment\(lib, "(.*)"\)/ -l\1/' | tr -d '\n'
+endef
 
-all:  build $(OUTDIR)/runtests examples ray
+HEADERS=$(wildcard src/*.h)
+TEST_SOURCES=$(wildcard tests/*.c)
+TESTS_BIN=$(basename $(TEST_SOURCES))
+TESTS_BIN=$(subst tests/,build/,$(basename $(TEST_SOURCES)))
+
+$(info TESTS=$(TESTS_BIN))
+
+top: runtests
+
+all:  build runtests examples
+
+compile_headers: $(HEADERS)
+	for header in $(HEADERS); do \
+		gcc -c $$header; \
+	done
+
+
 
 build:
 	mkdir build
@@ -48,15 +63,20 @@ $(OUTDIR)/ray: examples/ray.cpp $(HEADERS)
 	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $<
 
 
-$(OUTDIR)/runtests: $(HEADERS) $(TESTS)
-	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) tests/tests.cpp
+.PHONY: runtests
+runtests: $(TESTS_BIN)
+	@for test in $(TESTS_BIN); do \
+		# echo "RUN TESTS OF " $$test; \
+		./$$test; \
+	done
 
 
 
 $(TESTS_BIN): $(TESTS)
 
-build/%: tests/%.cpp $(HEADERS)
-	$(CC) -ggdb -I./src/ $< -o $@
+build/%: tests/%.c $(HEADERS)
+	@libs=`$(call grep_libs, $<)` \
+	&& gcc -ggdb -DMFT_WITH_MAIN -I./src/ $< -o $@ -lc $$libs
 
 .PHONY: test
 test: $(TESTS_BIN)

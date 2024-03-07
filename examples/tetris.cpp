@@ -8,6 +8,7 @@
 #include <mf_platform.h>
 #define MF_OPENGL_IMPLEMENTATION
 #include <mf_opengl.h>
+#include <mf_opengl2.h>
 #define MF_RENDERER_IMPLEMENTATION
 #include <mf_renderer.h>
 

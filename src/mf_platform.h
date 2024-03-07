@@ -186,7 +186,7 @@ struct mfp_input
     mfp_button_state keys[MFP__AMOUNT_KEYS];
 
     char downKeysBuffer[256];
-    u32 downKeysBufferSize = 0;
+    u32 downKeysBufferSize;
 
     // Text input
     char text[256];
@@ -223,14 +223,12 @@ struct mfp_timer
     float fps;
 };
 
-enum mfp_MessageType
-{
+typedef enum mfp_MessageType {
     MFP_MESSAGE_WINDOW_SIZE,
-};
+} mfp_MessageType;
 
-typedef void (*mfp_MessageCallbackFunc)(mfp_MessageType);
-struct mfp_platform
-{
+typedef void (*mfp_MessageCallbackFunc)(mfp_MessageType type);
+struct mfp_platform {
     void *os;
     mfp_MessageCallbackFunc callback;
 
@@ -260,7 +258,7 @@ enum
 
 
 
-#ifdef MF_PLATFORM_IMPLEMENTATION
+#if defined(MF_PLATFORM_IMPLEMENTATION) || defined(MF_IMPLEMENTATION)
 
 // TODO: whats a good practice so i dont have to redefine this every time?
 #define MFP_Assert(expr) if (!(expr)) {*(int *) 0 = 0; }
@@ -665,7 +663,7 @@ void mfp_begin(mfp_platform *platform)
 
 }
 
-void mfp_end(mfp_platform *platform, bool swapBuffers=true)
+void mfp_end(mfp_platform *platform, bool swapBuffers)
 {
     mfp__end(platform);
 #ifdef MF_PLATFORM_USE_OPENGL

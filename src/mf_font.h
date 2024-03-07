@@ -1,6 +1,7 @@
 #ifndef MF_FONT_H
 #define MF_FONT_H
 
+#include <assert.h>
 #include "mf.h"
 #ifdef _WIN32
 #define STB_TRUETYPE_IMPLEMENTATION

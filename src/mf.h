@@ -2,19 +2,15 @@
 #define MF_H
 
 
-#ifdef __cplusplus
-    #define mf_inline inline
-#else
-    #include <stdbool.h>
-    #define _POSIX_C_SOURCE 199309L
-    #define mf_inline
-#endif
+#include <stdbool.h>
 
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
     #define MF_MAIN int WinMain(HINSTANCE __hInstance, HINSTANCE __hPrevInstance, LPSTR __lpCmdLine, int __nShowCmd)
 #else
+    #define _POSIX_C_SOURCE 199309L
+    #define _DEFAULT_SOURCE
     #include <unistd.h> 
     #define MF_MAIN int main(int __argc, char **__argv)
     #ifndef _GNU_SOURCE
@@ -23,7 +19,6 @@
 #endif // _WIN32
 
 #include <fcntl.h>
-#include <stdlib.h>
 #include <time.h>
 #include <string.h>
 #include <stdarg.h>
@@ -67,7 +62,7 @@ typedef uint64_t u64;
 #define MF_MallocStruct(s) ((s *) MF_Malloc(sizeof(s)))
 #define MF_MallocArray(n, s) ((s *) MF_Malloc(n * sizeof(s)))
 
-#define MF_MemberOffset(s, m) ((char *) &m - (char *) &s)
+#define MF_MemberOffset(s, m) (int)((char *) &m - (char *) &s)
 
 
 // TODO: i would like to use it like
