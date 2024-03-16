@@ -47,8 +47,6 @@ typedef struct {
 #define mf_vec_last(v) v[mf__get_vec_header(v)->size - 1]
 #define mf_vec_safe_index_ptr(v, i) arr != NULL ? &arr[i] : NULL
 
-template <typename T> i32 mf_vec_index(T *v, T ele);
-
 
 #define mf__stretchy_check_and_resize(v) \
 	(mf__vec_full(v) ? mf__stretchy_grow((void **) &v, sizeof(*(v))) : 0)

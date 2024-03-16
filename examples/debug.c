@@ -115,7 +115,7 @@ int main() {
         glEnd();
 
         //draw_text(&font, "hellop'");
-        mfp_end(&p);
+        mfp_end(&p, true);
     }
 
     mfp_window_close(&p);

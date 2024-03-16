@@ -228,7 +228,7 @@ int main() {
         //render_text(&font, &textures[0], &vertices, vbo, ebo, "Zeile Eins", 0, -font.descent + font.linegap);
         //render_text(&font, &textures[0], &vertices, vbo, ebo, "Zeile 2", 0, -font.descent);
 
-        mfp_end(&platform);
+        mfp_end(&platform, true);
     }
 
     mfp_window_close(&platform);

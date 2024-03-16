@@ -20,7 +20,7 @@ int main()
         glClearColor(0.0f, 1.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        mfp_end(&platform);
+        mfp_end(&platform, true);
     }
 
     mfp_window_close(&platform);

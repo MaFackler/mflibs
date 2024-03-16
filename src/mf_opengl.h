@@ -2,7 +2,6 @@
 #define MF_OPENGL_H
 #include <stdio.h>
 #define _USE_MATH_DEFINES
-#include <cmath>
 #include <math.h>
 
 // NOTE: opengl code should be included by platform
@@ -260,10 +259,6 @@ unsigned int mfgl_vertex_buffer_dynamic_create(float *vertices, int n, float **m
     return vbo;
 }
 
-template <typename T>
-T* mfgl_map_buffer() {
-    return (T*) glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-}
 
 void mfgl_vertex_buffer_bind(unsigned int vbo)
 {

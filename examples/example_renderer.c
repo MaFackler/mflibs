@@ -403,10 +403,10 @@ int main() {
         glEnd();
 #endif
 
-        render_text(&font, "Maximilian");
+        render_text(&font, "Test");
 #endif
         mfgl_error_check();
-        mfp_end(&platform);
+        mfp_end(&platform, true);
         mf_sleep_ms(16);
     }
 

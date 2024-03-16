@@ -41,26 +41,26 @@ build:
 
 examples: $(OUTDIR)/example-platform $(OUTDIR)/example-renderer $(OUTDIR)/tetris $(OUTDIR)/debug $(OUTDIR)/craft $(OUTDIR)/gui $(OUTDIR)/ray
 
-$(OUTDIR)/craft: examples/craft.cpp $(HEADERS)
-	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
+$(OUTDIR)/craft: examples/craft.c $(HEADERS)
+	gcc $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
 
-$(OUTDIR)/debug: examples/debug.cpp $(HEADERS)
-	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
+$(OUTDIR)/debug: examples/debug.c $(HEADERS)
+	gcc $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
 
-$(OUTDIR)/example-platform: examples/example_platform.cpp $(HEADERS)
-	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
+$(OUTDIR)/example-platform: examples/example_platform.c $(HEADERS)
+	gcc $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
 
-$(OUTDIR)/example-renderer: examples/example_renderer.cpp $(HEADERS)
-	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
+$(OUTDIR)/example-renderer: examples/example_renderer.c $(HEADERS)
+	gcc $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
 
-$(OUTDIR)/tetris: examples/tetris.cpp $(HEADERS)
-	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
+$(OUTDIR)/tetris: examples/tetris.c $(HEADERS)
+	gcc $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
 
-$(OUTDIR)/gui: examples/gui.cpp $(HEADERS)
-	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS) `pkg-config --libs freetype2`
+$(OUTDIR)/gui: examples/gui.c $(HEADERS)
+	gcc $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS) `pkg-config --libs freetype2`
 
-$(OUTDIR)/ray: examples/ray.cpp $(HEADERS)
-	$(CC) $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $<
+$(OUTDIR)/ray: examples/ray.c $(HEADERS)
+	gcc $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $<
 
 
 .PHONY: runtests
@@ -76,7 +76,7 @@ $(TESTS_BIN): $(TESTS)
 
 build/%: tests/%.c $(HEADERS)
 	@libs=`$(call grep_libs, $<)` \
-	&& gcc -ggdb -DMFT_WITH_MAIN -I./src/ $< -o $@ -lc $$libs
+	&& gcc -ggdb -DMFT_WITH_MAIN -I./src/ $< -o $@ -lc -lm $$libs
 
 .PHONY: test
 test: $(TESTS_BIN)

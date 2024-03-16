@@ -2,7 +2,116 @@
 #define MF_MATH_H
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <stdbool.h>
+#include <stdint.h>
 
+typedef float f32;
+typedef int32_t i32;
+typedef uint32_t u32;
+
+// {{{ basic
+
+f32 clamp(f32 value, f32 min, f32 max) {
+    f32 res = value;
+    if (value < min) {
+        res = min;
+    } else if (value > max) {
+        res = max;
+    }
+    return res;
+}
+
+// }}}
+
+// {{{ v2
+
+typedef union v2 {
+   struct {
+       f32 x;
+       f32 y;
+   };
+   f32 m[2];
+} v2;
+
+bool v2_eq(v2 a, v2 b);
+v2 v2_add(v2 a, v2 b);
+
+float v2_distance(v2 a, v2 b);
+float v2_distance_squared(v2 a, v2 b);
+float v2_length(v2 a);
+v2 v2_normalize(v2 a);
+
+// Implementations
+
+bool v2_eq(v2 a, v2 b) {
+    return a.x == b.x && a.y == b.y;
+}
+
+v2 v2_add(v2 a, v2 b) {
+    v2 res = {0};
+    res.x = a.x + b.x;
+    res.y = a.y + b.y;
+    return res;
+}
+
+float v2_distance(v2 a, v2 b) {
+    float res = sqrt(v2_distance_squared(a, b));
+    return res;
+}
+
+float v2_distance_squared(v2 a, v2 b) {
+    float sx = (b.x - a.x) * (b.x - a.x);
+    float sy = (b.y - a.y) * (b.y - a.y);
+    float res = sx + sy;
+    return res;
+}
+
+float v2_length(v2 a) {
+    float res = sqrt(a.x * a.x + a.y * a.y);
+    return res;
+}
+
+v2 v2_normalize(v2 a) {
+    v2 res = {0};
+    float length = v2_length(a);
+    res.x = a.x / length;
+    res.y = a.y / length;
+    return res;
+}
+
+// }}}
+
+// {{{ v2ui
+
+typedef struct v2i {
+    i32 x;
+    i32 y;
+} v2i;
+
+// }}}
+
+// {{{ v2ui
+
+typedef struct v2ui {
+    u32 x;
+    u32 y;
+} v2ui;
+
+// }}}
+
+// {{{ v3
+
+typedef union v3 {
+    struct {
+        f32 x;
+        f32 y;
+        f32 z;
+    };
+} v3;
+
+// }}}
+
+#if 0
 
 inline float mfm_to_rad(float degree) {
     return degree * (M_PI / 180);
@@ -10,18 +119,6 @@ inline float mfm_to_rad(float degree) {
 
 inline float mfm_to_degree(float rad) {
     return rad * (180 / M_PI);
-}
-
-template <typename T>
-inline T mf_clamp(T x, T min, T max) {
-    T res = x;
-    if (x < min) {
-        res = min;
-    }
-    if (x > max) {
-        res = max;
-    }
-    return res;
 }
 
 float mfm_lerp(float a, float b, float t);
@@ -33,15 +130,11 @@ typedef struct
 } mfm_v2;
 
 
-float mfm_v2_distance(mfm_v2 a, mfm_v2 b);
-float mfm_v2_distance_squared(mfm_v2 a, mfm_v2 b);
-float mfm_v2_length(mfm_v2 a);
-mfm_v2 mfm_v2_normalize(mfm_v2 a);
 mfm_v2 mfm_v2_subtract(mfm_v2 a, mfm_v2 b);
 mfm_v2 mfm_v2_mul(mfm_v2 a, mfm_v2 b);
-mfm_v2 mfm_v2_mul(mfm_v2 a, float b);
+mfm_v2 mfm_v2_scale(mfm_v2 a, float b);
 mfm_v2 mfm_v2_div(mfm_v2 a, mfm_v2 b);
-mfm_v2 mfm_v2_div(mfm_v2 a, float b);
+mfm_v2 mfm_v2_iscale(mfm_v2 a, float b);
 
 
 
@@ -57,18 +150,16 @@ bool mfm_v2_is_equal(mfm_v2 a, mfm_v2 b);
 
 mfm_v2i mfm_v2i_add(mfm_v2i a, mfm_v2i b);
 
-template <typename T>
-union mfm_v3
-{
+union v3f {
     struct {
-        T x;
-        T y;
-        T z;
+        float x;
+        float y;
+        float z;
     };
     struct {
-        T r;
-        T g;
-        T b;
+        float r;
+        float g;
+        float b;
     };
 };
 
@@ -88,35 +179,6 @@ typedef struct
 } mfm_v3i;
 
 
-template <typename T>
-mfm_v3<T> mfm_v3_255_to_1(int r, int g, int b);
-
-template <typename T>
-float mfm_v3_length(mfm_v3<T> a);
-template <typename T>
-float mfm_v3_length_squared(mfm_v3<T> a);
-template <typename T>
-mfm_v3<T> mfm_v3_lerp(mfm_v3<T> a, mfm_v3<T> b, float t);
-template <typename T>
-mfm_v3<T> mfm_v3_add(mfm_v3<T> a, mfm_v3<T> b);
-template <typename T>
-mfm_v3<T> mfm_v3_sub(mfm_v3<T> a, mfm_v3<T> b);
-template <typename T>
-mfm_v3<T> mfm_v3_mul(mfm_v3<T> a, float b);
-template <typename T>
-mfm_v3<T> mfm_v3_mul(mfm_v3<T> a, mfm_v3<T> b);
-template <typename T>
-mfm_v3<T> mfm_v3_div(mfm_v3<T> a, float b);
-template <typename T>
-float mfm_v3_dot(mfm_v3<T> a, mfm_v3<T> b);
-template <typename T>
-mfm_v3<T> mfm_v3_normalize(mfm_v3<T> a);
-template <typename T>
-mfm_v3<T> mfm_v3_cross(mfm_v3<T> a, mfm_v3<T> b);
-template <typename T>
-mfm_v3<T> mfm_v3_negate(mfm_v3<T> a);
-template <typename T>
-bool mfm_v3_near_zero(mfm_v3<T> a);
 
 
 union mfm_rect
@@ -135,17 +197,16 @@ union mfm_rect
     float e[4];
 };
 
-union mfm_m4
+typedef union mfm_m4
 {
     struct {
         float m[16];
     };
-};
+} mfm_m4;
 
 inline mfm_m4 mfm_m4_identity();
 inline mfm_m4 mfm_m4_perspective(float fov, float aspect, float nearr, float farr);
-template <typename T>
-inline mfm_m4 mfm_m4_look_at(mfm_v3<T> eye, mfm_v3<T> center, mfm_v3<T> up);
+inline mfm_m4 mfm_m4_look_at(mfm_v3 eye, mfm_v3 center, mfm_v3 up);
 
 
 #ifdef MF_MATH_IMPLEMENTATION
@@ -156,34 +217,8 @@ float mfm_lerp(float a, float b, float t)
     return res;
 }
 
-float mfm_v2_distance(mfm_v2 a, mfm_v2 b)
-{
-    float res = sqrt(mfm_v2_distance_squared(a, b));
-    return res;
-}
 
-float mfm_v2_distance_squared(mfm_v2 a, mfm_v2 b)
-{
-    float sx = (b.x - a.x) * (b.x - a.x);
-    float sy = (b.y - a.y) * (b.y - a.y);
-    float res = sx + sy;
-    return res;
-}
 
-float mfm_v2_length(mfm_v2 a)
-{
-    float res = sqrt(a.x * a.x + a.y * a.y);
-    return res;
-}
-
-mfm_v2 mfm_v2_normalize(mfm_v2 a)
-{
-    mfm_v2 res = {0};
-    float length = mfm_v2_length(a);
-    res.x = a.x / length;
-    res.y = a.y / length;
-    return res;
-}
 
 mfm_v2 mfm_v2_subtract(mfm_v2 a, mfm_v2 b)
 {
@@ -233,13 +268,6 @@ bool mfm_v2_is_equal(mfm_v2 a, mfm_v2 b)
     return res;
 }
 
-mfm_v2i mfm_v2i_add(mfm_v2i a, mfm_v2i b)
-{
-    mfm_v2i res;
-    res.x = a.x + b.x;
-    res.y = a.y + b.y;
-    return res;
-}
 
 
 // mfm_v3
@@ -627,6 +655,7 @@ inline mfm_m4 mfm_m4_look_at(mfm_v3<T> eye, mfm_v3<T> center, mfm_v3<T> up)
     return res;
 }
 
+#endif
 #endif
 #endif
 

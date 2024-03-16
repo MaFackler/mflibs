@@ -12,61 +12,50 @@
 #define MF_RENDERER_IMPLEMENTATION
 #include <mf_renderer.h>
 
+const v3 BLACK = {0.0f, 0.0f, 0.0f};
+const v3 GRAY = {0.2f, 0.2f, 0.2f};
 
-typedef mfm_v3<float> v3;
-
-static v3 BLACK{0.0f, 0.0f, 0.0f};
-static v3 GRAY{0.2f, 0.2f, 0.2f};
-
-static v3 BACKGROUND_LIGHT = mfm_v3_255_to_1<float>(0xfb, 0xf1, 0xc7);
-static v3 BACKGROUND_GRAY = mfm_v3_255_to_1<float>(0x3c, 0x38, 0x36);
+const v3 BACKGROUND_LIGHT = {0};
+const v3 BACKGROUND_GRAY = {0};
 
 
-struct Piece
-{
+typedef struct Piece {
     u8 *data;
     u8 dim;
 
-    u8 get(u8 col, u8 row, u8 direction)
-    {
-        u8 res = 0;
-        if (direction == 0)
-        {
-            res = this->data[this->dim * row + col];
-        }
-        else if (direction == 1)
-        {
-            res = this->data[this->dim * (this->dim - 1 - col) + row];
-        }
-        else if (direction == 2)
-        {
-            res = this->data[this->dim * (this->dim - 1 - row) + this->dim - 1 - col];
-        }
-        else if (direction == 3)
-        {
-            res = this->data[this->dim * col + this->dim - 1 - row];
-        }
-        return res;
+
+} Piece;
+
+u8 piece_get(Piece *self, u8 col, u8 row, u8 direction) {
+    u8 res = 0;
+    if (direction == 0) {
+        res = self->data[self->dim * row + col];
     }
-
-
-    u32 getRowOffset(u8 direction)
-    {
-        u32 res = 0;
-        for (size_t y = 0; y < this->dim; ++y)
-        {
-            for (size_t x = 0; x < this->dim; ++x)
-            {
-                u8 value = this->get(x, y, direction);
-                if (value)
-                    return res;
-
-            }
-            res++;
-        }
-        return res;
+    else if (direction == 1) {
+        res = self->data[self->dim * (self->dim - 1 - col) + row];
     }
-};
+    else if (direction == 2) {
+        res = self->data[self->dim * (self->dim - 1 - row) + self->dim - 1 - col];
+    }
+    else if (direction == 3) {
+        res = self->data[self->dim * col + self->dim - 1 - row];
+    }
+    return res;
+}
+
+u32 piece_get_row_offset(Piece *self, u8 direction) {
+    u32 res = 0;
+    for (size_t y = 0; y < self->dim; ++y) {
+        for (size_t x = 0; x < self->dim; ++x) {
+            u8 value = piece_get(self, x, y, direction);
+            if (value)
+                return res;
+        }
+        res++;
+    }
+    return res;
+}
+
 
 
 u8 Piece1[] = {
@@ -112,76 +101,81 @@ u8 Piece7[] = {
 };
 
 static v3 colors[] = {
-    mfm_v3_255_to_1<float>(0xfb, 0x49, 0x34), // red
-    mfm_v3_255_to_1<float>(0xb8, 0xbb, 0x26), // green
-    mfm_v3_255_to_1<float>(0x93, 0xa5, 0x98), // blue
-    mfm_v3_255_to_1<float>(0xfa, 0xbd, 0x2f), // yellow
-    mfm_v3_255_to_1<float>(0x8e, 0xc0, 0x7c), // aqua
-    mfm_v3_255_to_1<float>(0xd3, 0x86, 0x9b), // purple
-    mfm_v3_255_to_1<float>(0xeb, 0xdb, 0xb2), // gray/white
+    {255, 0, 0},
+    {0, 255, 0},
+    {0, 0, 255},
+    {255, 255, 0},
+    {0, 255, 255},
+    {255, 0, 255},
+    {100, 100, 100},
 };
 
 static v3 colorsLight[] = {
-    mfm_v3_255_to_1<float>(0xcc, 0x24, 0x1d), // red
-    mfm_v3_255_to_1<float>(0x98, 0x97, 0x1a), // green
-    mfm_v3_255_to_1<float>(0x45, 0x85, 0x88), // blue
-    mfm_v3_255_to_1<float>(0xd7, 0x99, 0x21), // yellow
-    mfm_v3_255_to_1<float>(0x68, 0x9d, 0x6a), // aqua
-    mfm_v3_255_to_1<float>(0xb1, 0x62, 0x86), // purple
-    mfm_v3_255_to_1<float>(0xa8, 0x99, 0x84), // gray/white
+    {255, 0, 0},
+    {0, 255, 0},
+    {0, 0, 255},
+    {255, 255, 0},
+    {0, 255, 255},
+    {255, 0, 255},
+    {100, 100, 100},
 };
 
 static v3 colorsDark[] = {
-    mfm_v3_255_to_1<float>(0xcc, 0x24, 0x1d), // red
-    mfm_v3_255_to_1<float>(0x98, 0x97, 0x1a), // green
-    mfm_v3_255_to_1<float>(0x45, 0x85, 0x88), // blue
-    mfm_v3_255_to_1<float>(0xd7, 0x99, 0x21), // yellow
-    mfm_v3_255_to_1<float>(0x68, 0x9d, 0x6a), // aqua
-    mfm_v3_255_to_1<float>(0xb1, 0x62, 0x86), // purple
-    mfm_v3_255_to_1<float>(0xa8, 0x99, 0x84), // gray/white
+    {255, 0, 0},
+    {0, 255, 0},
+    {0, 0, 255},
+    {255, 255, 0},
+    {0, 255, 255},
+    {255, 0, 255},
+    {100, 100, 100},
 };
 
 static Piece piecesDef[] = {
-    Piece{Piece1, 4},
-    Piece{Piece2, 2},
-    Piece{Piece3, 3},
-    Piece{Piece4, 3},
-    Piece{Piece5, 3},
-    Piece{Piece6, 3},
-    Piece{Piece7, 3},
+    {Piece1, 4},
+    {Piece2, 2},
+    {Piece3, 3},
+    {Piece4, 3},
+    {Piece5, 3},
+    {Piece6, 3},
+    {Piece7, 3},
 };
 
-enum GamePhase
-{
+typedef enum GamePhase {
     GAME_RUNNING,
     GAME_OVER,
-};
+} GamePhase;
 
-struct GameState
-{
-    u32 numBlocksX = 10;
-    u32 numBlocksY = 22;
-    u32 blockSize = 40;
-    GamePhase phase = GAME_RUNNING;
-    u8 *board = {};
-    float deltaSec = 0.0f;
-    i32 row = 0;
-    i32 col = 0;
-    u8 direction = 0;
-    float tickTime = 0.5f;
-    u32 currentPieceIndex = 0;
+typedef struct GameState {
+    u32 numBlocksX;
+    u32 numBlocksY;
+    u32 blockSize;
+    GamePhase phase;
+    u8 *board;
+    float deltaSec;
+    i32 row;
+    i32 col;
+    u8 direction;
+    float tickTime;
+    u32 currentPieceIndex;
     Piece *pieces;
-    u32 numPieces = 0;
+    u32 numPieces;
 
-    u32 linesDeleted = 0;
+    u32 linesDeleted;
 
-    Piece* getCurrentPiece() { return &this->pieces[this->currentPieceIndex]; }
-    void generateNewPiece();
-    void setStartRowOfPiece();
+} GameState;
 
-};
+GameState MakeGameState() {
+    GameState res = {0};
+    res.numBlocksX = 10;
+    res.numBlocksY = 22;
+    res.blockSize = 40;
+    res.phase = GAME_RUNNING;
+    res.tickTime = 0.5f;
+}
 
-
+Piece* game_state_get_current_piece(GameState *self) {
+    return &self->pieces[self->currentPieceIndex];
+}
 
 inline
 u32 GetRandomNumber(u32 min, u32 max)
@@ -195,6 +189,19 @@ u32 GetRandomNumber(u32 min, u32 max)
     u32 res = rand() % (max + 1 - min) + min;
     return res;
 }
+
+void game_state_generate_new_piece(GameState *self) {
+    MF_Assert(self->numPieces > 0)
+    self->currentPieceIndex = GetRandomNumber(0, self->numPieces - 1);
+}
+
+void game_state_set_start_row(GameState *self) {
+    Piece* piece = game_state_get_current_piece(self);
+    self->row = 0;
+}
+
+
+
 
 inline
 u8 GetBoardValue(GameState *state, u32 row, u32 col)
@@ -223,14 +230,14 @@ u32 GetBoardHeight(GameState *state)
     return res;
 }
 
-void GameStateReset(GameState *state)
+void GameStateReset(GameState *self)
 {
-    state->linesDeleted = 0;
-    state->pieces = &piecesDef[0];
-    state->numPieces = MF_ArrayLength(piecesDef);
-    memset(state->board, 0, state->numBlocksX * state->numBlocksY);
-    state->generateNewPiece();
-    state->setStartRowOfPiece();
+    self->linesDeleted = 0;
+    self->pieces = &piecesDef[0];
+    self->numPieces = MF_ArrayLength(piecesDef);
+    memset(self->board, 0, self->numBlocksX * self->numBlocksY);
+    game_state_generate_new_piece(self);
+    game_state_set_start_row(self);
 }
 
 
@@ -251,7 +258,7 @@ void PrintPiece(Piece *piece, u8 direction)
     {
         for (size_t x = 0; x < piece->dim; ++x)
         {
-            u8 value = piece->get(x, y, direction);
+            u8 value = self->get(x, y, direction);
             char c = value ? 'x' : ' ';
             printf("%c", c);
         }
@@ -305,18 +312,6 @@ void DrawPiece(mfr_renderer *renderer, Piece *piece, i32 col, i32 row, u8 direct
     }
 }
 
-void GameState::generateNewPiece()
-{
-    MF_Assert(this->numPieces > 0)
-    this->currentPieceIndex = GetRandomNumber(0, this->numPieces - 1);
-}
-
-void GameState::setStartRowOfPiece()
-{
-    Piece* piece = this->getCurrentPiece();
-    //this->row = -piece->dim + piece->getRowOffset(0) + 1;
-    this->row = 0;
-}
 
 bool IsPieceValid(GameState *state, i32 col, i32 row, u32 direction)
 {
@@ -584,7 +579,7 @@ int main()
 
         mf_sleep_ms(16);
         mfr_flush(&renderer);
-        mfp_end(&platform);
+        mfp_end(&platform, true);
 
     }
 

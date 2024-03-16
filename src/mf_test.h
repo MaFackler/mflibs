@@ -103,7 +103,8 @@ void mft_main(int argc, char **argv) {
     int: printf("%d", t), \
     unsigned int: printf("%u", t), \
     double: printf("%lf", t), \
-    float: printf("%f", t))
+    float: printf("%f", t), \
+    _Bool: printf("%s", t ? "true" : "false"))
 
 #define MFT_COMPARE(a, b, condition) \
     {__typeof__(a) aresolved = (a); \
@@ -124,6 +125,25 @@ void mft_main(int argc, char **argv) {
         self->failure = true; \
     }}
 
+#define MFT_NEAR(a, b) \
+    {__typeof__(a) aresolved = (a); \
+    __typeof__(b) bresolved = (b); \
+    if (abs((aresolved) - (bresolved)) > 0.001f) { \
+        printf(MFT_ANSI_ESCAPE_COLOR, 91); \
+        printf("FAILED\n"); \
+        printf(MFT_ANSI_ESCAPE_RESET); \
+        printf(MFT_ANSI_ESCAPE_COLOR, 97); \
+        printf("%s:%d\n", __FILE__, __LINE__); \
+        printf(" Expected: %s near %s\n", #a, #b); \
+        printf("      Got: "); \
+        MFT_PRINT_TYPE(aresolved); \
+        printf(" <> "); \
+        MFT_PRINT_TYPE(bresolved); \
+        printf(MFT_ANSI_ESCAPE_RESET); \
+        printf("\n"); \
+        self->failure = true; \
+    }}
+
 #define CHECK_EQ(a, b) MFT_COMPARE(a, b, ==)
 #define CHECK_NE(a, b) MFT_COMPARE(a, b, !=)
 #define CHECK_LT(a, b) MFT_COMPARE(a, b, <)
@@ -132,6 +152,8 @@ void mft_main(int argc, char **argv) {
 #define CHECK_GE(a, b) MFT_COMPARE(a, b, >=)
 #define CHECK_TRUE(a) MFT_COMPARE(a, true, ==)
 #define CHECK_FALSE(a) MFT_COMPARE(a, false, ==)
+
+#define CHECK_NEAR(a, b) MFT_NEAR(a, b)
 
 
 

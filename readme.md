@@ -34,3 +34,36 @@ make test
 
 ![Tetris](tetris.png)
 
+
+## Coding Style
+
+```c
+// function
+mf_my_func(void);
+mf__my_private_func(void);
+
+// variable
+int myVar;
+
+// struct
+
+typedef struct MF_MyStruct {
+    int foo;
+} MF_MyStruct;
+```
+
+## Checklist
+
+[x] mf.h
+[ ] mf_file.h
+[ ] mf_font.h
+[ ] mf_gui.h
+[ ] mf_math.h
+[ ] mf_math.tmpl.h
+[ ] mf_opengl.h
+[ ] mf_opengl2.h
+[ ] mf_platform.h
+[ ] mf_renderer.h
+[ ] mf_string.h
+[ ] mf_test.h
+[ ] mf_vector.h
