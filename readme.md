@@ -66,4 +66,4 @@ typedef struct MF_MyStruct {
 [ ] mf_renderer.h
 [ ] mf_string.h
 [ ] mf_test.h
-[ ] mf_vector.h
+[x] mf_vector.h
