@@ -49,6 +49,7 @@ typedef struct MftState MftState;
 struct MftState {
     unsigned int count;
     unsigned int capacity;
+    size_t current_testcase;
     MftTestCase *test_cases;
 };
 
@@ -88,6 +89,7 @@ void mft_main(int argc, char **argv) {
     sa.sa_flags = SA_SIGINFO;
 
     for (unsigned int i = 0; i < state.count; ++i) {
+        state.current_testcase = i;
         MftTestCase *test_case = &state.test_cases[i];
         printf("%s:%d %s: ", test_case->filename, test_case->line, test_case->name);
         test_case->cb(test_case);
@@ -126,7 +128,7 @@ void mft_main(int argc, char **argv) {
         MFT_PRINT_TYPE(bresolved); \
         printf(MFT_ANSI_ESCAPE_RESET); \
         printf("\n"); \
-        self->failure = true; \
+        state.test_cases[state.current_testcase].failure = true; \
     }}
 
 #define MFT_NEAR(a, b) \
@@ -145,7 +147,7 @@ void mft_main(int argc, char **argv) {
         MFT_PRINT_TYPE(bresolved); \
         printf(MFT_ANSI_ESCAPE_RESET); \
         printf("\n"); \
-        self->failure = true; \
+        state.test_cases[state.current_testcase].failure = true; \
     }}
 
 #define MFT__COMPARE_STRN(a, b, n) \
@@ -164,7 +166,7 @@ void mft_main(int argc, char **argv) {
         MFT_PRINT_TYPE(bresolved); \
         printf(MFT_ANSI_ESCAPE_RESET); \
         printf("\n"); \
-        self->failure = true; \
+        state.test_cases[state.current_testcase].failure = true; \
     }}
 
 

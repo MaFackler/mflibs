@@ -1,105 +1,109 @@
 #ifndef MF_STRING_H
 #define MF_STRING_H
 
-#include <mf.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
+#include <assert.h>
+#include <math.h>
 
 #ifndef MF_STRING_DEFAULT_SIZE
 #define MF_STRING_DEFAULT_SIZE 256
 #endif  // MF_STRING_DEFAULT_SIZE
 
+typedef char* MF_String;
 
-#define S(a) mf_strview { a, strlen(a) }
-
-struct mf_strview {
-    const char *data;
-    u64 size;
-};
-
-typedef char* mf_str;
-
-struct mf__str_header {
-    u64 size;
-    u64 capacity;
-};
+typedef struct MF_StringHeader {
+    size_t length;
+    size_t capacity;
+} MF_StringHeader;
 
 // create/delete/attributes
-mf_str mf_str_new();
-mf_str mf_str_new(const char *s);
-mf_str mf_str_new(size_t n);
-mf_str mf_str_new_format(const char *fmt, ...);
-void mf_str_free(mf_str s);
+MF_String mf_str_new(void);
+MF_String mf_str_news(const char *s);
+MF_String mf_str_newn(size_t n);
+MF_String mf_str_new_format(const char *fmt, ...);
+void mf_str_free(MF_String s);
 
-u64 mf_str_size(mf_str s);
-u64 mf_str_capacity(mf_str s);
+size_t mf_str_length(MF_String s);
+size_t mf_str_capacity(MF_String s);
 
 // manipulation
-void mf_str_append(mf_str *s, const char *b);
+void mf_str_append(MF_String *s, const char *b);
 
 
 #ifdef MF_STRING_IMPLEMENTATION
 
-inline mf_str mf__str_from_header(mf__str_header *header) {
-    mf_str res = (mf_str) (header + 1);
+
+MF_String mf__str_from_header(MF_StringHeader *header) {
+    MF_String res = (MF_String) (header + 1);
     return res;
 }
 
-inline mf__str_header* mf__str_get_header(mf_str s) {
-    return ((mf__str_header *) s) -1;
+size_t mf__str_next_size(size_t orig) {
+    int shifts = (int) (log2(orig - 1) + 1);
+    return 1 << shifts;
 }
 
-inline mf__str_header * mf__str_realloc(mf__str_header *header, u64 size) {
-    mf__str_header *res = NULL;
-    res = (mf__str_header *) realloc(header, sizeof(mf__str_header) + size);
-    res->capacity = size;
+MF_StringHeader* mf__str_get_header(MF_String s) {
+    return ((MF_StringHeader *) s) -1;
+}
+
+MF_StringHeader * mf__str_realloc(MF_StringHeader *header, size_t capacity) {
+    MF_StringHeader *res = NULL;
+    res = (MF_StringHeader *) realloc(header, sizeof(MF_StringHeader) + capacity);
+    res->capacity = capacity;
     return res;
 }
 
-inline mf__str_header* mf__str_alloc_size(u64 size) {
-    size = mf_next_power_of_2(size);
-    size = MF_Max(size, MF_STRING_DEFAULT_SIZE);
-    MF_Assert((size & (size - 1)) == 0);
-    mf__str_header *header = (mf__str_header *) calloc(1, sizeof(mf__str_header) + size);
-    header->capacity = size;
-    header->size = 0;
+MF_StringHeader* mf__str_alloc_by_length(size_t length) {
+    size_t capacity = mf__str_next_size(length);
+    capacity = (capacity < MF_STRING_DEFAULT_SIZE) ? MF_STRING_DEFAULT_SIZE : capacity;
+    assert((capacity & (capacity - 1)) == 0);
+    MF_StringHeader *header = (MF_StringHeader *) calloc(1, sizeof(MF_StringHeader) + capacity);
+    header->capacity = capacity;
+    header->length = 0;
     return header;
 }
 
-inline mf__str_header*  __mf_str_check_and_adjust_size(mf__str_header *header, i64 n) {
-    mf__str_header *res = header;
+MF_StringHeader*  mf__str_adjust_size(MF_StringHeader *header, size_t n) {
+    MF_StringHeader *res = header;
     if (n != 0) {
-        u64 new_capacity = mf_next_power_of_2(header->size + n);
+        size_t new_capacity = mf__str_next_size(header->length + n + 1);
         if (header->capacity != new_capacity) {
             res = mf__str_realloc(header, new_capacity);
         }
     }
+
     return res;
 }
 
-mf_str mf_str_new() {
-    mf__str_header *header = mf__str_alloc_size(0);
-    mf_str res = mf__str_from_header(header);
+MF_String mf_str_new(void) {
+    MF_StringHeader *header = mf__str_alloc_by_length(0);
+    MF_String res = mf__str_from_header(header);
     return res;
 }
 
-mf_str mf_str_new(const char *s) {
+MF_String mf_str_news(const char *s) {
     size_t len = strlen(s);
-    mf__str_header *header = mf__str_alloc_size(len);
-    header->size = len;
-    mf_str res = mf__str_from_header(header);
+    MF_StringHeader *header = mf__str_alloc_by_length(len);
+    header->length = len;
+    MF_String res = mf__str_from_header(header);
     memcpy(res, s, len);
     res[len] = 0;
     return res;
 }
 
-mf_str mf_str_new(size_t n) {
-    mf__str_header *header  = mf__str_alloc_size(n);
-    mf_str res = mf__str_from_header(header);
+MF_String mf_str_newn(size_t n) {
+    MF_StringHeader *header  = mf__str_alloc_by_length(n);
+    MF_String res = mf__str_from_header(header);
     return res;
 }
 
-mf_str mf_str_new_format(const char *fmt, ...) {
-    mf_str res = NULL;
-    mf__str_header *header = mf__str_alloc_size(0);
+MF_String mf_str_new_format(const char *fmt, ...) {
+    MF_String res = NULL;
+    MF_StringHeader *header = mf__str_alloc_by_length(0);
     res = (char *) (header + 1);
 
     va_list args;
@@ -110,32 +114,31 @@ mf_str mf_str_new_format(const char *fmt, ...) {
     return res;
 }
 
-void mf_str_free(mf_str s) {
-    mf__str_header *header = mf__str_get_header(s);
-    header->size = 0;
+void mf_str_free(MF_String s) {
+    MF_StringHeader *header = mf__str_get_header(s);
+    header->length = 0;
     header->capacity = 0;
     free(header);
 }
 
-
-u64 mf_str_size(mf_str s) {
-    mf__str_header *header = mf__str_get_header(s);
-    return header->size;
+size_t mf_str_length(MF_String s) {
+    MF_StringHeader *header = mf__str_get_header(s);
+    return header->length;
 }
 
-u64 mf_str_capacity(mf_str s) {
-    mf__str_header *header = mf__str_get_header(s);
+size_t mf_str_capacity(MF_String s) {
+    MF_StringHeader *header = mf__str_get_header(s);
     return header->capacity;
 }
 
-void mf_str_append(mf_str *s, const char *b) {
-    u64 len = strlen(b);
-    mf__str_header *header = mf__str_get_header(*s);
-    header = __mf_str_check_and_adjust_size(header, len);
-    *s = (mf_str) (header + 1);
-    memcpy(&(*s)[header->size], b, len);
-    header->size += len;
-    (*s)[header->size] = 0;
+void mf_str_append(MF_String *s, const char *b) {
+    size_t len = strlen(b);
+    MF_StringHeader *header = mf__str_get_header(*s);
+    header = mf__str_adjust_size(header, len);
+    *s = (MF_String) (header + 1);
+    memcpy(&(*s)[header->length], b, len);
+    header->length += len;
+    (*s)[header->length] = 0;
 }
 
 #endif // MF_STRING_IMPLEMENTATION
