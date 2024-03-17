@@ -182,8 +182,6 @@ void mft_main(int argc, char **argv) {
 #define CHECK_STRN(a, b, n) MFT__COMPARE_STRN(a, b, n)
 
 
-
-
 #ifdef MFT_WITH_MAIN
 MFT_MAIN();
 #endif
