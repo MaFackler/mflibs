@@ -55,7 +55,7 @@ typedef struct MF_MyStruct {
 ## Checklist
 
 [x] mf.h
-[ ] mf_file.h
+[x] mf_file.h
 [ ] mf_font.h
 [ ] mf_gui.h
 [ ] mf_math.h

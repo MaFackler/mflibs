@@ -1,5 +1,11 @@
 #ifndef MF_FILE_H
 #define MF_FILE_H
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <string.h>
+#include <assert.h>
+
 #if defined(WIN32) || defined(_WIN32)
 #else
 #include <sys/stat.h>
@@ -8,11 +14,7 @@
 #include <dirent.h>
 #endif
 
-// Allocators
-#ifndef mff_malloc
-    #define mff_malloc malloc
-#endif
-
+// {{{ Macros
 #define MF_PATH_SEPARATOR_WINDOWS '\\'
 #define MF_PATH_SEPARATOR_UNIX '/'
 
@@ -21,75 +23,42 @@
 #else
 #define MF_PATH_SEPARATOR MF_PATH_SEPARATOR_UNIX
 #endif
+// }}}
 
+// {{{ Declarations
+
+// -- {{{ General
+bool mff_is_file(const char *filename);
+// -- }}}
+
+// -- {{{ Path
+char* mff_path_join_create(const char *a, const char *b, char separator);
+// -- }}}
+
+// -- {{{ File
 char* mff_file_read(const char *path, const char *mode, size_t *size);
-char* mf_path_join_create(const char *a, const char *b, char separator);
-void mf_file_copy(const char *src, const char *dest);
-bool mf_is_file(const char *filename);
-uint64_t mf_get_last_write_time(const char *filename);
+void mff_file_copy(const char *src, const char *dest);
+long unsigned int mff_file_get_last_write_time(const char *filename);
+// -- }}}
 
-typedef struct mf_path_item mf_path_item;
-typedef struct mf_directory mf_directory;
-bool mf_directory_open(mf_directory *dir, const char* name, bool recursive);
-bool mf_directory_next(mf_directory *dir, mf_path_item *item);
-void mf_directory_close(mf_directory *dir);
-bool mf_path_item_is_directory(mf_path_item *item);
-bool mf_path_item_is_file(mf_path_item *item);
+// -- {{{ Directory
+typedef struct MFF_PathItem MFF_PathItem;
+typedef struct MFF_Directory MFF_Directory;
+bool mff_directory_open(MFF_Directory *dir, const char* name, bool recursive);
+bool mff_directory_next(MFF_Directory *dir, MFF_PathItem *item);
+void mff_directory_close(MFF_Directory *dir);
+bool mff_path_item_is_directory(MFF_PathItem *item);
+bool mff_path_item_is_file(MFF_PathItem *item);
+// -- }}}
 
-#ifdef MF_FILE_IMPLEMENTATION
+// }}}
 
-char* mff_file_read(const char *path, const char *mode, size_t *size) {
-    FILE *file = fopen(path, mode);
-    size_t bytesToRead = 0;
-    fseek(file, 0, SEEK_END);
-    bytesToRead = ftell(file);
+#if defined(MF_FILE_IMPLEMENTATION) | defined(MF_IMPLEMENTATION)
 
-    if (size)
-        *size = bytesToRead;
+// {{{ Definitions
 
-    fseek(file, 0, SEEK_SET);
-    char *res = (char *) mff_malloc(bytesToRead);
-    while (bytesToRead > 0) {
-        u32 readBytes = fread(res, 1, bytesToRead, file);
-        bytesToRead -= readBytes;
-    }
-    return res;
-}
-
-char* mf_path_join_create(const char *a, const char *b, char separator) {
-    char *res = (char *) mff_malloc(strlen(a) + strlen(b) + 2);
-    sprintf(res, "%s%c%s", a, separator, b);
-    return res;
-}
-
-void mf_file_copy(const char *src, const char *dest) {
-#ifdef WIN32
-    int res = CopyFile(src, dest, 0);
-    assert(res != 0);
-#else
-    struct stat st;
-    assert(stat(src, &st) == 0);
-    int fdSrc = open(src, O_RDONLY);
-    assert(fdSrc >= 0);
-    int fdDest = open(dest, O_CREAT | O_WRONLY | O_TRUNC, st.st_mode);
-    assert(fdDest >= 0);
-    char buf[8 * 1024];
-
-    while (1) {
-        size_t bytesRead = read(fdSrc, &buf[0], sizeof(buf));
-        if (!bytesRead)
-            break;
-        size_t bytesWrote = write(fdDest, &buf[0], bytesRead);
-        assert(bytesRead == bytesWrote);
-    }
-
-    close(fdSrc);
-    close(fdDest);
-    //MF_AssertSuccessOnZero(chmod(dest, st.st_mode));
-#endif
-}
-
-bool mf_is_file(const char *filename) {
+// -- {{{ General
+bool mff_is_file(const char *filename) {
     bool res = false;
 #ifdef WIN32
     WIN32_FIND_DATA data;
@@ -115,9 +84,64 @@ bool mf_is_file(const char *filename) {
 #endif
     return res;
 }
+// -- }}}
 
-uint64_t mf_get_last_write_time(const char *filename) {
-    uint64_t res = 0;
+// -- {{{ Path
+char* mff_path_join_create(const char *a, const char *b, char separator) {
+    char *res = (char *) malloc(strlen(a) + strlen(b) + 2);
+    sprintf(res, "%s%c%s", a, separator, b);
+    return res;
+}
+// -- }}}
+
+// -- {{{ File
+char* mff_file_read(const char *path, const char *mode, size_t *size) {
+    FILE *file = fopen(path, mode);
+    size_t bytesToRead = 0;
+    fseek(file, 0, SEEK_END);
+    bytesToRead = ftell(file);
+
+    if (size)
+        *size = bytesToRead;
+
+    fseek(file, 0, SEEK_SET);
+    char *res = (char *) malloc(bytesToRead);
+    while (bytesToRead > 0) {
+        size_t readBytes = fread(res, 1, bytesToRead, file);
+        bytesToRead -= readBytes;
+    }
+    return res;
+}
+
+void mff_file_copy(const char *src, const char *dest) {
+#ifdef WIN32
+    int res = CopyFile(src, dest, 0);
+    assert(res != 0);
+#else
+    struct stat st;
+    assert(stat(src, &st) == 0);
+    int fdSrc = open(src, O_RDONLY);
+    assert(fdSrc >= 0);
+    int fdDest = open(dest, O_CREAT | O_WRONLY | O_TRUNC, st.st_mode);
+    assert(fdDest >= 0);
+    char buf[8 * 1024];
+
+    while (1) {
+        size_t bytesRead = read(fdSrc, &buf[0], sizeof(buf));
+        if (!bytesRead)
+            break;
+        size_t bytesWrote = write(fdDest, &buf[0], bytesRead);
+        assert(bytesRead == bytesWrote);
+    }
+
+    close(fdSrc);
+    close(fdDest);
+#endif
+}
+
+
+long unsigned int mff_file_get_last_write_time(const char *filename) {
+    long unsigned int res = 0;
 #ifdef WIN32
     WIN32_FILE_ATTRIBUTE_DATA data;
     if (GetFileAttributesEx(filename, GetFileExInfoStandard, &data)) {
@@ -133,6 +157,9 @@ uint64_t mf_get_last_write_time(const char *filename) {
     return res;
 }
 
+// -- }}}
+
+// -- {{{ Directory
 enum MF_PathItemType {
     PATH_ITEM_UNKNOWN,
     PATH_ITEM_FILE,
@@ -140,12 +167,12 @@ enum MF_PathItemType {
 };
 
 
-struct mf_path_item {
+struct MFF_PathItem {
     char *name;
     enum MF_PathItemType type;
 };
 
-struct mf_directory {
+struct MFF_Directory {
 
 #ifdef WIN32
     HANDLE handle;
@@ -159,7 +186,7 @@ struct mf_directory {
 
 
 
-bool mf_directory_open(mf_directory *dir, const char *name, bool recursive) {
+bool mff_directory_open(MFF_Directory *dir, const char *name, bool recursive) {
     bool res = false;
 #ifdef WIN32
     char buffer[256];
@@ -174,7 +201,7 @@ bool mf_directory_open(mf_directory *dir, const char *name, bool recursive) {
     return res;
 }
 
-bool mf_directory_next(mf_directory *dir, mf_path_item *item) {
+bool mff_directory_next(MFF_Directory *dir, MFF_PathItem *item) {
     bool res = false;
 #ifdef WIN32
     if (dir->firstOne) {
@@ -219,7 +246,7 @@ bool mf_directory_next(mf_directory *dir, mf_path_item *item) {
     return res;
 }
 
-void mf_directory_close(mf_directory *dir) {
+void mff_directory_close(MFF_Directory *dir) {
 #ifdef WIN32
     FindClose(dir->handle);
 #else
@@ -228,14 +255,18 @@ void mf_directory_close(mf_directory *dir) {
 }
 
 inline
-bool mf_path_item_is_directory(mf_path_item *item) {
+bool mff_path_item_is_directory(MFF_PathItem *item) {
     return item->type == PATH_ITEM_DIRECTORY;
 }
 
 inline
-bool mf_path_item_is_file(mf_path_item *item) {
+bool mff_path_item_is_file(MFF_PathItem *item) {
     return item->type == PATH_ITEM_FILE;
 }
+
+// }}}
+
+// }}}
 
 #endif // MF_FILE_IMPLEMENTATION
 #endif // MF_FILE_H
