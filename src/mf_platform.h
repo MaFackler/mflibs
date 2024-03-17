@@ -1,46 +1,14 @@
 #ifndef MF_PLATFORM_H
 #define MF_PLATFORM_H
-/* USAGE:
 
-// To create window with opengl context
-#define MF_PLATFORM_USE_OPENGL
-// Use implementation also
-#define MF_PLATFORM_IMPLEMENTATION
-#include "mf_platform.h"
-
-
-int main()
-{
-    mfp_platform platform = {};
-
-    mfp_init(&platform);
-    mfp_window_open(&platform, "Example", 0, 0, 1600, 900);
-
-    bool running = true;
-    while (running && platform.window.isOpen)
-    {
-        mfp_begin(&platform);
-
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        mfp_end(&platform);
-    }
-
-    mfp_window_close(&platform);
-    mfp_destroy(&platform);
-}
-
-*/
+// {{{ Includes
 
 #ifdef __cplusplus
-#define mf_inline inline
 #else
 #include <stdbool.h>
 #ifndef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 199309L
 #endif // _POSIX_C_SOURCE
-#define mf_inline
 #endif // __cplusplus
 
 #include <string.h>
@@ -57,122 +25,30 @@ int main()
 #include <X11/Xatom.h>
 #endif // WIN32
 
-#ifdef MF_PLATFORM_USE_OPENGL
-#define GL_GLEXT_PROTOTYPES
-//#define GLX_GLEXT_PROTOTYPES
-//
-#include <GL/gl.h>
-#include <GL/glu.h>
-#ifdef __linux__
-#include <GL/glx.h>
-#include <GL/glext.h>
-#else // WINDOWS
+// }}}
 
-#define GL_COMPILE_STATUS                 0x8B81
-#define GL_VERTEX_SHADER                  0x8B31
-#define GL_VALIDATE_STATUS                0x8B83
-#define GL_FRAGMENT_SHADER                0x8B30
-#define GL_LINK_STATUS                    0x8B82
-#define WGL_CONTEXT_MAJOR_VERSION_ARB           0x2091
-#define WGL_CONTEXT_MINOR_VERSION_ARB           0x2092
-#define WGL_CONTEXT_PROFILE_MASK_ARB            0x9126
-#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB        0x00000001
-#define WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB 0x00000002
-#define GL_TEXTURE0                       0x84C0
-#define GL_TEXTURE1                       0x84C1
-#define GL_TEXTURE2                       0x84C2
-#define GL_BGR                            0x80E0
-#define GL_BGRA                           0x80E1
-#define GL_ARRAY_BUFFER                   0x8892
-#define GL_ELEMENT_ARRAY_BUFFER           0x8893
-#define GL_READ_ONLY                      0x88B8
-#define GL_WRITE_ONLY                     0x88B9
-#define GL_READ_WRITE                     0x88BA
-#define GL_BUFFER_ACCESS                  0x88BB
-#define GL_BUFFER_MAPPED                  0x88BC
-#define GL_BUFFER_MAP_POINTER             0x88BD
-#define GL_STREAM_DRAW                    0x88E0
-#define GL_STREAM_READ                    0x88E1
-#define GL_STREAM_COPY                    0x88E2
-#define GL_STATIC_DRAW                    0x88E4
-#define GL_STATIC_READ                    0x88E5
-#define GL_STATIC_COPY                    0x88E6
-#define GL_DYNAMIC_DRAW                   0x88E8
-#define GL_DYNAMIC_READ                   0x88E9
-#define GL_DYNAMIC_COPY                   0x88EA
-#define GL_CLAMP_TO_EDGE                  0x812F
-#define GL_CLAMP                          0x2900
-#define GL_CLAMP_TO_BORDER                0x812D
+// {{{ Declarations
 
-#define GL_FUNC_DEF(rtype, name, ...) \
-    typedef rtype (*name##Proc)(__VA_ARGS__); \
-    static name##Proc name;
+typedef struct MFP_ButtonState MFP_ButtonState;
+typedef struct MFP_Platform MFP_Platform;
+typedef struct MFP_Input MFP_Input;
+typedef struct MFP_Timer MFP_Timer;
+typedef struct MFP_Window MFP_Window;
 
-GL_FUNC_DEF(HGLRC, wglCreateContextAttribsARB, HDC hDC, HGLRC hShareContext, const int *attribList);
-// TODO: why gl char not working
-GL_FUNC_DEF(GLint, glGetUniformLocation, GLuint program, const char *name);
-GL_FUNC_DEF(GLuint, glCreateProgram, void);
-GL_FUNC_DEF(GLuint, glCreateShader, GLenum type);
-GL_FUNC_DEF(void*, glMapBuffer, GLenum target, GLenum access);
-GL_FUNC_DEF(void, glActiveTexture, GLenum texture);
-GL_FUNC_DEF(void, glAttachShader, GLuint program, GLuint shader);
-GL_FUNC_DEF(void, glBindBuffer, GLenum target, GLuint buffer);
-GL_FUNC_DEF(void, glBindBuffers, GLenum target, GLuint first, GLsizei count, const GLuint *buffers);
-GL_FUNC_DEF(void, glBindVertexArray, GLuint array);
-GL_FUNC_DEF(void, glBufferData, GLenum target, GLsizei size, const void *data, GLenum usage);
-GL_FUNC_DEF(void, glBufferSubData, GLenum target, GLint *offset, GLsizei size, const void *data);
-GL_FUNC_DEF(void, glCompileShader, GLuint shader);
-GL_FUNC_DEF(void, glDeleteShader, GLuint shader);
-GL_FUNC_DEF(void, glEnableVertexAttribArray, GLuint index);
-GL_FUNC_DEF(void, glGenBuffers, GLsizei n, GLuint *buffers);
-GL_FUNC_DEF(void, glGenVertexArrays, GLsizei n, GLuint *arrays);
-GL_FUNC_DEF(void, glGenerateMipmap, GLenum target);
-GL_FUNC_DEF(void, glGetProgramiv, GLuint program, GLenum pname, GLint *params);
-GL_FUNC_DEF(void, glGetShaderInfoLog, GLuint shader, GLsizei bufSIze, GLsizei *length, char *infoLog);
-GL_FUNC_DEF(void, glGetShaderiv, GLuint shader, GLenum pname, GLint *params);
-GL_FUNC_DEF(void, glLinkProgram, GLuint program);
-GL_FUNC_DEF(void, glShaderSource, GLuint shader, GLsizei count, const char **string, GLint *length);
-GL_FUNC_DEF(void, glUniform1i, GLint location, GLint v0);
-GL_FUNC_DEF(void, glUniform4f, GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
-GL_FUNC_DEF(void, glUniformMatrix4fv, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
-GL_FUNC_DEF(void, glUseProgram, GLuint program);
-GL_FUNC_DEF(void, glVertexAttribPointer, GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void * pointer);
+void mfp_init(MFP_Platform *platform);
+void mfp_destroy(MFP_Platform *platform);
 
+void mfp_begin(MFP_Platform *platform);
+void mfp_end(MFP_Platform *platform, bool swapBuffers);
 
+void mfp_window_toggle_fullscreen(MFP_Platform *platform);
+void mfp_window_open(MFP_Platform *platform, const char *title, int x, int y, int width, int height);
+void mfp_window_close(MFP_Platform *platform);
 
+void mfp__end(MFP_Platform *platform);
+unsigned long int mfp__get_ticks();
 
-
-#endif
-
-#endif // MF_PLATFORM_USE_OPENGL
-
-typedef uint32_t u32;
-typedef uint64_t u64;
-typedef int32_t i32;
-
-
-
-typedef struct mfp_button_state mfp_button_state;
-typedef struct mfp_platform mfp_platform;
-typedef struct mfp_input mfp_input;
-typedef struct mfp_timer mfp_timer;
-typedef struct mfp_window mfp_window;
-
-void mfp_init(mfp_platform *platform);
-void mfp_destroy(mfp_platform *platform);
-
-void mfp_begin(mfp_platform *platform);
-void mfp_end(mfp_platform *platform, bool swapBuffers);
-
-void mfp_window_toggle_fullscreen(mfp_platform *platform);
-void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i32 width, i32 height);
-void mfp_window_close(mfp_platform *platform);
-
-void mfp__end(mfp_platform *platform);
-u64 mfp__get_ticks();
-
-struct mfp_button_state
-{
+struct MFP_ButtonState {
     bool down;
     bool pressed;
     bool released;
@@ -180,66 +56,54 @@ struct mfp_button_state
 
 #define MFP__AMOUNT_KEYS 256
 
-struct mfp_input
-{
+struct MFP_Input {
     bool enableKeyRepeat;
-    mfp_button_state keys[MFP__AMOUNT_KEYS];
+    MFP_ButtonState keys[MFP__AMOUNT_KEYS];
 
     char downKeysBuffer[256];
-    u32 downKeysBufferSize;
+    size_t downKeysBufferSize;
 
     // Text input
     char text[256];
-    u32 textLength;
+    size_t textLength;
 
     // Input
     float mouseWheelDelta;
 
-    mfp_button_state mouseLeft;
-    i32 mouseX;
-    i32 mouseY;
-    i32 mouseDx;
-    i32 mouseDy;
+    MFP_ButtonState mouseLeft;
+    int mouseX;
+    int mouseY;
+    int mouseDx;
+    int mouseDy;
 };
 
-struct mfp_window
-{
+struct MFP_Window {
     const char *title;
     bool isOpen;
     bool isFullscreen;
 
     // NOTE: top down
-    i32 x;
-    i32 y;
-    u32 width;
-    u32 height;
+    int x;
+    int y;
+    size_t width;
+    size_t height;
 };
 
-struct mfp_timer
-{
-    // Time
-    u64 ticks;
+struct MFP_Timer {
+    unsigned long int ticks;
     float deltaSec;
     float fps;
 };
 
-typedef enum mfp_MessageType {
-    MFP_MESSAGE_WINDOW_SIZE,
-} mfp_MessageType;
-
-typedef void (*mfp_MessageCallbackFunc)(mfp_MessageType type);
-struct mfp_platform {
+struct MFP_Platform {
     void *os;
-    mfp_MessageCallbackFunc callback;
 
-    mfp_input input;
-    mfp_window window;
-    mfp_timer timer;
+    MFP_Input input;
+    MFP_Window window;
+    MFP_Timer timer;
 };
 
-
-enum
-{
+typedef enum MFP_Keys {
     MF_KEY_BACKSPACE = 1,
     MF_KEY_TAB,
     MF_KEY_RETURN,
@@ -254,22 +118,19 @@ enum
     MF_KEY_RIGHT,
     MF_KEY_LEFT,
     MF_KEY_ESCAPE = 0x1b,
-};
+} MFP_Keys;
 
-
+// }}}
 
 #if defined(MF_PLATFORM_IMPLEMENTATION) || defined(MF_IMPLEMENTATION)
 
-// TODO: whats a good practice so i dont have to redefine this every time?
-#define MFP_Assert(expr) if (!(expr)) {*(int *) 0 = 0; }
 #define MFP_ArrayLength(arr) (sizeof(arr) / sizeof(arr[0]))
 
 #include <stdio.h>
 inline
-void mfp__end(mfp_platform *platform)
-{
+void mfp__end(MFP_Platform *platform) {
     // reset input
-    mfp_input *input = &platform->input;
+    MFP_Input *input = &platform->input;
     input->textLength = 0;
     input->text[0] = 0;
     input->downKeysBuffer[0] = 0;
@@ -277,16 +138,10 @@ void mfp__end(mfp_platform *platform)
     input->mouseLeft.pressed = false;
     input->mouseWheelDelta = 0.0f;
 
-#ifdef _WIN32
-    static LARGE_INTEGER frequency;
-    if (frequency.QuadPart == 0) {
-        QueryPerformanceFrequency(&frequency);
-    }
-#endif
 
     // update time
-    mfp_timer *timer = &platform->timer;
-    u64 ticks = mfp__get_ticks();
+    MFP_Timer *timer = &platform->timer;
+    unsigned long int ticks = mfp__get_ticks();
 
 #ifdef _WIN32
     timer->deltaSec = ((float) ticks - (float) timer->ticks) / (float) frequency.QuadPart;
@@ -297,15 +152,11 @@ void mfp__end(mfp_platform *platform)
     timer->fps = (1.0f / timer->deltaSec);
 }
 
+
+// {{{ Linux
 #ifdef __linux__
-// LINUX PLATFORM
 
-#ifdef MF_PLATFORM_USE_OPENGL
-typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, int, const int*);
-#endif
-
-typedef struct
-{
+typedef struct MFP_Linux {
     Display *display;
     int screen;
     Window root;
@@ -316,207 +167,49 @@ typedef struct
     XVisualInfo *vi;
     Visual *visual;
     Colormap colormap;
-    i32 depth;
+    int depth;
 
     void *graphicHandle;
-} mfp_x11;
+} MFP_Linux;
 
-
-mf_inline
-mfp_x11 *mfp__get_x11(mfp_platform *platform)
-{
-    return (mfp_x11 *) platform->os; 
+MFP_Linux* mfp__get_linux(MFP_Platform *platform) {
+    return (MFP_Linux *) platform->os; 
 }
 
-u64 mfp__get_time_micro()
-{
+unsigned long int mfp__get_time_micro() {
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
-    u64 cycles = ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
+    unsigned long int cycles = ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
     return cycles;
 }
 
-#ifdef MF_PLATFORM_USE_OPENGL
-void mfp__init_opengl(mfp_platform *platform)
-{
-    mfp_x11 *x11 = mfp__get_x11(platform);
-    static int visualAttribs[] = {
-      GLX_X_RENDERABLE    , True,
-      GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
-      GLX_RENDER_TYPE     , GLX_RGBA_BIT,
-      GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
-      GLX_RED_SIZE        , 8,
-      GLX_GREEN_SIZE      , 8,
-      GLX_BLUE_SIZE       , 8,
-      GLX_ALPHA_SIZE      , 8,
-      GLX_DEPTH_SIZE      , 24,
-      GLX_STENCIL_SIZE    , 8,
-      GLX_DOUBLEBUFFER    , True,
-      //GLX_SAMPLE_BUFFERS  , 1,
-      //GLX_SAMPLES         , 4,
-      None
-    };
-    i32 fbCount = 0;
-    GLXFBConfig *fbc = glXChooseFBConfig(x11->display, x11->screen, visualAttribs, &fbCount);
-
-    MFP_Assert(fbc);
-    i32 fbIndex = -1;
-    //i32 bestSampleBuffers = 0;
-    i32 bestSamples = 0;
-
-    for (i32 i = 0; i < fbCount; ++i)
-    {
-        XVisualInfo *vi = glXGetVisualFromFBConfig(x11->display, fbc[i]);
-        i32 sampleBuffers = 0;
-        i32 samples = 0;
-        glXGetFBConfigAttrib(x11->display, fbc[i], GLX_SAMPLE_BUFFERS, &sampleBuffers);
-        glXGetFBConfigAttrib(x11->display, fbc[i], GLX_SAMPLES, &samples);
-        if (sampleBuffers && samples > bestSamples)
-        {
-            fbIndex = i;
-            bestSamples = samples;
-        }
-        XFree(vi);
-    }
-    MFP_Assert(fbIndex >= 0);
-    
-    int attribs[] = {
-        GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
-        GLX_CONTEXT_MINOR_VERSION_ARB, 0,
-        None
-    };
-    
-    x11->vi = glXGetVisualFromFBConfig(x11->display, fbc[fbIndex]);
-    x11->visual = x11->vi->visual;
-    x11->colormap = XCreateColormap(x11->display,
-                                        x11->root,
-                                        x11->vi->visual,
-                                        AllocNone);
-
-    x11->graphicHandle = malloc(sizeof(GLXContext));
-
-
-    glXCreateContextAttribsARBProc createContext = (glXCreateContextAttribsARBProc)glXGetProcAddress((const GLubyte*)"glXCreateContextAttribsARB");
-    MFP_Assert(createContext);
-    //*((GLXContext *) x11->graphicHandle) = glXCreateContext(x11->display, x11->vi, 0, GL_TRUE);
-
-    //*((GLXContext *) x11->graphicHandle) = glXCreateContextAttribsARBProc(x11->display, fbc[fbIndex], 0, True, attribs);
-    GLXContext context = createContext(x11->display, fbc[fbIndex], 0, True, attribs);
-    //GLXContext glxContext = glXCreateContext(x11->display, x11->vi, NULL, GL_TRUE);
-    bool success = glXMakeCurrent(x11->display, x11->window, context);
-    MFP_Assert(success);
-
-    *((GLXContext *) x11->graphicHandle) = context;
-
-    i32 major = 0;
-    i32 minor = 0;
-    glXQueryVersion(x11->display, &major, &minor);
-
-    // TODO: version??
-    //MF_Assert(major == 3);
-}
-#endif
-
-
-void mfp_init(mfp_platform *platform)
-{
-    platform->os = malloc(sizeof(mfp_x11));
-    mfp_x11 *plat = (mfp_x11 *) platform->os;
-    plat->display = XOpenDisplay(NULL);
-    plat->screen = DefaultScreen(plat->display);
-    plat->root = RootWindow(plat->display, plat->screen);
-
-    plat->depth = XDefaultDepth(plat->display, plat->screen);
-    plat->visual = XDefaultVisual(plat->display, plat->screen);
-    plat->colormap = XDefaultColormap(plat->display, plat->screen);
-    XWarpPointer(plat->display, None, plat->root, 0, 0, 0, 0, 0, 0);
-    XUngrabPointer(plat->display, CurrentTime);
-    XFlush(plat->display);
-    
-#ifdef MF_WINDOWS
-    timer->time = mfp__get_time_micro();
-#endif
-
-}
-
-
-void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i32 width, i32 height)
-{
-    MFP_Assert(!platform->window.isOpen);
-    mfp_x11 *x11 = mfp__get_x11(platform);
-    platform->window.x = x;
-    platform->window.y = y;
-    platform->window.width = width;
-    platform->window.height = height;
-    platform->window.title = title;
-    XSetWindowAttributes windowAttributes;
-    windowAttributes.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask |
-        StructureNotifyMask | PointerMotionMask | EnterWindowMask | LeaveWindowMask |
-        ButtonPressMask | ButtonReleaseMask;
-
-    windowAttributes.colormap = x11->colormap;
-
-    // TODO: multi monitor setup: x coordinate is always relative root
-    // window so the window will launch on the left monitor not the fouces one
-    x11->window = XCreateWindow(x11->display,
-                                x11->root,
-                                platform->window.x,
-                                platform->window.y,
-                                platform->window.width,
-                                platform->window.height,
-                                0,
-                                x11->depth,
-                                InputOutput,
-                                x11->visual,
-                                CWColormap | CWEventMask,
-                                &windowAttributes);
-
-
-    XMapWindow(x11->display, x11->window);
-    if (platform->window.title)
-        XStoreName(x11->display, x11->window, platform->window.title); 
-
-    platform->window.isOpen = true;
-#ifdef MF_PLATFORM_USE_OPENGL
-    mfp__init_opengl(platform);
-#endif
-}
-
-
-void mfp__dispatch_key(mfp_input *input, mfp_button_state *state, bool down)
-{
+void mfp__dispatch_key(MFP_Input *input, MFP_ButtonState *state, bool down) {
     state->pressed = !state->down && down;
     state->released = state->down && !down;
     state->down = down;
 }
 
-void mfp__dispatch_xkey(mfp_input *input, XKeyEvent *event, bool down)
-{
+void mfp__dispatch_xkey(MFP_Input *input, XKeyEvent *event, bool down) {
     KeySym sym = XLookupKeysym(event, 0);
-    if (sym >= XK_space && sym <= XK_asciitilde)
-    {
-        mfp_button_state *state = &input->keys[sym];
+    if (sym >= XK_space && sym <= XK_asciitilde) {
+        MFP_ButtonState *state = &input->keys[sym];
         mfp__dispatch_key(input, state, down);
-        if (state->pressed)
-        {
+        if (state->pressed) {
             // handle text input
             char buffer[16] = {};
-            u32 amount = 0;
+            size_t amount = 0;
             KeySym key;
             amount = XLookupString(event, buffer, sizeof(buffer), &key, 0);
             memcpy(&input->text[input->textLength], buffer, amount);
             input->textLength += amount;
-            MFP_Assert(input->textLength < 256);
+            assert(input->textLength < 256);
             input->text[input->textLength] = 0;
         } else if (state->down) {
             input->downKeysBuffer[input->downKeysBufferSize++] = sym;
         }
-    }
-    else
-    {
+    } else {
         char mysym = 0;
-        switch (sym)
-        {
+        switch (sym) {
             case XK_BackSpace:
                 mysym = MF_KEY_BACKSPACE;
                 break;
@@ -563,57 +256,102 @@ void mfp__dispatch_xkey(mfp_input *input, XKeyEvent *event, bool down)
             default:
                 break;
         }
-        if (mysym != 0)
-        {
-            mfp_button_state *state = &input->keys[(i32)mysym];
+        if (mysym != 0) {
+            MFP_ButtonState *state = &input->keys[(int)mysym];
             mfp__dispatch_key(input, state, down);
         }
     }
-
 }
 
-u64 mfp__get_ticks() {
+unsigned long int mfp__get_ticks() {
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC_RAW, &now);
-    u64 res = ((u64) now.tv_sec * 1000) + ((u64) now.tv_nsec / 1000000);
+    unsigned long int res = ((unsigned long int) now.tv_sec * 1000) + ((unsigned long int) now.tv_nsec / 1000000);
     return res;
 }
 
-void mfp_begin(mfp_platform *platform)
-{
-    if (platform->timer.ticks == 0)
-    {
+void mfp_init(MFP_Platform *platform) {
+    platform->os = malloc(sizeof(MFP_Linux));
+    MFP_Linux *plat = (MFP_Linux *) platform->os;
+    plat->display = XOpenDisplay(NULL);
+    plat->screen = DefaultScreen(plat->display);
+    plat->root = RootWindow(plat->display, plat->screen);
+
+    plat->depth = XDefaultDepth(plat->display, plat->screen);
+    plat->visual = XDefaultVisual(plat->display, plat->screen);
+    plat->colormap = XDefaultColormap(plat->display, plat->screen);
+    XWarpPointer(plat->display, None, plat->root, 0, 0, 0, 0, 0, 0);
+    XUngrabPointer(plat->display, CurrentTime);
+    XFlush(plat->display);
+}
+
+void mfp_window_open(MFP_Platform *platform, const char *title, int x, int y, int width, int height) {
+    assert(!platform->window.isOpen);
+    MFP_Linux *oslinux = mfp__get_linux(platform);
+    platform->window.x = x;
+    platform->window.y = y;
+    platform->window.width = width;
+    platform->window.height = height;
+    platform->window.title = title;
+    XSetWindowAttributes windowAttributes;
+    windowAttributes.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask |
+        StructureNotifyMask | PointerMotionMask | EnterWindowMask | LeaveWindowMask |
+        ButtonPressMask | ButtonReleaseMask;
+
+    windowAttributes.colormap = oslinux->colormap;
+
+    // TODO: multi monitor setup: x coordinate is always relative root
+    // window so the window will launch on the left monitor not the fouces one
+    oslinux->window = XCreateWindow(oslinux->display,
+                                    oslinux->root,
+                                    platform->window.x,
+                                    platform->window.y,
+                                    platform->window.width,
+                                    platform->window.height,
+                                    0,
+                                    oslinux->depth,
+                                    InputOutput,
+                                    oslinux->visual,
+                                    CWColormap | CWEventMask,
+                                    &windowAttributes);
+
+
+    XMapWindow(oslinux->display, oslinux->window);
+    if (platform->window.title)
+        XStoreName(oslinux->display, oslinux->window, platform->window.title); 
+
+    platform->window.isOpen = true;
+}
+
+
+void mfp_begin(MFP_Platform *platform) {
+    if (platform->timer.ticks == 0) {
         platform->timer.ticks = mfp__get_ticks();
     }
     XEvent event;
-    mfp_input *input = &platform->input;
+    MFP_Input *input = &platform->input;
 
-    for (u32 i = 0; i < MFP_ArrayLength(input->keys); ++i)
-    {
-        mfp_button_state *state = &input->keys[i];
+    for (size_t i = 0; i < MFP_ArrayLength(input->keys); ++i) {
+        MFP_ButtonState *state = &input->keys[i];
         state->pressed = false;
         state->released = false;
     }
 
-    mfp_x11* x11 = mfp__get_x11(platform);
+    MFP_Linux* oslinux = mfp__get_linux(platform);
 
-    while(XPending(x11->display))
-    {
-        XNextEvent(x11->display, &event);
-        switch (event.type)
-        {
-            case KeyPress:
-            {
+    while(XPending(oslinux->display)) {
+        XNextEvent(oslinux->display, &event);
+        switch (event.type) {
+            case KeyPress: {
                 mfp__dispatch_xkey(input, &event.xkey, true);
             } break;
-            case KeyRelease:
-            {
+            case KeyRelease: {
                 // NOTE: xserver sends release and press if key is hold down
                 // this will ignore those events
-                if (XEventsQueued(x11->display, QueuedAfterReading))
+                if (XEventsQueued(oslinux->display, QueuedAfterReading))
                 {
                     XEvent next;
-                    XPeekEvent(x11->display, &next);
+                    XPeekEvent(oslinux->display, &next);
                     if (next.type == KeyPress && next.xkey.time == event.xkey.time)
                     {
                         if (input->enableKeyRepeat)
@@ -624,8 +362,7 @@ void mfp_begin(mfp_platform *platform)
                 } 
                 mfp__dispatch_xkey(input, &event.xkey, false);
             } break;
-            case ConfigureNotify:
-            {
+            case ConfigureNotify: {
             //XConfigureEvent xce = event.xconfigure;
 
             // TODO: 
@@ -638,169 +375,120 @@ void mfp_begin(mfp_platform *platform)
             } break;
             case EnterNotify:
             case LeaveNotify:
-            case MotionNotify:
-            {
+            case MotionNotify: {
                 XMotionEvent xme = event.xmotion;
                 input->mouseDx = xme.x - input->mouseX;
                 input->mouseX = xme.x;
                 input->mouseDy = (platform->window.height - xme.y) - input->mouseY;
                 input->mouseY = platform->window.height - xme.y;
             } break;
-            case ButtonPress:
-            {
+            case ButtonPress: {
                 //XButtonEvent xbe = event.xbutton;
                 input->mouseLeft.down = true;
             } break;
-            case ButtonRelease:
-            {
+            case ButtonRelease: {
                 input->mouseLeft.released = true;
                 input->mouseLeft.pressed = input->mouseLeft.down;
                 input->mouseLeft.down = false;
             } break;
         }
-
     }
-
 }
 
-void mfp_end(mfp_platform *platform, bool swapBuffers)
-{
+void mfp_end(MFP_Platform *platform, bool swapBuffers) {
     mfp__end(platform);
-#ifdef MF_PLATFORM_USE_OPENGL
-    if (swapBuffers) {
-        mfp_x11 *x11 = mfp__get_x11(platform);
-        glXSwapBuffers(x11->display, x11->window);
-    }
-#endif
 }
 
-
-void mfp_window_close(mfp_platform *platform)
-{
-    mfp_window *window = &platform->window;
-    mfp_x11 *x11 = mfp__get_x11(platform);
-    XDestroyWindow(x11->display, x11->window);
-    XCloseDisplay(x11->display);
+void mfp_window_close(MFP_Platform *platform) {
+    MFP_Window *window = &platform->window;
+    MFP_Linux *oslinux = mfp__get_linux(platform);
+    XDestroyWindow(oslinux->display, oslinux->window);
+    XCloseDisplay(oslinux->display);
     window->isOpen = false;
 }
 
-void mfp_window_toggle_fullscreen(mfp_platform *platform)
-{
-    mfp_x11 *x11 = mfp__get_x11(platform);
-#if 0
-    Atom atoms[2] = {0};
-    atoms[0] = XInternAtom(x11->display, "_NET_WM_STATE", false);
-    atoms[1] = XInternAtom(x11->display, "_NET_WM_STATE_FULLSCREEN", false);
-
-    XChangeProperty(x11->display,
-                    x11->window,
-                    atoms[0],
-                    XA_ATOM, 32,
-                    PropModeReplace, (unsigned char *) &atoms[0], 1);
-#endif
+void mfp_window_toggle_fullscreen(MFP_Platform *platform) {
+    MFP_Linux *oslinux = mfp__get_linux(platform);
     XEvent e;
     e.xclient.type = ClientMessage;
-    e.xclient.window = x11->window;
-    e.xclient.message_type = XInternAtom(x11->display, "_NET_WM_STATE", true);
+    e.xclient.window = oslinux->window;
+    e.xclient.message_type = XInternAtom(oslinux->display, "_NET_WM_STATE", true);
     e.xclient.format = 32;
     e.xclient.data.l[0] = 2;
-    e.xclient.data.l[1] = XInternAtom(x11->display, "_NET_WM_STATE_FULLSCREEN", true);
+    e.xclient.data.l[1] = XInternAtom(oslinux->display, "_NET_WM_STATE_FULLSCREEN", true);
     e.xclient.data.l[2] = 0;
     e.xclient.data.l[3] = 1;
     e.xclient.data.l[4] = 0;
-    XSendEvent(x11->display, x11->root, False, SubstructureRedirectMask | SubstructureNotifyMask, &e);
-    // TODO: reset width and height?
-    //XMoveResizeWindow(x11->display, x11->window, 0, 0, platform->window.width, platform->window.height);
+    XSendEvent(oslinux->display, oslinux->root, False, SubstructureRedirectMask | SubstructureNotifyMask, &e);
 }
 
-void mfp_destroy(mfp_platform *platform)
-{
+void mfp_destroy(MFP_Platform *platform) {
+    // TODO:
 }
 
+// }}}
+
+// {{{ Windows
 #else
 
-static mfp_platform *g_platform = NULL;
-typedef struct
-{
+static MFP_Platform *g_platform = NULL;
+typedef struct MFP_Win32 {
     HWND window;
     HDC dc;
 
+    LARGE_INTEGER frequency;
     void *graphicHandle;
-} mfp_win;
+} MFP_Win32;
 
-
-u64 mfp__get_ticks()
-{
+unsigned long int mfp__get_ticks() {
     LARGE_INTEGER counter;
     QueryPerformanceCounter(&counter);
     return counter.QuadPart;
 }
 
-mf_inline
-mfp_win *mfp__get_win(mfp_platform *platform)
-{
-    return (mfp_win *) platform->os; 
+MFP_Win32 *mfp__get_win32(MFP_Platform *platform) {
+    return (MFP_Win32 *) platform->os; 
 }
 
-void mfp_init(mfp_platform *platform)
-{
-    platform->os = malloc(sizeof(mfp_win));
+void mfp_init(MFP_Platform *platform) {
+    platform->os = malloc(sizeof(MFP_Win32));
+    QueryPerformanceFrequency(&platform->os.frequency);
 }
 
-void mfp_begin(mfp_platform *platform)
-{
-
-    if (platform->timer.ticks == 0)
-    {
+void mfp_begin(MFP_Platform *platform) {
+    if (platform->timer.ticks == 0) {
         platform->timer.ticks = mfp__get_ticks();
     }
-    for (size_t i = 0; i < MFP__AMOUNT_KEYS; ++i)
-    {
-        mfp_button_state *state = &platform->input.keys[i];
+    for (size_t i = 0; i < MFP__AMOUNT_KEYS; ++i) {
+        MFP_ButtonState *state = &platform->input.keys[i];
         state->pressed = false;
         state->released = false;
     }
 
-    mfp_win *os = mfp__get_win(platform);
+    MFP_Win32 *os = mfp__get_win32(platform);
     MSG msg;
-    while (PeekMessage(&msg, os->window, 0, 0, PM_REMOVE))
-    {
+    while (PeekMessage(&msg, os->window, 0, 0, PM_REMOVE)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
 }
 
-void mfp_end(mfp_platform *platform, bool swapBuffers=true)
-{
+void mfp_end(MFP_Platform *platform, bool swapBuffers=true) {
     mfp__end(platform);
-#ifdef MF_PLATFORM_USE_OPENGL
-    if (swapBuffers) {
-        mfp_win *os = mfp__get_win(platform);
-        SwapBuffers(os->dc);
-    }
-#endif
 }
 
-void mfp_destroy(mfp_platform *platform)
-{
-    mfp_win *os = mfp__get_win(platform);
-#ifdef MF_PLATFORM_USE_OPENGL
-    HGLRC *hgl = (HGLRC *) os->graphicHandle;
-    wglDeleteContext(*hgl);
-#endif
+void mfp_destroy(MFP_Platform *platform) {
+    MFP_Win32 *os = mfp__get_win32(platform);
     DestroyWindow(os->window);
     DeleteObject(os->dc);
 }
 
-void mfp_window_toggle_fullscreen(mfp_platform *platform)
-{
+void mfp_window_toggle_fullscreen(MFP_Platform *platform) {
     void *dummy = platform;
     assert(dummy);
 }
 
-mf_inline
-void mfp__get_client_rect(HWND window, i32 *x, i32 *y, u32 *width, u32 *height)
-{
+void mfp__get_client_rect(HWND window, int *x, int *y, size_t *width, size_t *height) {
     RECT clientRect;
     GetClientRect(window, &clientRect);
 
@@ -810,17 +498,14 @@ void mfp__get_client_rect(HWND window, i32 *x, i32 *y, u32 *width, u32 *height)
     *height = clientRect.bottom - clientRect.top;
 }
 
-mf_inline
-void mfp__set_mouse_pos(mfp_platform *platform, LPARAM lParam)
-{
-    i32 x = LOWORD(lParam);
-    i32 y = platform->window.height - HIWORD(lParam);
+void mfp__set_mouse_pos(MFP_Platform *platform, LPARAM lParam) {
+    int x = LOWORD(lParam);
+    int y = platform->window.height - HIWORD(lParam);
     platform->input.mouseX = x;
     platform->input.mouseY = y;
 }
 
-void mfp__dispatch_key_to_input(mfp_input *input, mfp_button_state *state, bool down)
-{
+void mfp__dispatch_key_to_input(MFP_Input *input, MFP_ButtonState *state, bool down) {
     state->pressed = !state->down && down;
     state->released = state->down && !down;
     if (input->enableKeyRepeat && state->down && down)
@@ -831,9 +516,8 @@ void mfp__dispatch_key_to_input(mfp_input *input, mfp_button_state *state, bool 
     state->down = down;
 }
 
-void mfp__dispatch_windows_key(mfp_input *input, u32 keycode, bool down)
-{
-    i32 keyIndex = keycode;
+void mfp__dispatch_windows_key(MFP_Input *input, size_t keycode, bool down) {
+    int keyIndex = keycode;
     char buf[1024] = {};
     OutputDebugString(buf);
 
@@ -841,12 +525,12 @@ void mfp__dispatch_windows_key(mfp_input *input, u32 keycode, bool down)
     assert(keyIndex < 'a' || keyIndex > 'z');
     if (keyIndex >= 'A' && keyIndex <= 'Z')
     {
-        i32 upperLowerOffset = 32;
+        int upperLowerOffset = 32;
         bool shift_down = input->keys[MF_KEY_SHIFT].down;
         if (shift_down || input->keys[MF_KEY_CTRL].down)
         {
             // NOTE: if upper case also dispatch lower case press
-            mfp_button_state *state = &input->keys[keyIndex + upperLowerOffset];
+            MFP_ButtonState *state = &input->keys[keyIndex + upperLowerOffset];
             mfp__dispatch_key_to_input(input, state, down);
 
             input->text[input->textLength++] = shift_down ? keyIndex : keyIndex + 32;
@@ -879,7 +563,7 @@ void mfp__dispatch_windows_key(mfp_input *input, u32 keycode, bool down)
     else if (keyIndex == VK_ESCAPE)
         keyIndex = MF_KEY_ESCAPE; 
 
-    mfp_button_state *state = &input->keys[keyIndex];
+    MFP_ButtonState *state = &input->keys[keyIndex];
     if (down) {
         input->downKeysBuffer[input->downKeysBufferSize++] = keyIndex;
     }
@@ -887,19 +571,16 @@ void mfp__dispatch_windows_key(mfp_input *input, u32 keycode, bool down)
     return;
 }
 
-LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
+LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM lParam) {
     LRESULT res = 0;
     //Platform *platform = (Platform *) GetWindowLongPtr(wnd, GWLP_USERDATA);
     assert(g_platform != NULL);
-    mfp_win *os = mfp__get_win(g_platform);
+    MFP_Win32 *os = mfp__get_win32(g_platform);
     switch (message)
     {
-        case WM_SIZE:
-        {
-            if (g_platform->callback)
-            {
-                mfp_window *window = &g_platform->window;
+        case WM_SIZE: {
+            if (g_platform->callback) {
+                MFP_Window *window = &g_platform->window;
                 mfp__get_client_rect(os->window,
                                      &window->x,
                                      &window->y,
@@ -909,60 +590,48 @@ LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM 
             }
             break;
         }
-        case WM_LBUTTONDOWN:
-        {
+        case WM_LBUTTONDOWN: {
             mfp__set_mouse_pos(g_platform, lParam);
             g_platform->input.mouseLeft.pressed = true;
             break;
         }
-        case WM_MOUSEMOVE:
-        {
+        case WM_MOUSEMOVE: {
             mfp__set_mouse_pos(g_platform, lParam);
         }
-        case WM_MOUSEWHEEL:
-        {
-            //i32 keys = GET_KEYSTATE_WPARAM(wParam);
-            i32 delta = GET_WHEEL_DELTA_WPARAM(wParam);
+        case WM_MOUSEWHEEL: {
+            int delta = GET_WHEEL_DELTA_WPARAM(wParam);
             g_platform->input.mouseWheelDelta = (float) delta;
             break;
         }
         case WM_CLOSE:
         case WM_DESTROY:
-        case WM_QUIT:
-        {
+        case WM_QUIT: {
             g_platform->window.isOpen = false;
             break;
         }
-        case WM_SYSKEYDOWN:
-        {
-            printf("WM_SYSKEYDOWN %d\n", (u32) wParam);
+        case WM_SYSKEYDOWN: {
+            printf("WM_SYSKEYDOWN %d\n", (size_t) wParam);
             break;
         }
-        case WM_KEYDOWN:
-        {
+        case WM_KEYDOWN: {
             // TODO: if the _WinProc loop is slow the amount of repeats will be more than one
             // so the application misses some key repeats but maybe this is okay
-            //u32 amount = lParam & 0x0FFFF;
-            printf("WM_KEYDOWN %d %c\n", (u32) wParam, (char) wParam);
-            mfp__dispatch_windows_key(&g_platform->input, (u32) wParam, true);
+            //size_t amount = lParam & 0x0FFFF;
+            mfp__dispatch_windows_key(&g_platform->input, wParam, true);
             break;
         }
-        case WM_SYSKEYUP:
-        {
-            //printf("WM_SYSKEYUP %d\n", (u32) wParam);
+        case WM_SYSKEYUP: {
             break;
         }
-        case WM_KEYUP:
-        {
-            mfp__dispatch_windows_key(&g_platform->input, (u32) wParam, false);
+        case WM_KEYUP: {
+            mfp__dispatch_windows_key(&g_platform->input, wParam, false);
             break;
         }
-        case WM_EXITSIZEMOVE:
-        {
-            i32 x, y;
-            u32 width, height;
+        case WM_EXITSIZEMOVE: {
+            int x, y;
+            size_t width, height;
             mfp__get_client_rect(os->window, &x, &y, &width, &height);
-            mfp_window *window = &g_platform->window;
+            MFP_Window *window = &g_platform->window;
             if (x != window->x ||
                 y != window->y ||
                 width != window->width ||
@@ -974,23 +643,19 @@ LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM 
                 window->height = height;
             }
         }
-        case WM_PAINT:
-        {
+        case WM_PAINT: {
             //PAINTSTRUCT Paint;
             //HDC dc = BeginPaint(wnd, &Paint);
             //EndPaint(wnd, &Paint);
             res = DefWindowProcA(wnd, message, wParam, lParam);
             break;
         }
-        case WM_CHAR:
-        {
+        case WM_CHAR: {
             WCHAR utfChar = (WCHAR) wParam;
             int shifted = ((int) lParam >> 16) & 0x0F;
             char asciiChar;
-            i32 length = WideCharToMultiByte(CP_ACP, 0, &utfChar, 1, &asciiChar, 1, 0, 0);
-            mfp_input *input = &g_platform->input;
-            printf("WM_CHAR %d %c %d\n", (u32) wParam, asciiChar, shifted);
-            //res = 0;
+            int length = WideCharToMultiByte(CP_ACP, 0, &utfChar, 1, &asciiChar, 1, 0, 0);
+            MFP_Input *input = &g_platform->input;
             if (length == 1 && asciiChar >= ' ')
             {
                 if (asciiChar == '\r') {
@@ -1008,79 +673,7 @@ LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM 
     return res;
 }
 
-#ifdef MF_PLATFORM_USE_OPENGL
-void mfp__init_opengl(mfp_platform *platform)
-{
-    mfp_win *os = mfp__get_win(platform);
-    PIXELFORMATDESCRIPTOR pf = {};
-    pf.nSize = sizeof(pf);
-    pf.nVersion = 1;
-    pf.dwFlags = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER;
-    pf.cColorBits = 24;
-    pf.cAlphaBits = 8;
-    int suggestedIndex = ChoosePixelFormat(os->dc, &pf);
-    PIXELFORMATDESCRIPTOR spf;
-    DescribePixelFormat(os->dc, suggestedIndex, sizeof(spf), &spf);
-    SetPixelFormat(os->dc, suggestedIndex, &spf);
-
-    os->graphicHandle = malloc(sizeof(HGLRC));
-    HGLRC *hgl = (HGLRC *) os->graphicHandle;
-    HGLRC basicContext = wglCreateContext(os->dc);
-    if (wglMakeCurrent(os->dc, basicContext))
-    {
-#define GL_FUNC_LOAD(name)\
-    name = (name##Proc) wglGetProcAddress(#name);
-        wglCreateContextAttribsARB = (wglCreateContextAttribsARBProc) wglGetProcAddress("wglCreateContextAttribsARB");
-        GLint attribs[] =
-        {
-            WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
-            WGL_CONTEXT_MINOR_VERSION_ARB, 3,
-            WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
-            0
-        };
-        HGLRC modernContext = wglCreateContextAttribsARB(os->dc, 0, &attribs[0]);
-        if (modernContext)
-        {
-            wglMakeCurrent(os->dc, modernContext);
-            wglDeleteContext(basicContext);
-            *hgl = modernContext;
-        }
-        else
-        {
-            *hgl = basicContext;
-        }
-        GL_FUNC_LOAD(glActiveTexture);
-        GL_FUNC_LOAD(glAttachShader);
-        GL_FUNC_LOAD(glBindBuffer);
-        GL_FUNC_LOAD(glBindBuffers);
-        GL_FUNC_LOAD(glBindVertexArray);
-        GL_FUNC_LOAD(glBufferData);
-        GL_FUNC_LOAD(glBufferSubData);
-        GL_FUNC_LOAD(glCompileShader);
-        GL_FUNC_LOAD(glCreateProgram);
-        GL_FUNC_LOAD(glCreateShader);
-        GL_FUNC_LOAD(glDeleteShader);
-        GL_FUNC_LOAD(glEnableVertexAttribArray);
-        GL_FUNC_LOAD(glGenBuffers);
-        GL_FUNC_LOAD(glGenVertexArrays);
-        GL_FUNC_LOAD(glGenerateMipmap);
-        GL_FUNC_LOAD(glGetProgramiv);
-        GL_FUNC_LOAD(glGetShaderInfoLog);
-        GL_FUNC_LOAD(glGetShaderiv);
-        GL_FUNC_LOAD(glGetUniformLocation);
-        GL_FUNC_LOAD(glLinkProgram);
-        GL_FUNC_LOAD(glMapBuffer);
-        GL_FUNC_LOAD(glShaderSource);
-        GL_FUNC_LOAD(glUniform1i);
-        GL_FUNC_LOAD(glUniform4f);
-        GL_FUNC_LOAD(glUniformMatrix4fv);
-        GL_FUNC_LOAD(glUseProgram);
-        GL_FUNC_LOAD(glVertexAttribPointer);
-    }
-}
-#endif // MF_PLATFORM_USE_OPENGL
-
-void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i32 width, i32 height)
+void mfp_window_open(MFP_Platform *platform, const char *title, int x, int y, int width, int height)
 {
     WNDCLASS wc = {};
 
@@ -1094,8 +687,8 @@ void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i3
     g_platform = platform;
 
 
-    mfp_win *os = mfp__get_win(platform);
-    mfp_window *window = &platform->window;
+    MFP_Win32 *os = mfp__get_win32(platform);
+    MFP_Window *window = &platform->window;
     window->x = x;
     window->y = y;
     window->title = title;
@@ -1126,7 +719,7 @@ void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i3
     desiredPixelFormat.iLayerType = PFD_MAIN_PLANE;
 
     // TODO: pixelformat always needed??
-    i32 pixelFormatIndex = ChoosePixelFormat(os->dc, &desiredPixelFormat);
+    int pixelFormatIndex = ChoosePixelFormat(os->dc, &desiredPixelFormat);
     PIXELFORMATDESCRIPTOR suggestedPixelFormat;
     DescribePixelFormat(os->dc, pixelFormatIndex, sizeof(suggestedPixelFormat), &suggestedPixelFormat);
     SetPixelFormat(os->dc, pixelFormatIndex, &suggestedPixelFormat);
@@ -1135,18 +728,15 @@ void mfp_window_open(mfp_platform *platform, const char *title, i32 x, i32 y, i3
 
     mfp__get_client_rect(os->window, &window->x, &window->y, &window->width, &window->height);
     window->isOpen = true;
-#ifdef MF_PLATFORM_USE_OPENGL
-    mfp__init_opengl(platform);
-#endif
 }
 
-void mfp_window_close(mfp_platform *platform)
+void mfp_window_close(MFP_Platform *platform)
 {
     assert(platform);
 }
 
-
 #endif
+// }}}
 
 #endif // MF_PLATFORM_IMPLEMENTATION
 #endif // MF_PLATFORM_H

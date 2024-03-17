@@ -62,7 +62,7 @@ typedef struct MF_MyStruct {
 [ ] mf_math.tmpl.h
 [ ] mf_opengl.h
 [ ] mf_opengl2.h
-[ ] mf_platform.h
+[x] mf_platform.h
 [ ] mf_renderer.h
 [x] mf_string.h
 [x] mf_test.h

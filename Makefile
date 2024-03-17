@@ -34,12 +34,10 @@ compile_headers: $(HEADERS)
 		gcc -c $$header; \
 	done
 
-
-
 build:
 	mkdir build
 
-examples: $(OUTDIR)/example-platform $(OUTDIR)/example-renderer $(OUTDIR)/tetris $(OUTDIR)/debug $(OUTDIR)/craft $(OUTDIR)/gui $(OUTDIR)/ray
+examples: $(OUTDIR)/example-platform $(OUTDIR)/example-platform-opengl
 
 $(OUTDIR)/craft: examples/craft.c $(HEADERS)
 	gcc $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
@@ -48,6 +46,9 @@ $(OUTDIR)/debug: examples/debug.c $(HEADERS)
 	gcc $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
 
 $(OUTDIR)/example-platform: examples/example_platform.c $(HEADERS)
+	gcc $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
+
+$(OUTDIR)/example-platform-opengl: examples/example_platform_opengl.c $(HEADERS)
 	gcc $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
 
 $(OUTDIR)/example-renderer: examples/example_renderer.c $(HEADERS)
