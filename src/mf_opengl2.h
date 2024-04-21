@@ -1,4 +1,8 @@
-#pragma once
+#ifndef MF_OPENGL2_H
+#define MF_OPENGL2_H
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <math.h>
 
 // Drawing
 void mfgl_clear();
@@ -9,18 +13,17 @@ void mfgl_draw_triangle(float a, float b, float c, float d, float e, float f);
 
 // Color
 void mfgl_set_color(float r, float g, float b, float a);
-void mfgl_set_color_i32(i32 value);
-void mfgl_set_color_255(i32 r, i32 g, i32 b, i32 a);
+void mfgl_set_color_i32(int value);
+void mfgl_set_color_255(int r, int g, int b, int a);
 void mfgl_set_color_rgb(float r, float g, float b);
-void mfgl_set_color_rgb_255(i32 r, i32 g, i32 b);
+void mfgl_set_color_rgb_255(int r, int g, int b);
 
 // Viewport
-void mfgl_viewport_bottom_up(u32 width, u32 height);
-void mfgl_viewport_top_down(u32 width, u32 height);
+void mfgl_viewport_bottom_up(unsigned int width, unsigned int height);
+void mfgl_viewport_top_down(unsigned int width, unsigned int height);
 
 
-void mfgl_viewport_top_down(u32 width, u32 height)
-{
+void mfgl_viewport_top_down(unsigned int width, unsigned int height) {
     glMatrixMode(GL_PROJECTION);
     float mat[] =
     {
@@ -37,7 +40,7 @@ void mfgl_set_color(float r, float g, float b, float a)
     glColor4f(r, g, b, a);
 }
 
-void mfgl_set_color_i32(i32 value)
+void mfgl_set_color_i32(int value)
 {
     float r = (value >> 16 & 0xFF) / 255.0f;
     float g = (value >> 8 & 0xFF) / 255.0f;
@@ -45,7 +48,7 @@ void mfgl_set_color_i32(i32 value)
     mfgl_set_color_rgb(r, g, b);
 }
 
-void mfgl_set_color_255(i32 r, i32 g, i32 b, i32 a)
+void mfgl_set_color_255(int r, int g, int b, int a)
 {
     mfgl_set_color(r / 255.f, g / 255.f, b / 255.f, a / 255.f);
 }
@@ -55,12 +58,12 @@ void mfgl_set_color_rgb(float r, float g, float b)
     mfgl_set_color(r, g, b, 1.0f);
 }
 
-void mfgl_set_color_rgb_255(i32 r, i32 g, i32 b)
+void mfgl_set_color_rgb_255(int r, int g, int b)
 {
     mfgl_set_color_rgb(r / 255.f, g / 255.f, b / 255.f);
 }
 
-void mfgl_viewport_bottom_up(u32 width, u32 height)
+void mfgl_viewport_bottom_up(unsigned int width, unsigned int height)
 {
     glMatrixMode(GL_PROJECTION);
     float mat[] =
@@ -131,3 +134,5 @@ void mfgl_draw_triangle(float a, float b, float c, float d, float e, float f)
         glVertex2f(e, f);
     glEnd();
 }
+
+#endif // MF_OPENGL2_H

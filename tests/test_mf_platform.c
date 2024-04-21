@@ -3,21 +3,27 @@
 #include <mf.h>
 #include <mf_test.h>
 #include <mf_platform.h>
+#include <mf_platform_opengl.h>
 #pragma comment(lib, "X11")
 #pragma comment(lib, "GL")
 
-TEST(basic_window) {
-    mfp_platform platform = {};
-    mfp_init(&platform);
+TEST(MFP_Platform) {
+    MFP_Platform platform = {};
+    MFP_Init(&platform);
 #if 0
-    mfp_window_open(&platform, "Test", 0, 0, 800, 600);
-    mfp_begin(&platform);
+    MFP_WindowOpen(&platform, "Test", 0, 0, 800, 600);
+    MFP_InitOpengl(&platform);
+
+    MFP_Begin(&platform);
+    MFP_BeginOpengl(&platform);
+
     glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-    mfp_end(&platform, false);
-    mf_sleep_ms(10);
 
-    mfp_window_close(&platform);
+    MFP_EndOpengl(&platform);
+    MFP_End(&platform, false);
+
+    MFP_WindowClose(&platform);
 #endif
-    mfp_destroy(&platform);
+    MFP_Destroy(&platform);
 }

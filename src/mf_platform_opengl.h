@@ -1,12 +1,19 @@
 #ifndef MF_PLATFORM_OPENGL_H
 #define MF_PLATFORM_OPENGL_H
 
+#ifndef MF_PLATFORM_H
+#error "Include mf_platform.h first"
+#endif
+
+#define API static inline
+
+
 // {{{ Definitions
 
-void mfp_init_opengl(MFP_Platform *platform);
+API void MFP_InitOpengl(MFP_Platform *platform);
 
-void mfp_begin_opengl(MFP_Platform *platform);
-void mfp_end_opengl(MFP_Platform *platform);
+API void MFP_BeginOpengl(MFP_Platform *platform);
+API void MFP_EndOpengl(MFP_Platform *platform);
 
 #define GL_GLEXT_PROTOTYPES
 //#define GLX_GLEXT_PROTOTYPES
@@ -98,8 +105,16 @@ GL_FUNC_DEF(void, glVertexAttribPointer, GLuint index, GLint size, GLenum type, 
 // {{{ Linux
 #ifdef __linux__
 
-void mfp_init_opengl(MFP_Platform *platform) {
-    MFP_Linux *oslinux = mfp__get_linux(platform);
+static inline void MFP_InitOpenglWindow(MFP_Platform *platform);
+
+API void MFP_InitOpengl(MFP_Platform *platform) {
+    platform->graphicsAfterWindow = MFP_InitOpenglWindow;
+    platform->graphicsBegin = MFP_BeginOpengl;
+    platform->graphicsEnd = MFP_EndOpengl;
+}
+
+static inline void MFP_InitOpenglWindow(MFP_Platform *platform) {
+    MFP_Linux *oslinux = MFP__GetLinux(platform);
     static int visualAttribs[] = {
       GLX_X_RENDERABLE    , True,
       GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
@@ -124,15 +139,13 @@ void mfp_init_opengl(MFP_Platform *platform) {
     //int bestSampleBuffers = 0;
     int bestSamples = 0;
 
-    for (int i = 0; i < fbCount; ++i)
-    {
+    for (int i = 0; i < fbCount; ++i) {
         XVisualInfo *vi = glXGetVisualFromFBConfig(oslinux->display, fbc[i]);
         int sampleBuffers = 0;
         int samples = 0;
         glXGetFBConfigAttrib(oslinux->display, fbc[i], GLX_SAMPLE_BUFFERS, &sampleBuffers);
         glXGetFBConfigAttrib(oslinux->display, fbc[i], GLX_SAMPLES, &samples);
-        if (sampleBuffers && samples > bestSamples)
-        {
+        if (sampleBuffers && samples > bestSamples) {
             fbIndex = i;
             bestSamples = samples;
         }
@@ -158,11 +171,7 @@ void mfp_init_opengl(MFP_Platform *platform) {
 
     glXCreateContextAttribsARBProc createContext = (glXCreateContextAttribsARBProc)glXGetProcAddress((const GLubyte*)"glXCreateContextAttribsARB");
     assert(createContext);
-    //*((GLXContext *) oslinux->graphicHandle) = glXCreateContext(oslinux->display, oslinux->vi, 0, GL_TRUE);
-
-    //*((GLXContext *) oslinux->graphicHandle) = glXCreateContextAttribsARBProc(oslinux->display, fbc[fbIndex], 0, True, attribs);
     GLXContext context = createContext(oslinux->display, fbc[fbIndex], 0, True, attribs);
-    //GLXContext glxContext = glXCreateContext(oslinux->display, oslinux->vi, NULL, GL_TRUE);
     bool success = glXMakeCurrent(oslinux->display, oslinux->window, context);
     assert(success);
 
@@ -170,17 +179,20 @@ void mfp_init_opengl(MFP_Platform *platform) {
 
     int major = 0;
     int minor = 0;
-    glXQueryVersion(oslinux->display, &major, &minor);
+    glGetIntegerv(GL_MAJOR_VERSION, &major);
+    glGetIntegerv(GL_MINOR_VERSION, &minor);
+    // glXQueryVersion(oslinux->display, &major, &minor);
 
-    // TODO: version??
-    //MF_Assert(major == 3);
+    printf("OpenGL version %d.%d\n", major, minor);
+    assert(major >= 3);
+    // assert(minor >= 3);
 }
 
-void mfp_begin_opengl(MFP_Platform *platform) {
+API void MFP_BeginOpengl(MFP_Platform *platform) {
 }
 
-void mfp_end_opengl(MFP_Platform *platform) {
-    MFP_Linux *oslinux = mfp__get_linux(platform);
+API void MFP_EndOpengl(MFP_Platform *platform) {
+    MFP_Linux *oslinux = MFP__GetLinux(platform);
     glXSwapBuffers(oslinux->display, oslinux->window);
 }
 
@@ -188,7 +200,7 @@ void mfp_end_opengl(MFP_Platform *platform) {
 // {{{ Windows
 #else
 
-void mfp_init_opengl(MFP_Platform *platform) {
+API void MFP_InitOpengl(MFP_Platform *platform) {
     MFP_Win32 *os = mfp__get_win32(platform);
     PIXELFORMATDESCRIPTOR pf = {};
     pf.nSize = sizeof(pf);
@@ -204,27 +216,22 @@ void mfp_init_opengl(MFP_Platform *platform) {
     os->graphicHandle = malloc(sizeof(HGLRC));
     HGLRC *hgl = (HGLRC *) os->graphicHandle;
     HGLRC basicContext = wglCreateContext(os->dc);
-    if (wglMakeCurrent(os->dc, basicContext))
-    {
+    if (wglMakeCurrent(os->dc, basicContext)) {
 #define GL_FUNC_LOAD(name)\
     name = (name##Proc) wglGetProcAddress(#name);
         wglCreateContextAttribsARB = (wglCreateContextAttribsARBProc) wglGetProcAddress("wglCreateContextAttribsARB");
-        GLint attribs[] =
-        {
+        GLint attribs[] = {
             WGL_CONTEXT_MAJOR_VERSION_ARB, 3,
             WGL_CONTEXT_MINOR_VERSION_ARB, 3,
             WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
             0
         };
         HGLRC modernContext = wglCreateContextAttribsARB(os->dc, 0, &attribs[0]);
-        if (modernContext)
-        {
+        if (modernContext) {
             wglMakeCurrent(os->dc, modernContext);
             wglDeleteContext(basicContext);
             *hgl = modernContext;
-        }
-        else
-        {
+        } else {
             *hgl = basicContext;
         }
         GL_FUNC_LOAD(glActiveTexture);
@@ -257,20 +264,18 @@ void mfp_init_opengl(MFP_Platform *platform) {
     }
 }
 
-void mfp_destroy_opengl(MFP_Platform *platform) {
+API void MFP_DestroyOpengl(MFP_Platform *platform) {
     HGLRC *hgl = (HGLRC *) os->graphicHandle;
     wglDeleteContext(*hgl);
 }
 
-void mfp_begin_opengl(MFP_Platform *platform) {
+API void MFP_BeginOpengl(MFP_Platform *platform) {
 }
 
-void mfp_end_opengl(MFP_Platform *platform) {
+API void MFP_EndOpengl(MFP_Platform *platform) {
     MFP_Win32 *os = mfp__get_win32(platform);
     SwapBuffers(os->dc);
 }
-
-
 
 // }}}
 #endif

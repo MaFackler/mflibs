@@ -29,24 +29,32 @@
 
 // {{{ Declarations
 
+#define API static inline
+#define MFP_WINDOWPOS_CENTER -1
+
 typedef struct MFP_ButtonState MFP_ButtonState;
 typedef struct MFP_Platform MFP_Platform;
 typedef struct MFP_Input MFP_Input;
 typedef struct MFP_Timer MFP_Timer;
 typedef struct MFP_Window MFP_Window;
 
-void mfp_init(MFP_Platform *platform);
-void mfp_destroy(MFP_Platform *platform);
+API void MFP_Init(MFP_Platform *platform);
+API void MFP_SetTargetFps(MFP_Platform *platform, int fps);
+API void MFP_Destroy(MFP_Platform *platform);
+API void MFP_Begin(MFP_Platform *platform);
+API void MFP_End(MFP_Platform *platform, bool swapBuffers);
+API void MFP_WindowOpen(MFP_Platform *platform, const char *title, int x, int y, int width, int height);
+API void MFP_WindowClose(MFP_Platform *platform);
+API bool MFP_WindowShouldClose(MFP_Platform *platform);
+API void MFP_WindowToggleFullscreen(MFP_Platform *platform);
+API bool MFP_IsKeyPressed(MFP_Platform *platform, char c);
+API bool MFP_IsKeyDown(MFP_Platform *platform, char c);
+API bool MFP_IsKeyReleased(MFP_Platform *platform, char c);
+API float MFP_GetDeltaSec(MFP_Platform *platform);
+API void MFP_SleepMs(long ms);
 
-void mfp_begin(MFP_Platform *platform);
-void mfp_end(MFP_Platform *platform, bool swapBuffers);
-
-void mfp_window_toggle_fullscreen(MFP_Platform *platform);
-void mfp_window_open(MFP_Platform *platform, const char *title, int x, int y, int width, int height);
-void mfp_window_close(MFP_Platform *platform);
-
-void mfp__end(MFP_Platform *platform);
-unsigned long int mfp__get_ticks();
+API void MFP__End(MFP_Platform *platform);
+API unsigned long int MFP__GetTicks();
 
 struct MFP_ButtonState {
     bool down;
@@ -97,7 +105,11 @@ struct MFP_Timer {
 
 struct MFP_Platform {
     void *os;
+    void (*graphicsAfterWindow)(MFP_Platform *platform);
+    void (*graphicsBegin)(MFP_Platform *platform);
+    void (*graphicsEnd)(MFP_Platform *platform);
 
+    int targetFps;
     MFP_Input input;
     MFP_Window window;
     MFP_Timer timer;
@@ -127,8 +139,10 @@ typedef enum MFP_Keys {
 #define MFP_ArrayLength(arr) (sizeof(arr) / sizeof(arr[0]))
 
 #include <stdio.h>
-inline
-void mfp__end(MFP_Platform *platform) {
+API void MFP__End(MFP_Platform *platform) {
+    if (platform->graphicsEnd) {
+        platform->graphicsEnd(platform);
+    }
     // reset input
     MFP_Input *input = &platform->input;
     input->textLength = 0;
@@ -141,14 +155,21 @@ void mfp__end(MFP_Platform *platform) {
 
     // update time
     MFP_Timer *timer = &platform->timer;
-    unsigned long int ticks = mfp__get_ticks();
+    unsigned long int ticks = MFP__GetTicks();
 
+    // TODO: deltaSec returns inf if target fps is not set????
 #ifdef _WIN32
     timer->deltaSec = ((float) ticks - (float) timer->ticks) / (float) frequency.QuadPart;
 #else
     timer->deltaSec = (float) (ticks - timer->ticks) / 1000.0f;
 #endif
     timer->ticks = ticks;
+    float targetFrameTime = 1.0f / platform->targetFps;
+    if (timer->deltaSec < targetFrameTime) {
+        float remaining = targetFrameTime - timer->deltaSec;
+        MFP_SleepMs(1000 * remaining);
+        timer->deltaSec = targetFrameTime;
+    }
     timer->fps = (1.0f / timer->deltaSec);
 }
 
@@ -172,28 +193,21 @@ typedef struct MFP_Linux {
     void *graphicHandle;
 } MFP_Linux;
 
-MFP_Linux* mfp__get_linux(MFP_Platform *platform) {
+API MFP_Linux* MFP__GetLinux(MFP_Platform *platform) {
     return (MFP_Linux *) platform->os; 
 }
 
-unsigned long int mfp__get_time_micro() {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    unsigned long int cycles = ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
-    return cycles;
-}
-
-void mfp__dispatch_key(MFP_Input *input, MFP_ButtonState *state, bool down) {
+API void MFP__LinuxDispatchKey(MFP_Input *input, MFP_ButtonState *state, bool down) {
     state->pressed = !state->down && down;
     state->released = state->down && !down;
     state->down = down;
 }
 
-void mfp__dispatch_xkey(MFP_Input *input, XKeyEvent *event, bool down) {
+API void MFP__LinuxDispatchXKey(MFP_Input *input, XKeyEvent *event, bool down) {
     KeySym sym = XLookupKeysym(event, 0);
     if (sym >= XK_space && sym <= XK_asciitilde) {
         MFP_ButtonState *state = &input->keys[sym];
-        mfp__dispatch_key(input, state, down);
+        MFP__LinuxDispatchKey(input, state, down);
         if (state->pressed) {
             // handle text input
             char buffer[16] = {};
@@ -258,19 +272,19 @@ void mfp__dispatch_xkey(MFP_Input *input, XKeyEvent *event, bool down) {
         }
         if (mysym != 0) {
             MFP_ButtonState *state = &input->keys[(int)mysym];
-            mfp__dispatch_key(input, state, down);
+            MFP__LinuxDispatchKey(input, state, down);
         }
     }
 }
 
-unsigned long int mfp__get_ticks() {
+API unsigned long int MFP__GetTicks() {
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC_RAW, &now);
     unsigned long int res = ((unsigned long int) now.tv_sec * 1000) + ((unsigned long int) now.tv_nsec / 1000000);
     return res;
 }
 
-void mfp_init(MFP_Platform *platform) {
+API void MFP_Init(MFP_Platform *platform) {
     platform->os = malloc(sizeof(MFP_Linux));
     MFP_Linux *plat = (MFP_Linux *) platform->os;
     plat->display = XOpenDisplay(NULL);
@@ -285,48 +299,13 @@ void mfp_init(MFP_Platform *platform) {
     XFlush(plat->display);
 }
 
-void mfp_window_open(MFP_Platform *platform, const char *title, int x, int y, int width, int height) {
-    assert(!platform->window.isOpen);
-    MFP_Linux *oslinux = mfp__get_linux(platform);
-    platform->window.x = x;
-    platform->window.y = y;
-    platform->window.width = width;
-    platform->window.height = height;
-    platform->window.title = title;
-    XSetWindowAttributes windowAttributes;
-    windowAttributes.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask |
-        StructureNotifyMask | PointerMotionMask | EnterWindowMask | LeaveWindowMask |
-        ButtonPressMask | ButtonReleaseMask;
-
-    windowAttributes.colormap = oslinux->colormap;
-
-    // TODO: multi monitor setup: x coordinate is always relative root
-    // window so the window will launch on the left monitor not the fouces one
-    oslinux->window = XCreateWindow(oslinux->display,
-                                    oslinux->root,
-                                    platform->window.x,
-                                    platform->window.y,
-                                    platform->window.width,
-                                    platform->window.height,
-                                    0,
-                                    oslinux->depth,
-                                    InputOutput,
-                                    oslinux->visual,
-                                    CWColormap | CWEventMask,
-                                    &windowAttributes);
-
-
-    XMapWindow(oslinux->display, oslinux->window);
-    if (platform->window.title)
-        XStoreName(oslinux->display, oslinux->window, platform->window.title); 
-
-    platform->window.isOpen = true;
+API void MFP_SetTargetFps(MFP_Platform *platform, int fps) {
+    platform->targetFps = fps;
 }
 
-
-void mfp_begin(MFP_Platform *platform) {
+API void MFP_Begin(MFP_Platform *platform) {
     if (platform->timer.ticks == 0) {
-        platform->timer.ticks = mfp__get_ticks();
+        platform->timer.ticks = MFP__GetTicks();
     }
     XEvent event;
     MFP_Input *input = &platform->input;
@@ -337,13 +316,13 @@ void mfp_begin(MFP_Platform *platform) {
         state->released = false;
     }
 
-    MFP_Linux* oslinux = mfp__get_linux(platform);
+    MFP_Linux* oslinux = MFP__GetLinux(platform);
 
     while(XPending(oslinux->display)) {
         XNextEvent(oslinux->display, &event);
         switch (event.type) {
             case KeyPress: {
-                mfp__dispatch_xkey(input, &event.xkey, true);
+                MFP__LinuxDispatchXKey(input, &event.xkey, true);
             } break;
             case KeyRelease: {
                 // NOTE: xserver sends release and press if key is hold down
@@ -355,12 +334,12 @@ void mfp_begin(MFP_Platform *platform) {
                     if (next.type == KeyPress && next.xkey.time == event.xkey.time)
                     {
                         if (input->enableKeyRepeat)
-                            mfp__dispatch_xkey(input, &event.xkey, false);
+                            MFP__LinuxDispatchXKey(input, &event.xkey, false);
                         else
                             continue;
                     }
                 } 
-                mfp__dispatch_xkey(input, &event.xkey, false);
+                MFP__LinuxDispatchXKey(input, &event.xkey, false);
             } break;
             case ConfigureNotify: {
             //XConfigureEvent xce = event.xconfigure;
@@ -395,20 +374,76 @@ void mfp_begin(MFP_Platform *platform) {
     }
 }
 
-void mfp_end(MFP_Platform *platform, bool swapBuffers) {
-    mfp__end(platform);
+API void MFP_End(MFP_Platform *platform, bool swapBuffers) {
+    MFP__End(platform);
 }
 
-void mfp_window_close(MFP_Platform *platform) {
+API void MFP_WindowOpen(MFP_Platform *platform, const char *title, int x, int y, int width, int height) {
+    assert(!platform->window.isOpen);
+    MFP_Linux *oslinux = MFP__GetLinux(platform);
+    int screen = XDefaultScreen(oslinux->display);
+    if (x == MFP_WINDOWPOS_CENTER) {
+        int displayWidth = XDisplayWidth(oslinux->display, screen);
+        platform->window.x = (displayWidth - width) * 0.5f;
+    } else {
+        platform->window.x = x;
+    }
+    if (y == MFP_WINDOWPOS_CENTER) {
+        int displayHeight = XDisplayHeight(oslinux->display, screen);
+        platform->window.y = (displayHeight - height) * 0.5f;
+    } else {
+        platform->window.y = y;
+    }
+    platform->window.width = width;
+    platform->window.height = height;
+    platform->window.title = title;
+    XSetWindowAttributes windowAttributes;
+    windowAttributes.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask |
+        StructureNotifyMask | PointerMotionMask | EnterWindowMask | LeaveWindowMask |
+        ButtonPressMask | ButtonReleaseMask;
+
+    windowAttributes.colormap = oslinux->colormap;
+
+    // TODO: multi monitor setup: x coordinate is always relative root
+    // window so the window will launch on the left monitor not the fouces one
+    oslinux->window = XCreateWindow(oslinux->display,
+                                    oslinux->root,
+                                    platform->window.x,
+                                    platform->window.y,
+                                    platform->window.width,
+                                    platform->window.height,
+                                    0,
+                                    oslinux->depth,
+                                    InputOutput,
+                                    oslinux->visual,
+                                    CWColormap | CWEventMask,
+                                    &windowAttributes);
+
+
+    XMapWindow(oslinux->display, oslinux->window);
+    if (platform->window.title)
+        XStoreName(oslinux->display, oslinux->window, platform->window.title); 
+
+    if (platform->graphicsAfterWindow) {
+        platform->graphicsAfterWindow(platform);
+    }
+    platform->window.isOpen = true;
+}
+
+API void MFP_WindowClose(MFP_Platform *platform) {
     MFP_Window *window = &platform->window;
-    MFP_Linux *oslinux = mfp__get_linux(platform);
+    MFP_Linux *oslinux = MFP__GetLinux(platform);
     XDestroyWindow(oslinux->display, oslinux->window);
     XCloseDisplay(oslinux->display);
     window->isOpen = false;
 }
 
-void mfp_window_toggle_fullscreen(MFP_Platform *platform) {
-    MFP_Linux *oslinux = mfp__get_linux(platform);
+API bool MFP_WindowShouldClose(MFP_Platform *platform) {
+    return !platform->window.isOpen;
+}
+
+API void MFP_WindowToggleFullscreen(MFP_Platform *platform) {
+    MFP_Linux *oslinux = MFP__GetLinux(platform);
     XEvent e;
     e.xclient.type = ClientMessage;
     e.xclient.window = oslinux->window;
@@ -422,7 +457,29 @@ void mfp_window_toggle_fullscreen(MFP_Platform *platform) {
     XSendEvent(oslinux->display, oslinux->root, False, SubstructureRedirectMask | SubstructureNotifyMask, &e);
 }
 
-void mfp_destroy(MFP_Platform *platform) {
+API bool MFP_IsKeyPressed(MFP_Platform *platform, char c) {
+    return platform->input.keys[c].pressed;
+}
+
+API bool MFP_IsKeyDown(MFP_Platform *platform, char c) {
+    return platform->input.keys[c].down;
+}
+
+API bool MFP_IsKeyReleased(MFP_Platform *platform, char c) {
+    return platform->input.keys[c].released;
+}
+
+API float MFP_GetDeltaSec(MFP_Platform *platform) {
+    return platform->timer.deltaSec;
+}
+
+API void MFP_SleepMs(long ms) {
+    struct timespec ts;
+    ts.tv_sec = ms / 1000;
+    ts.tv_nsec = (ms / 1000) * 1000000;
+}
+
+API void MFP_Destroy(MFP_Platform *platform) {
     // TODO:
 }
 
@@ -440,24 +497,24 @@ typedef struct MFP_Win32 {
     void *graphicHandle;
 } MFP_Win32;
 
-unsigned long int mfp__get_ticks() {
+API unsigned long int MFP__GetTicks() {
     LARGE_INTEGER counter;
     QueryPerformanceCounter(&counter);
     return counter.QuadPart;
 }
 
-MFP_Win32 *mfp__get_win32(MFP_Platform *platform) {
+API MFP_Win32 *MFP_GetWin32(MFP_Platform *platform) {
     return (MFP_Win32 *) platform->os; 
 }
 
-void mfp_init(MFP_Platform *platform) {
+API void MFP_Init(MFP_Platform *platform) {
     platform->os = malloc(sizeof(MFP_Win32));
     QueryPerformanceFrequency(&platform->os.frequency);
 }
 
-void mfp_begin(MFP_Platform *platform) {
+API void MFP_Begin(MFP_Platform *platform) {
     if (platform->timer.ticks == 0) {
-        platform->timer.ticks = mfp__get_ticks();
+        platform->timer.ticks = MFP__GetTicks();
     }
     for (size_t i = 0; i < MFP__AMOUNT_KEYS; ++i) {
         MFP_ButtonState *state = &platform->input.keys[i];
@@ -465,30 +522,34 @@ void mfp_begin(MFP_Platform *platform) {
         state->released = false;
     }
 
-    MFP_Win32 *os = mfp__get_win32(platform);
+    MFP_Win32 *os = MFP_GetWin32(platform);
     MSG msg;
     while (PeekMessage(&msg, os->window, 0, 0, PM_REMOVE)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+
+    if (platform->graphicsBegin) {
+        platform->graphicsBegin(platform);
+    }
 }
 
-void mfp_end(MFP_Platform *platform, bool swapBuffers=true) {
-    mfp__end(platform);
+API void MFP_End(MFP_Platform *platform, bool swapBuffers=true) {
+    MFP__End(platform);
 }
 
-void mfp_destroy(MFP_Platform *platform) {
-    MFP_Win32 *os = mfp__get_win32(platform);
+API void MFP_Destroy(MFP_Platform *platform) {
+    MFP_Win32 *os = MFP_GetWin32(platform);
     DestroyWindow(os->window);
     DeleteObject(os->dc);
 }
 
-void mfp_window_toggle_fullscreen(MFP_Platform *platform) {
+API void MFP_WindowToggleFullscreen(MFP_Platform *platform) {
     void *dummy = platform;
     assert(dummy);
 }
 
-void mfp__get_client_rect(HWND window, int *x, int *y, size_t *width, size_t *height) {
+API void MFP__GetClientRect(HWND window, int *x, int *y, size_t *width, size_t *height) {
     RECT clientRect;
     GetClientRect(window, &clientRect);
 
@@ -498,14 +559,14 @@ void mfp__get_client_rect(HWND window, int *x, int *y, size_t *width, size_t *he
     *height = clientRect.bottom - clientRect.top;
 }
 
-void mfp__set_mouse_pos(MFP_Platform *platform, LPARAM lParam) {
+void MFP__Win32SetMousePos(MFP_Platform *platform, LPARAM lParam) {
     int x = LOWORD(lParam);
     int y = platform->window.height - HIWORD(lParam);
     platform->input.mouseX = x;
     platform->input.mouseY = y;
 }
 
-void mfp__dispatch_key_to_input(MFP_Input *input, MFP_ButtonState *state, bool down) {
+void MFP__Win32DispatchKeyToInput(MFP_Input *input, MFP_ButtonState *state, bool down) {
     state->pressed = !state->down && down;
     state->released = state->down && !down;
     if (input->enableKeyRepeat && state->down && down)
@@ -516,7 +577,7 @@ void mfp__dispatch_key_to_input(MFP_Input *input, MFP_ButtonState *state, bool d
     state->down = down;
 }
 
-void mfp__dispatch_windows_key(MFP_Input *input, size_t keycode, bool down) {
+void MFP__Win32DispatchKey(MFP_Input *input, size_t keycode, bool down) {
     int keyIndex = keycode;
     char buf[1024] = {};
     OutputDebugString(buf);
@@ -531,7 +592,7 @@ void mfp__dispatch_windows_key(MFP_Input *input, size_t keycode, bool down) {
         {
             // NOTE: if upper case also dispatch lower case press
             MFP_ButtonState *state = &input->keys[keyIndex + upperLowerOffset];
-            mfp__dispatch_key_to_input(input, state, down);
+            MFP__Win32DispatchKeyToInput(input, state, down);
 
             input->text[input->textLength++] = shift_down ? keyIndex : keyIndex + 32;
         }
@@ -567,36 +628,35 @@ void mfp__dispatch_windows_key(MFP_Input *input, size_t keycode, bool down) {
     if (down) {
         input->downKeysBuffer[input->downKeysBufferSize++] = keyIndex;
     }
-    mfp__dispatch_key_to_input(input, state, down);
+    MFP__Win32DispatchKeyToInput(input, state, down);
     return;
 }
 
-LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK MFP__Win32Proc(HWND wnd, UINT message, WPARAM wParam, LPARAM lParam) {
     LRESULT res = 0;
     //Platform *platform = (Platform *) GetWindowLongPtr(wnd, GWLP_USERDATA);
     assert(g_platform != NULL);
-    MFP_Win32 *os = mfp__get_win32(g_platform);
-    switch (message)
-    {
+    MFP_Win32 *os = MFP_GetWin32(g_platform);
+    switch (message) {
         case WM_SIZE: {
             if (g_platform->callback) {
                 MFP_Window *window = &g_platform->window;
-                mfp__get_client_rect(os->window,
-                                     &window->x,
-                                     &window->y,
-                                     &window->width,
-                                     &window->height);
+                MFP__GetClientRect(os->window,
+                                   &window->x,
+                                   &window->y,
+                                   &window->width,
+                                   &window->height);
                 g_platform->callback(MFP_MESSAGE_WINDOW_SIZE);
             }
             break;
         }
         case WM_LBUTTONDOWN: {
-            mfp__set_mouse_pos(g_platform, lParam);
+            MFP__Win32SetMousePos(g_platform, lParam);
             g_platform->input.mouseLeft.pressed = true;
             break;
         }
         case WM_MOUSEMOVE: {
-            mfp__set_mouse_pos(g_platform, lParam);
+            MFP__Win32SetMousePos(g_platform, lParam);
         }
         case WM_MOUSEWHEEL: {
             int delta = GET_WHEEL_DELTA_WPARAM(wParam);
@@ -617,14 +677,14 @@ LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM 
             // TODO: if the _WinProc loop is slow the amount of repeats will be more than one
             // so the application misses some key repeats but maybe this is okay
             //size_t amount = lParam & 0x0FFFF;
-            mfp__dispatch_windows_key(&g_platform->input, wParam, true);
+            MFP__Win32DispatchKey(&g_platform->input, wParam, true);
             break;
         }
         case WM_SYSKEYUP: {
             break;
         }
         case WM_KEYUP: {
-            mfp__dispatch_windows_key(&g_platform->input, wParam, false);
+            MFP__Win32DispatchKey(&g_platform->input, wParam, false);
             break;
         }
         case WM_EXITSIZEMOVE: {
@@ -635,8 +695,7 @@ LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM 
             if (x != window->x ||
                 y != window->y ||
                 width != window->width ||
-                height != window->height)
-            {
+                height != window->height) {
                 window->x = x;
                 window->y = y;
                 window->width = width;
@@ -673,12 +732,11 @@ LRESULT CALLBACK mfp__window_proc(HWND wnd, UINT message, WPARAM wParam, LPARAM 
     return res;
 }
 
-void mfp_window_open(MFP_Platform *platform, const char *title, int x, int y, int width, int height)
-{
+API void MFP_WindowOpen(MFP_Platform *platform, const char *title, int x, int y, int width, int height) {
     WNDCLASS wc = {};
 
     wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = mfp__window_proc;
+    wc.lpfnWndProc = MFP__Win32Proc;
     wc.lpszClassName = "Platform";
     wc.hCursor = LoadCursor(0, IDC_ARROW);
     RegisterClass(&wc);
@@ -687,7 +745,7 @@ void mfp_window_open(MFP_Platform *platform, const char *title, int x, int y, in
     g_platform = platform;
 
 
-    MFP_Win32 *os = mfp__get_win32(platform);
+    MFP_Win32 *os = MFP_GetWin32(platform);
     MFP_Window *window = &platform->window;
     window->x = x;
     window->y = y;
@@ -730,8 +788,7 @@ void mfp_window_open(MFP_Platform *platform, const char *title, int x, int y, in
     window->isOpen = true;
 }
 
-void mfp_window_close(MFP_Platform *platform)
-{
+API void MFP_WindowClose(MFP_Platform *platform) {
     assert(platform);
 }
 

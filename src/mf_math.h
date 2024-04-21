@@ -5,14 +5,32 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef float f32;
-typedef int32_t i32;
-typedef uint32_t u32;
+
+#define MFM_Sin sin
+#define MFM_Cos cos
+#define MFM_Pi M_PI
+#define MFM_Pi2 (2 * M_PI)
+#define API static inline
+API float MFM_DegToRad(float degree) {
+    return degree * (M_PI / 180);
+}
+
+API float MFM_RadToDeg(float rad) {
+    return rad * (180 / M_PI);
+}
+
+API float MFM_Wrap(float value, float min, float max) {
+    if (value > max) {
+        value -= (max - min);
+    }
+    return value;
+}
+
 
 // {{{ basic
 
-f32 clamp(f32 value, f32 min, f32 max) {
-    f32 res = value;
+API float MFM_Clamp(float value, float min, float max) {
+    float res = value;
     if (value < min) {
         res = min;
     } else if (value > max) {
@@ -23,57 +41,57 @@ f32 clamp(f32 value, f32 min, f32 max) {
 
 // }}}
 
-// {{{ v2
+// {{{ MFM_Vec2
 
-typedef union v2 {
+typedef union MFM_Vec2 {
+   float m[2];
    struct {
-       f32 x;
-       f32 y;
+       float x;
+       float y;
    };
-   f32 m[2];
-} v2;
+} MFM_Vec2;
 
-bool v2_eq(v2 a, v2 b);
-v2 v2_add(v2 a, v2 b);
+API bool MFM_EqualV2(MFM_Vec2 a, MFM_Vec2 b);
+API MFM_Vec2 MFM_Vec2Add(MFM_Vec2 a, MFM_Vec2 b);
 
-float v2_distance(v2 a, v2 b);
-float v2_distance_squared(v2 a, v2 b);
-float v2_length(v2 a);
-v2 v2_normalize(v2 a);
+API float MFM_Vec2Distance(MFM_Vec2 a, MFM_Vec2 b);
+API float MFM_Vec2DistanceSquared(MFM_Vec2 a, MFM_Vec2 b);
+API float MFM_Vec2Length(MFM_Vec2 a);
+API MFM_Vec2 MFM_Vec2Normalize(MFM_Vec2 a);
 
 // Implementations
 
-bool v2_eq(v2 a, v2 b) {
+API bool MFM_Vec2Equal(MFM_Vec2 a, MFM_Vec2 b) {
     return a.x == b.x && a.y == b.y;
 }
 
-v2 v2_add(v2 a, v2 b) {
-    v2 res = {0};
+API MFM_Vec2 MFM_Vec2Add(MFM_Vec2 a, MFM_Vec2 b) {
+    MFM_Vec2 res = {0};
     res.x = a.x + b.x;
     res.y = a.y + b.y;
     return res;
 }
 
-float v2_distance(v2 a, v2 b) {
-    float res = sqrt(v2_distance_squared(a, b));
+API float MFM_Vec2Distance(MFM_Vec2 a, MFM_Vec2 b) {
+    float res = sqrt(MFM_Vec2DistanceSquared(a, b));
     return res;
 }
 
-float v2_distance_squared(v2 a, v2 b) {
+API float MFM_Vec2DistanceSquared(MFM_Vec2 a, MFM_Vec2 b) {
     float sx = (b.x - a.x) * (b.x - a.x);
     float sy = (b.y - a.y) * (b.y - a.y);
     float res = sx + sy;
     return res;
 }
 
-float v2_length(v2 a) {
+API float MFM_Vec2Length(MFM_Vec2 a) {
     float res = sqrt(a.x * a.x + a.y * a.y);
     return res;
 }
 
-v2 v2_normalize(v2 a) {
-    v2 res = {0};
-    float length = v2_length(a);
+API MFM_Vec2 MFM_Vec2Normalize(MFM_Vec2 a) {
+    MFM_Vec2 res = {0};
+    float length = MFM_Vec2Length(a);
     res.x = a.x / length;
     res.y = a.y / length;
     return res;
@@ -81,45 +99,374 @@ v2 v2_normalize(v2 a) {
 
 // }}}
 
-// {{{ v2ui
+// {{{ MFM_Vec2ui
 
-typedef struct v2i {
-    i32 x;
-    i32 y;
-} v2i;
-
-// }}}
-
-// {{{ v2ui
-
-typedef struct v2ui {
-    u32 x;
-    u32 y;
-} v2ui;
+typedef struct MFM_Vec2i {
+    int x;
+    int y;
+} MFM_Vec2i;
 
 // }}}
 
-// {{{ v3
+// {{{ MFM_Vec2ui
 
-typedef union v3 {
+typedef struct MFM_Vec2ui {
+    unsigned int x;
+    unsigned int y;
+} MFM_Vec2ui;
+
+// }}}
+
+// {{{ MFM_Vec3
+
+typedef union MFM_Vec3 {
     struct {
-        f32 x;
-        f32 y;
-        f32 z;
+        float x;
+        float y;
+        float z;
     };
-} v3;
+} MFM_Vec3;
 
+API float MFM_Vec3LengthSquared(MFM_Vec3 a);
+API float MFM_Vec3Length(MFM_Vec3 a);
+API MFM_Vec3 MFM_Vec3All(float value);
+API MFM_Vec3 MFM_Vec3Negate(MFM_Vec3 a);
+API MFM_Vec3 MFM_Vec3Normalize(MFM_Vec3 a);
+API MFM_Vec3 MFM_Vec3Cross(MFM_Vec3 a, MFM_Vec3 b);
+API float MFM_Vec3Dot(MFM_Vec3 a, MFM_Vec3 b);
+API MFM_Vec3 MFM_Vec3Add(MFM_Vec3 a, MFM_Vec3 b);
+API MFM_Vec3 MFM_Vec3Sub(MFM_Vec3 a, MFM_Vec3 b);
+API MFM_Vec3 MFM_Vec3Mul(MFM_Vec3 a, MFM_Vec3 b);
+API MFM_Vec3 MFM_Vec3Div(MFM_Vec3 a, MFM_Vec3 b);
+API MFM_Vec3 MFM_Vec3Scale(MFM_Vec3 a, float b);
+API bool MFM_Vec3NearZero(MFM_Vec3 a);
+
+// }}}
+
+// {{{ MFM_Vec3i
+typedef struct MFM_Vec3i {
+    int x;
+    int y;
+    int z;
+} MFM_Vec3i;
+// }}} MFM_Vec3i
+
+
+// {{{ MFM_Vec4
+
+typedef union MFM_Vec4 {
+    struct {
+        float x;
+        float y;
+        float z;
+        float w;
+    };
+} MFM_Vec4;
+
+// }}}
+
+// {{{ MFM_Mat4
+typedef union MFM_Mat4 {
+    struct {
+        float m[16];
+    };
+} MFM_Mat4;
+
+API MFM_Mat4 MFM_Mat4Identity();
+API MFM_Mat4 MFM_Mat4Translate(MFM_Vec3 offset);
+API MFM_Mat4 MFM_Mat4RotateX(float angle);
+API MFM_Mat4 MFM_Mat4RotateY(float angle);
+API MFM_Mat4 MFM_Mat4RotateZ(float angle);
+API MFM_Mat4 MFM_Mat4Scale(MFM_Vec3 diagonal);
+API MFM_Mat4 MFM_Mat4Ortho(float left, float right, float bottom, float top, float zNear, float zFar);
+API MFM_Mat4 MFM_Mat4Perspective(float left, float right, float bottom, float top, float zNear, float zFar);
+API MFM_Mat4 MFM_Mat4PerspectiveFov(float fov, float aspectRatio, float zNear, float zFar);
+API MFM_Mat4 MFM_Mat4LookAt(MFM_Vec3 eye, MFM_Vec3 at, MFM_Vec3 up);
+API MFM_Mat4 MFM_Mat4Mul(MFM_Mat4 a, MFM_Mat4 b);
+API MFM_Vec3 MFM_Mat4MulVec3(MFM_Mat4 m, MFM_Vec3 v);
+
+// }}}
+
+// {{{ Implementation
+
+#if defined(MF_MATH_IMPLEMENTATION) || defined(MF_IMPLEMENTATION)
+
+// {{{ MFM_Vec3
+//
+
+API float MFM_Vec3LengthSquared(MFM_Vec3 a) {
+    float res = (a.x * a.x) + (a.y * a.y) + (a.z * a.z);
+    return res;
+}
+
+API float MFM_Vec3Length(MFM_Vec3 a) {
+    float res = 0;
+    res = sqrt(MFM_Vec3LengthSquared(a));
+    return res;
+}
+
+API MFM_Vec3 MFM_Vec3All(float value) {
+    return (MFM_Vec3) {value, value, value};
+}
+
+API MFM_Vec3 MFM_Vec3Negate(MFM_Vec3 a) {
+    MFM_Vec3 res = {};
+    res.x = -a.x;
+    res.y = -a.y;
+    res.z = -a.z;
+    return res;
+}
+
+API MFM_Vec3 MFM_Vec3Normalize(MFM_Vec3 a) {
+    MFM_Vec3 res = {};
+    float length = MFM_Vec3Length(a);
+    res.x = a.x / length;
+    res.y = a.y / length;
+    res.z = a.z / length;
+    return res;
+}
+
+API MFM_Vec3 MFM_Vec3Cross(MFM_Vec3 a, MFM_Vec3 b) {
+    MFM_Vec3 res = {};
+    res.x = a.y * b.z - a.z * b.y;
+    res.y = a.z * b.x - a.x * b.z;
+    res.z = a.x * b.y - a.y * b.x;
+    return res;
+}
+
+API float MFM_Vec3Dot(MFM_Vec3 a, MFM_Vec3 b) {
+    float res = 0;
+    res = a.x * b.x + a.y * b.y + a.z * b.z;
+    return res;
+}
+
+API MFM_Vec3 MFM_Vec3Add(MFM_Vec3 a, MFM_Vec3 b) {
+    MFM_Vec3 res;
+    res.x = a.x + b.x;
+    res.y = a.y + b.y;
+    res.z = a.z + b.z;
+    return res;
+}
+
+API MFM_Vec3 MFM_Vec3Sub(MFM_Vec3 a, MFM_Vec3 b) {
+    MFM_Vec3 res;
+    res.x = a.x - b.x;
+    res.y = a.y - b.y;
+    res.z = a.z - b.z;
+    return res;
+}
+
+API MFM_Vec3 MFM_Vec3Mul(MFM_Vec3 a, MFM_Vec3 b) {
+    MFM_Vec3 res;
+    res.x = a.x * b.x;
+    res.y = a.y * b.y;
+    res.z = a.z * b.z;
+    return res;
+}
+
+API MFM_Vec3 MFM_Vec3Div(MFM_Vec3 a, MFM_Vec3 b) {
+    MFM_Vec3 res;
+    res.x = a.x / b.x;
+    res.y = a.y / b.y;
+    res.z = a.z / b.z;
+    return res;
+}
+
+API MFM_Vec3 MFM_Vec3Scale(MFM_Vec3 a, float b) {
+    MFM_Vec3 res;
+    res.x = a.x * b;
+    res.y = a.y * b;
+    res.z = a.z * b;
+    return res;
+}
+
+API bool MFM_Vec3NearZero(MFM_Vec3 a) {
+    const double s = 1e-8;
+    return ((fabs(a.x) < s) && (fabs(a.y) < s) && (fabs(a.z) < s));
+}
+
+// }}}
+
+// {{{ MFM_Mat4
+
+API MFM_Mat4 MFM_Mat4Identity() {
+    MFM_Mat4 res = {0};
+    res.m[0 * 4 + 0] = 1.0f;
+    res.m[1 * 4 + 1] = 1.0f;
+    res.m[2 * 4 + 2] = 1.0f;
+    res.m[3 * 4 + 3] = 1.0f;
+    return res;
+}
+
+API MFM_Mat4 MFM_Mat4Translate(MFM_Vec3 offset) {
+    MFM_Mat4 res = MFM_Mat4Identity();
+    res.m[0 * 4 + 3] = offset.x;
+    res.m[1 * 4 + 3] = offset.y;
+    res.m[2 * 4 + 3] = offset.z;
+    return res;
+}
+
+API MFM_Mat4 MFM_Mat4RotateX(float angle) {
+    MFM_Mat4 res = {0};
+    res.m[0 * 4 + 0] = 1.0f;
+    res.m[1 * 4 + 1] = MFM_Cos(angle);
+    res.m[1 * 4 + 2] = -MFM_Sin(angle);
+    res.m[2 * 4 + 1] = MFM_Sin(angle);
+    res.m[2 * 4 + 2] = MFM_Cos(angle);
+    res.m[3 * 4 + 3] = 1.0f;
+    return res;
+}
+
+API MFM_Mat4 MFM_Mat4RotateY(float angle) {
+    MFM_Mat4 res = {0};
+    res.m[0 * 4 + 0] = MFM_Cos(angle);
+    res.m[0 * 4 + 2] = MFM_Sin(angle);
+    res.m[1 * 4 + 1] = 1.0f;
+    res.m[2 * 4 + 0] = -MFM_Sin(angle);
+    res.m[2 * 4 + 2] = MFM_Cos(angle);
+    res.m[3 * 4 + 3] = 1.0f;
+    return res;
+}
+
+API MFM_Mat4 MFM_Mat4RotateZ(float angle) {
+    MFM_Mat4 res = {0};
+    res.m[0 * 4 + 0] = MFM_Cos(angle);
+    res.m[0 * 4 + 1] = -MFM_Sin(angle);
+    res.m[1 * 4 + 0] = MFM_Sin(angle);
+    res.m[1 * 4 + 1] = MFM_Cos(angle);
+    res.m[2 * 4 + 2] = 1.0f;
+    res.m[3 * 4 + 3] = 1.0f;
+    return res;
+}
+
+API MFM_Mat4 MFM_Mat4Scale(MFM_Vec3 diagonal) {
+    MFM_Mat4 res = {0};
+    res.m[0 * 4 + 0] = diagonal.x;
+    res.m[1 * 4 + 1] = diagonal.y;
+    res.m[2 * 4 + 2] = diagonal.z;
+    res.m[3 * 4 + 3] = 1.0f;
+    return res;
+}
+
+API MFM_Mat4 MFM_Mat4Ortho(float left, float right, float bottom, float top, float zNear, float zFar) {
+	MFM_Mat4 res = {0};
+    res.m[0 * 4 + 0] = 2.0f / (right - left);
+    res.m[0 * 4 + 3] = - (right + left) / (right - left);
+    res.m[1 * 4 + 1] = 2.0f / (top - bottom);
+    res.m[1 * 4 + 3] = - (top + bottom) / (top - bottom);
+    res.m[2 * 4 + 2] = - 2.0f / (zFar - zNear);  // NOTE: OpenGL negation
+    res.m[2 * 4 + 3] = - (zFar + zNear) / (zFar - zNear);
+    res.m[3 * 4 + 3] = 1.0f;
+    return res;
+}
+
+API MFM_Mat4 MFM_Mat4Perspective(float left, float right, float bottom, float top, float zNear, float zFar) {
+    MFM_Mat4 res = {};
+#if 1
+    res.m[0 * 4 + 0] = (2 * zNear) / (right - left);
+    res.m[0 * 4 + 2] = (right + left) / (right - left);
+    res.m[1 * 4 + 1] = (2 * zNear) / (top - bottom);
+    res.m[1 * 4 + 2] = (top + bottom) / (top - bottom);
+    res.m[2 * 4 + 2] = (zNear + zFar) / (zNear - zFar);
+    res.m[2 * 4 + 3] = (2 * zNear * zFar) / (zNear - zFar);
+    res.m[3 * 4 + 2] = -1.0f;
+#else
+    res.m[0 * 4 + 0] = (2 * zNear) / (right - left);
+    res.m[0 * 4 + 2] = (right + left) / (right - left);
+    res.m[1 * 4 + 1] = (2 * zNear) / (top - bottom);
+    res.m[1 * 4 + 2] = (top + bottom) / (top - bottom);
+    res.m[2 * 4 + 2] = (zNear + zFar) / (zNear - zFar);
+    res.m[3 * 4 + 2] = -1.0f;
+#endif
+
+
+    return res;
+}
+
+API MFM_Mat4 MFM_Mat4PerspectiveFov(float fov, float aspectRatio, float zNear, float zFar) {
+    MFM_Mat4 res = {0};
+    float c = 1.0f / tanf(fov / 2.0f);
+    res.m[0 * 4 + 0] = c / aspectRatio;
+    res.m[1 * 4 + 1] = c;
+
+    res.m[2 * 4 + 2] = -(zNear + zFar) / (zNear - zFar);
+    res.m[2 * 4 + 3] = -(2.0f * zNear * zFar) / (zNear - zFar);
+
+    res.m[3 * 4 + 2] = -1.0f;
+
+    return res;
+}
+
+API MFM_Mat4 MFM_Mat4LookAt(MFM_Vec3 eye, MFM_Vec3 at, MFM_Vec3 up) {
+    MFM_Vec3 zaxis = MFM_Vec3Normalize(MFM_Vec3Sub(at, eye));
+    MFM_Vec3 xaxis = MFM_Vec3Normalize(MFM_Vec3Cross(zaxis, up));
+    MFM_Vec3 yaxis = MFM_Vec3Normalize(MFM_Vec3Cross(xaxis, zaxis));
+    // NOTE: negate because Opengl zaxis
+    zaxis = MFM_Vec3Negate(zaxis);
+
+    MFM_Mat4 res = {
+        xaxis.x, xaxis.y, xaxis.z, -MFM_Vec3Dot(xaxis, eye),
+        yaxis.x, yaxis.y, yaxis.z, -MFM_Vec3Dot(yaxis, eye),
+        zaxis.x, zaxis.y, zaxis.z, -MFM_Vec3Dot(zaxis, eye),
+        0.0f, 0.0f, 0.0f, 1.0f,
+    };
+    return res;
+}
+
+API MFM_Mat4 MFM_Mat4Mul(MFM_Mat4 a, MFM_Mat4 b) {
+    MFM_Mat4 res = {0};
+
+#define __Mat4_Calc(x, y) \
+    res.m[y * 4 + x] = a.m[y * 4 + 0] * b.m[0 * 4 + x] + \
+                       a.m[y * 4 + 1] * b.m[1 * 4 + x] + \
+                       a.m[y * 4 + 2] * b.m[2 * 4 + x] + \
+                       a.m[y * 4 + 3] * b.m[3 * 4 + x]
+
+    __Mat4_Calc(0, 0);
+    __Mat4_Calc(1, 0);
+    __Mat4_Calc(2, 0);
+    __Mat4_Calc(3, 0);
+    __Mat4_Calc(0, 1);
+    __Mat4_Calc(1, 1);
+    __Mat4_Calc(2, 1);
+    __Mat4_Calc(3, 1);
+    __Mat4_Calc(0, 2);
+    __Mat4_Calc(1, 2);
+    __Mat4_Calc(2, 2);
+    __Mat4_Calc(3, 2);
+    __Mat4_Calc(0, 3);
+    __Mat4_Calc(1, 3);
+    __Mat4_Calc(2, 3);
+    __Mat4_Calc(3, 3);
+
+#undef __Mat4_Calc
+    return res;
+}
+
+API MFM_Vec3 MFM_Mat4MulVec3(MFM_Mat4 m, MFM_Vec3 v) {
+    MFM_Vec3 res = {0};
+    res.x = m.m[0 * 4 + 0] * v.x +
+            m.m[0 * 4 + 1] * v.y + 
+            m.m[0 * 4 + 2] * v.z +
+            m.m[0 * 4 + 3] * 1.0f;
+    res.y = m.m[1 * 4 + 0] * v.x +
+            m.m[1 * 4 + 1] * v.y + 
+            m.m[1 * 4 + 2] * v.z +
+            m.m[1 * 4 + 3] * 1.0f;
+    res.z = m.m[2 * 4 + 0] * v.x +
+            m.m[2 * 4 + 1] * v.y + 
+            m.m[2 * 4 + 2] * v.z +
+            m.m[2 * 4 + 3] * 1.0f;
+    return res;
+}
+
+// }}}
+
+#endif
 // }}}
 
 #if 0
 
-inline float mfm_to_rad(float degree) {
-    return degree * (M_PI / 180);
-}
-
-inline float mfm_to_degree(float rad) {
-    return rad * (180 / M_PI);
-}
 
 float mfm_lerp(float a, float b, float t);
 
@@ -127,14 +474,14 @@ typedef struct
 {
     float x;
     float y;
-} mfm_v2;
+} mfm_MFM_Vec2;
 
 
-mfm_v2 mfm_v2_subtract(mfm_v2 a, mfm_v2 b);
-mfm_v2 mfm_v2_mul(mfm_v2 a, mfm_v2 b);
-mfm_v2 mfm_v2_scale(mfm_v2 a, float b);
-mfm_v2 mfm_v2_div(mfm_v2 a, mfm_v2 b);
-mfm_v2 mfm_v2_iscale(mfm_v2 a, float b);
+mfm_MFM_Vec2 mfm_MFM_Vec2_subtract(mfm_MFM_Vec2 a, mfm_MFM_Vec2 b);
+mfm_MFM_Vec2 mfm_MFM_Vec2_mul(mfm_MFM_Vec2 a, mfm_MFM_Vec2 b);
+mfm_MFM_Vec2 mfm_MFM_Vec2_scale(mfm_MFM_Vec2 a, float b);
+mfm_MFM_Vec2 mfm_MFM_Vec2_div(mfm_MFM_Vec2 a, mfm_MFM_Vec2 b);
+mfm_MFM_Vec2 mfm_MFM_Vec2_iscale(mfm_MFM_Vec2 a, float b);
 
 
 
@@ -143,14 +490,14 @@ typedef struct
     int x;
     int y;
 
-} mfm_v2i;
+} mfm_MFM_Vec2i;
 
 
-bool mfm_v2_is_equal(mfm_v2 a, mfm_v2 b);
+bool mfm_MFM_Vec2_is_equal(mfm_MFM_Vec2 a, mfm_MFM_Vec2 b);
 
-mfm_v2i mfm_v2i_add(mfm_v2i a, mfm_v2i b);
+mfm_MFM_Vec2i mfm_MFM_Vec2i_add(mfm_MFM_Vec2i a, mfm_MFM_Vec2i b);
 
-union v3f {
+union MFM_Vec3f {
     struct {
         float x;
         float y;
@@ -169,14 +516,8 @@ typedef struct
     float g;
     float b;
     float a;
-} mfm_v4;
+} mfm_MFM_Vec4;
 
-typedef struct
-{
-    int x;
-    int y;
-    int z;
-} mfm_v3i;
 
 
 
@@ -190,23 +531,14 @@ union mfm_rect
         float height;
     };
     struct {
-        mfm_v2 xy;
+        mfm_MFM_Vec2 xy;
         float __ignore3;
         float __ignore4;
     };
     float e[4];
 };
 
-typedef union mfm_m4
-{
-    struct {
-        float m[16];
-    };
-} mfm_m4;
 
-inline mfm_m4 mfm_m4_identity();
-inline mfm_m4 mfm_m4_perspective(float fov, float aspect, float nearr, float farr);
-inline mfm_m4 mfm_m4_look_at(mfm_v3 eye, mfm_v3 center, mfm_v3 up);
 
 
 #ifdef MF_MATH_IMPLEMENTATION
@@ -220,49 +552,49 @@ float mfm_lerp(float a, float b, float t)
 
 
 
-mfm_v2 mfm_v2_subtract(mfm_v2 a, mfm_v2 b)
+mfm_MFM_Vec2 mfm_MFM_Vec2_subtract(mfm_MFM_Vec2 a, mfm_MFM_Vec2 b)
 {
-    mfm_v2 res = {0};
+    mfm_MFM_Vec2 res = {0};
     res.x = a.x - b.x;
     res.y = a.y - b.y;
     return res;
 }
 
-mfm_v2 mfm_v2_mul(mfm_v2 a, mfm_v2 b)
+mfm_MFM_Vec2 mfm_MFM_Vec2_mul(mfm_MFM_Vec2 a, mfm_MFM_Vec2 b)
 {
-    mfm_v2 res = {0};
+    mfm_MFM_Vec2 res = {0};
     res.x = a.x * b.x;
     res.y = a.x * b.y;
     return res;
 }
 
-mfm_v2 mfm_v2_mul(mfm_v2 a, float b)
+mfm_MFM_Vec2 mfm_MFM_Vec2_mul(mfm_MFM_Vec2 a, float b)
 {
-    mfm_v2 res = {0};
+    mfm_MFM_Vec2 res = {0};
     res.x = a.x * b;
     res.y = a.y * b;
     return res;
 }
 
-mfm_v2 mfm_v2_div(mfm_v2 a, mfm_v2 b)
+mfm_MFM_Vec2 mfm_MFM_Vec2_div(mfm_MFM_Vec2 a, mfm_MFM_Vec2 b)
 {
-    mfm_v2 res = {0};
+    mfm_MFM_Vec2 res = {0};
     res.x = a.x / b.x;
     res.y = a.y / b.y;
     return res;
 }
 
-mfm_v2 mfm_v2_div(mfm_v2 a, float b)
+mfm_MFM_Vec2 mfm_MFM_Vec2_div(mfm_MFM_Vec2 a, float b)
 {
-    mfm_v2 res = {0};
+    mfm_MFM_Vec2 res = {0};
     res.x = a.x / b;
     res.y = a.y / b;
     return res;
 }
 
-// mfm_v2
+// mfm_MFM_Vec2
 inline
-bool mfm_v2_is_equal(mfm_v2 a, mfm_v2 b)
+bool mfm_MFM_Vec2_is_equal(mfm_MFM_Vec2 a, mfm_MFM_Vec2 b)
 {
     bool res = a.x == b.x && a.y == b.y;
     return res;
@@ -270,33 +602,22 @@ bool mfm_v2_is_equal(mfm_v2 a, mfm_v2 b)
 
 
 
-// mfm_v3
+// mfm_MFM_Vec3
 
 template <typename T>
-mfm_v3<T> mfm_v3_255_to_1(int r, int g, int b) {
-    mfm_v3<T> res;
+mfm_MFM_Vec3<T> mfm_MFM_Vec3_255_to_1(int r, int g, int b) {
+    mfm_MFM_Vec3<T> res;
     res.x = r / 255.0f;
     res.y = g / 255.0f;
     res.z = b / 255.0f;
     return res;
 }
 
-template <typename T>
-float mfm_v3_length(mfm_v3<T> a) {
-    float res = 0;
-    res = sqrt(mfm_v3_length_squared(a));
-    return res;
-}
 
-template <typename T>
-float mfm_v3_length_squared(mfm_v3<T> a) {
-    float res = (a.x * a.x) + (a.y * a.y) + (a.z * a.z);
-    return res;
-}
 
 template <typename T>
 inline
-float mfm_v3_lerp(float a, float b, float t)
+float mfm_MFM_Vec3_lerp(float a, float b, float t)
 {
     float res = a + (b - a) * t;
     return res;
@@ -304,31 +625,21 @@ float mfm_v3_lerp(float a, float b, float t)
 
 template <typename T>
 inline
-mfm_v3<T> mfm_v3_add(mfm_v3<T> a, mfm_v3<T> b)
+mfm_MFM_Vec3<T> mfm_MFM_Vec3_add(mfm_MFM_Vec3<T> a, mfm_MFM_Vec3<T> b)
 {
-    mfm_v3<T> res;
+    mfm_MFM_Vec3<T> res;
     res.x = a.x + b.x;
     res.y = a.y + b.y;
     res.z = a.z + b.z;
     return res;
 }
 
-template <typename T>
-inline
-mfm_v3<T> mfm_v3_sub(mfm_v3<T> a, mfm_v3<T> b)
-{
-    mfm_v3<T> res;
-    res.x = a.x - b.x;
-    res.y = a.y - b.y;
-    res.z = a.z - b.z;
-    return res;
-}
 
 template <typename T>
 inline
-mfm_v3<T> mfm_v3_mul(mfm_v3<T> a, float b)
+mfm_MFM_Vec3<T> mfm_MFM_Vec3_mul(mfm_MFM_Vec3<T> a, float b)
 {
-    mfm_v3<T> res;
+    mfm_MFM_Vec3<T> res;
     res.x = a.x * b;
     res.y = a.y * b;
     res.z = a.z * b;
@@ -336,9 +647,9 @@ mfm_v3<T> mfm_v3_mul(mfm_v3<T> a, float b)
 }
 
 template <typename T>
-mfm_v3<T> mfm_v3_mul(mfm_v3<T> a, mfm_v3<T> b)
+mfm_MFM_Vec3<T> mfm_MFM_Vec3_mul(mfm_MFM_Vec3<T> a, mfm_MFM_Vec3<T> b)
 {
-    mfm_v3<T> res;
+    mfm_MFM_Vec3<T> res;
     res.x = a.x * b.x;
     res.y = a.y * b.y;
     res.z = a.z * b.z;
@@ -346,66 +657,23 @@ mfm_v3<T> mfm_v3_mul(mfm_v3<T> a, mfm_v3<T> b)
 }
 
 template <typename T>
-mfm_v3<T> mfm_v3_div(mfm_v3<T> a, float b)
+mfm_MFM_Vec3<T> mfm_MFM_Vec3_div(mfm_MFM_Vec3<T> a, float b)
 {
-    mfm_v3<T> res;
+    mfm_MFM_Vec3<T> res;
     res.x = a.x / b;
     res.y = a.y / b;
     res.z = a.z / b;
     return res;
 }
 
-template <typename T>
-float mfm_v3_dot(mfm_v3<T> a, mfm_v3<T> b)
-{
-    float res = 0;
-    res = a.x * b.x + a.y * b.y + a.z * b.z;
-    return res;
-}
 
-template <typename T>
-mfm_v3<T> mfm_v3_normalize(mfm_v3<T> a)
-{
-    mfm_v3<T> res = {};
-    float length = mfm_v3_length(a);
-    res.x = a.x / length;
-    res.y = a.y / length;
-    res.z = a.z / length;
-    return res;
-}
 
-template <typename T>
-mfm_v3<T> mfm_v3_cross(mfm_v3<T> a, mfm_v3<T> b)
-{
-    mfm_v3<T> res = {};
-    res.x = a.y * b.z - a.z * b.y;
-    res.y = a.z * b.x - a.x * b.z;
-    res.z = a.x * b.y - a.y * b.x;
-    return res;
-}
-
-template <typename T>
-mfm_v3<T> mfm_v3_negate(mfm_v3<T> a)
-{
-    mfm_v3<T> res = {};
-    res.x = -a.x;
-    res.y = -a.y;
-    res.z = -a.z;
-    return res;
-}
-
-template <typename T>
-bool mfm_v3_near_zero(mfm_v3<T> a)
-{
-    const double s = 1e-8;
-    return ((fabs(a.x) < s) && (fabs(a.y) < s) && (fabs(a.z) < s));
-}
 
 template <typename T>
 inline
-mfm_v3<T> mfm_v3_lerp(mfm_v3<T> a, mfm_v3<T> b, float t)
+mfm_MFM_Vec3<T> mfm_MFM_Vec3_lerp(mfm_MFM_Vec3<T> a, mfm_MFM_Vec3<T> b, float t)
 {
-    mfm_v3<T> res = mfm_v3_add(a, mfm_v3_mul(mfm_v3_sub(b, a), t));
+    mfm_MFM_Vec3<T> res = mfm_MFM_Vec3_add(a, mfm_MFM_Vec3_mul(mfm_MFM_Vec3_sub(b, a), t));
     return res;
 }
 
@@ -463,55 +731,55 @@ mfm_rect mfm_rect_margin(mfm_rect r, float left, float top, float right, float b
 // Vector2
 
 inline
-mfm_v2 operator-(mfm_v2 a, mfm_v2 b)
+mfm_MFM_Vec2 operator-(mfm_MFM_Vec2 a, mfm_MFM_Vec2 b)
 {
-    return mfm_v2_subtract(a, b);
+    return mfm_MFM_Vec2_subtract(a, b);
 }
 
 inline
-mfm_v2 operator*(mfm_v2 a, mfm_v2 b)
+mfm_MFM_Vec2 operator*(mfm_MFM_Vec2 a, mfm_MFM_Vec2 b)
 {
-    return mfm_v2_mul(a, b);
+    return mfm_MFM_Vec2_mul(a, b);
 }
 
 inline
-mfm_v2 operator*(mfm_v2 a, float b)
+mfm_MFM_Vec2 operator*(mfm_MFM_Vec2 a, float b)
 {
-    return mfm_v2_mul(a, b);
+    return mfm_MFM_Vec2_mul(a, b);
 }
 
 inline
-mfm_v2 operator/(mfm_v2 a, mfm_v2 b)
+mfm_MFM_Vec2 operator/(mfm_MFM_Vec2 a, mfm_MFM_Vec2 b)
 {
-    return mfm_v2_div(a, b);
+    return mfm_MFM_Vec2_div(a, b);
 }
 
 inline
-mfm_v2 operator/(mfm_v2 a, float b)
+mfm_MFM_Vec2 operator/(mfm_MFM_Vec2 a, float b)
 {
-    return mfm_v2_div(a, b);
+    return mfm_MFM_Vec2_div(a, b);
 }
 
 inline
-bool operator==(mfm_v2 a, mfm_v2 b)
+bool operator==(mfm_MFM_Vec2 a, mfm_MFM_Vec2 b)
 {
-    return mfm_v2_is_equal(a, b);
+    return mfm_MFM_Vec2_is_equal(a, b);
 }
 
 inline
-bool operator!=(mfm_v2 a, mfm_v2 b)
+bool operator!=(mfm_MFM_Vec2 a, mfm_MFM_Vec2 b)
 {
-    return !mfm_v2_is_equal(a, b);
+    return !mfm_MFM_Vec2_is_equal(a, b);
 }
 
 inline
-mfm_v2i operator+(mfm_v2i a, mfm_v2i b)
+mfm_MFM_Vec2i operator+(mfm_MFM_Vec2i a, mfm_MFM_Vec2i b)
 {
-    return mfm_v2i_add(a, b);
+    return mfm_MFM_Vec2i_add(a, b);
 }
 
 inline
-mfm_v2i& operator+=(mfm_v2i& a, mfm_v2i& b)
+mfm_MFM_Vec2i& operator+=(mfm_MFM_Vec2i& a, mfm_MFM_Vec2i& b)
 {
     a = a + b;
     return a;
@@ -520,143 +788,72 @@ mfm_v2i& operator+=(mfm_v2i& a, mfm_v2i& b)
 // Vector 3
 template <typename T>
 inline
-mfm_v3<T> operator+(mfm_v3<T> a, mfm_v3<T> b)
+mfm_MFM_Vec3<T> operator+(mfm_MFM_Vec3<T> a, mfm_MFM_Vec3<T> b)
 {
-    return mfm_v3_add(a, b);
+    return mfm_MFM_Vec3_add(a, b);
 }
 
 template <typename T>
 inline
-mfm_v3<T> operator-(mfm_v3<T> a, mfm_v3<T> b)
+mfm_MFM_Vec3<T> operator-(mfm_MFM_Vec3<T> a, mfm_MFM_Vec3<T> b)
 {
-    return mfm_v3_sub(a, b);
+    return mfm_MFM_Vec3_sub(a, b);
 }
 
 template <typename T>
 inline
-mfm_v3<T> operator*(mfm_v3<T> a, float b)
+mfm_MFM_Vec3<T> operator*(mfm_MFM_Vec3<T> a, float b)
 {
-    return mfm_v3_mul(a, b);
+    return mfm_MFM_Vec3_mul(a, b);
 }
 
 template <typename T>
 inline
-mfm_v3<T> operator*(float b, mfm_v3<T> a)
+mfm_MFM_Vec3<T> operator*(float b, mfm_MFM_Vec3<T> a)
 {
-    return mfm_v3_mul(a, b);
+    return mfm_MFM_Vec3_mul(a, b);
 }
 
 template <typename T>
 inline
-mfm_v3<T> operator*(mfm_v3<T> a, double b)
+mfm_MFM_Vec3<T> operator*(mfm_MFM_Vec3<T> a, double b)
 {
-    return mfm_v3_mul(a, b);
+    return mfm_MFM_Vec3_mul(a, b);
 }
 
 template <typename T>
 inline
-mfm_v3<T> operator*(double b, mfm_v3<T> a)
+mfm_MFM_Vec3<T> operator*(double b, mfm_MFM_Vec3<T> a)
 {
-    return mfm_v3_mul(a, b);
+    return mfm_MFM_Vec3_mul(a, b);
 }
 
 template <typename T>
 inline
-mfm_v3<T> operator*(mfm_v3<T> a, mfm_v3<T> b)
+mfm_MFM_Vec3<T> operator*(mfm_MFM_Vec3<T> a, mfm_MFM_Vec3<T> b)
 {
-    return mfm_v3_mul(a, b);
+    return mfm_MFM_Vec3_mul(a, b);
 }
 
 template <typename T>
 inline
-mfm_v3<T> operator/(mfm_v3<T> a, T b)
+mfm_MFM_Vec3<T> operator/(mfm_MFM_Vec3<T> a, T b)
 {
-    return mfm_v3_div(a, b);
+    return mfm_MFM_Vec3_div(a, b);
 }
 
-mfm_m4 mfm_m4_identity()
-{
-    mfm_m4 res = {};
-    res.m[0 * 4 + 0] = 1.0f;
-    res.m[1 * 4 + 1] = 1.0f;
-    res.m[2 * 4 + 2] = 1.0f;
-    res.m[3 * 4 + 3] = 1.0f;
-    return res;
-}
-
-inline mfm_m4 mfm_m4_ortho(float left, float right, float bottom, float top, float nearr, float farr) {
-	mfm_m4 res = {};
-
-    res.m[0 * 4 + 0] = 2.0f / (right - left);
-    res.m[1 * 4 + 1] = 2.0f / (top - bottom);
-    res.m[2 * 4 + 2] = 2.0f / (nearr - farr);
-    res.m[2 * 4 + 2] = 2.0f / nearr;
-    res.m[3 * 4 + 3] = 1.0f;
-
-    res.m[3 * 4 + 0] = (left + right) / (left - right);
-    res.m[3 * 4 + 1] = (bottom + top) / (bottom - top);
-    res.m[3 * 4 + 2] = (farr + nearr) / (nearr - farr);
-
-    return res;
-}
-
-inline mfm_m4 mfm_m4_perspective(float fov, float aspect, float nearr, float farr)
-{
-    mfm_m4 res = {};
-    //  TODO: this is column-major?
-#if 0 
-    // without aspect
-    float s = 1.0f / tanf(fov * (M_PI / 360.0f));
-    res.m[0 * 4 + 0] = s;
-    res.m[1 * 4 + 1] = s;
-
-    res.m[2 * 4 + 2] = -farr / (farr - nearr);
-    res.m[2 * 4 + 3] = -1.0f;
-
-    res.m[3 * 4 + 2] = -(farr * nearr) / (farr - nearr);
-    float c = 1.0f / (tanf(fov * (M_PI / 360.0f)));
-    res.m[0 * 4 + 0] = c / aspect;
-    res.m[1 * 4 + 1] =  c;
-
-    res.m[2 * 4 + 2] = (nearr + farr) / (nearr - farr);
-    res.m[2 * 4 + 3] = -1.0f;
-
-    res.m[2 * 4 + 2] = (2.0f * farr * nearr) / (nearr - farr);
-
-#else
-    float c = 1.0f / (tanf(fov * (M_PI / 360.0f)));
-    res.m[0 * 4 + 0] = c / aspect;
-
-    res.m[1 * 4 + 1] = c;
-
-    res.m[2 * 4 + 2] = -((farr + nearr) / (farr - nearr));
-    res.m[2 * 4 + 3] = -((2 * farr * nearr) / (farr - nearr));
-
-    res.m[3 * 4 + 2] = -1;
-#endif
-    return res;
-}
-
-template <typename T>
-inline mfm_m4 mfm_m4_look_at(mfm_v3<T> eye, mfm_v3<T> center, mfm_v3<T> up)
-{
-    mfm_v3<T> zaxis = mfm_v3_normalize(center - eye);
-    mfm_v3<T> xaxis = mfm_v3_normalize(mfm_v3_cross(zaxis, up));
-    mfm_v3<T> yaxis = mfm_v3_normalize(mfm_v3_cross(xaxis, zaxis));
-    // NOTE: negate because Opengl zaxis
-    zaxis = mfm_v3_negate(zaxis);
-
-    mfm_m4 res = {
-        xaxis.x, xaxis.y, xaxis.z, -mfm_v3_dot(xaxis, eye),
-        yaxis.x, yaxis.y, yaxis.z, -mfm_v3_dot(yaxis, eye),
-        zaxis.x, zaxis.y, zaxis.z, -mfm_v3_dot(zaxis, eye),
-        0.0f, 0.0f, 0.0f, 1.0f,
-    };
-    return res;
-}
 
 #endif
 #endif
+#endif
+
+#undef API
+
+#ifdef MF_MATH_SHORT_NAMES
+typedef MFM_Vec2 Vec2;
+typedef MFM_Vec3 Vec3;
+typedef MFM_Vec4 Vec4;
+typedef MFM_Mat4 Mat4;
 #endif
 
 #endif // MF_MATH_H

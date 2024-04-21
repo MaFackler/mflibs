@@ -2,32 +2,32 @@
 
 #include <mf_vector.h>
 
-TEST(mf_vec) {
+TEST(MF_Vec) {
     int* arr = NULL;
-    CHECK_EQ(mf_vec_size(arr), 0);
-    CHECK_EQ(mf__vec_capacity(arr), 0);
+    CHECK_EQ(MF_VecLen(arr), 0);
+    CHECK_EQ(MF_VecCapacity(arr), 0);
 
-    mf_vec_push(arr, 1);
-    CHECK_EQ(mf_vec_size(arr), 1);
-    CHECK_EQ(mf__vec_capacity(arr), 2);
+    MF_VecPush(arr, 1);
+    CHECK_EQ(MF_VecLen(arr), 1);
+    CHECK_EQ(MF_VecCapacity(arr), 2);
 
-    mf_vec_push(arr, 2);
-    CHECK_EQ(mf_vec_size(arr), 2);
-    CHECK_EQ(mf__vec_capacity(arr), 2);
+    MF_VecPush(arr, 2);
+    CHECK_EQ(MF_VecLen(arr), 2);
+    CHECK_EQ(MF_VecCapacity(arr), 2);
 
-    *mf_vec_add(arr) = 3;
-    CHECK_EQ(mf_vec_size(arr), 3);
-    CHECK_EQ(mf__vec_capacity(arr), 6);
+    *MF_VecAdd(arr) = 3;
+    CHECK_EQ(MF_VecLen(arr), 3);
+    CHECK_EQ(MF_VecCapacity(arr), 6);
 
     CHECK_EQ(arr[0], 1);
     CHECK_EQ(arr[1], 2);
     CHECK_EQ(arr[2], 3);
 
-    mf_vec_for(arr) {
+    MF_VecFor(arr) {
         int dummy = *it;
     }
 
-    mf_vec_clear(arr);
-    CHECK_EQ(mf_vec_size(arr), 0);
+    MF_VecClear(arr);
+    CHECK_EQ(MF_VecLen(arr), 0);
 }
 

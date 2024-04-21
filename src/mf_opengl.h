@@ -1,36 +1,39 @@
 #ifndef MF_OPENGL_H
 #define MF_OPENGL_H
 #include <stdio.h>
+#include <stdbool.h>
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <GL/gl.h>
 
-// NOTE: opengl code should be included by platform
+
+#define API static inline
+typedef GLuint MFGL_ShaderId;
+typedef GLuint MFGL_ProgramId;
+typedef GLuint MFGL_TextureId;
 
 
 // glEnable/glDisable wrappers
 void mfgl_texture(bool value);
 void mfgl_blend(bool value);
-void mfgl_wireframe(bool value);
-
-
+API void MFGL_SetWireframe(bool value);
 
 
 // Shaders
-unsigned int mfgl_shader_vertex_create(const char *vs);
-unsigned int mfgl_shader_fragment_create(const char *fs);
-unsigned int mfgl_shader_program_create(unsigned int vs, unsigned int fs);
-void mfgl_shader_program_use(unsigned int program);
-void mfgl_shader_delete(unsigned int id);
-unsigned int mfgl_shader_uniform_location(unsigned int shader, const char *name);
-void mfgl_shader_uniform_4f(unsigned int location, float a, float b, float c, float d);
-void mfgl_shader_uniform_1i(unsigned int location, int a);
-void mfgl_shader_uniform_4fv(unsigned int location, unsigned int count, float *data);
+API MFGL_ShaderId MFGL_ShaderCreate(const char *vs, GLenum type);
+API void MFGL_ShaderDelete(MFGL_ShaderId id);
+API MFGL_ProgramId MFGL_ProgramCreate(MFGL_ShaderId vs, MFGL_ShaderId fs);
+API MFGL_ProgramId MFGL_ProgramCreateVsFs(const char *vs, const char *fs);
+API void MFGL_ProgramUse(MFGL_ProgramId program);
+API unsigned int MFGL_ProgramUniformLocation(MFGL_ProgramId program, const char *name);
+API void MFGL_ProgramSetUniform1i(unsigned int location, int a);
+API void MFGL_ProgramSetUniform4f(unsigned int location, float a, float b, float c, float d);
+API void MFGL_ProgramSetUniform4fv(unsigned int location, unsigned int count, bool transpose, float *data);
 
 
 // Textures
-unsigned int mfgl_texture_create_argb(int width, int height, unsigned char *data);
-unsigned int mfgl_texture_create_alpha(int width, int height, unsigned char *data);
-void mfgl_texture_bind(unsigned int id);
+API MFGL_TextureId MFGL_TextureCreate(int width, int height, GLenum targetFormat, GLenum sourceFormat, unsigned char *data);
+API void MFGL_TextureBind(MFGL_TextureId id);
 
 // Vertex Buffer
 unsigned int mfgl_vertex_buffer_create(float *vertices, int n);
@@ -55,7 +58,7 @@ void mfgl_vertex_array_bind(unsigned int vao);
 void mfgl_error_check();
 
 
-#ifdef MF_OPENGL_IMPLEMENTATION
+#if defined(MF_OPENGL_IMPLEMENTATION) || defined(MF_IMPLEMENTATION)
 
 void mfgl_texture(bool value)
 {
@@ -76,27 +79,17 @@ void mfgl_blend(bool value)
     }
 }
 
-void mfgl_wireframe(bool value)
-{
-    if (value)
+API void MFGL_SetWireframe(bool value) {
+    if (value) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    else
+    } else {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
+    }
 }
 
-
-
-
-
-
-
-
-
-unsigned int mfgl_shader_vertex_create(const char *vs)
-{
-    unsigned int res;
-    res = glCreateShader(GL_VERTEX_SHADER);
+API MFGL_ShaderId MFGL_ShaderCreate(const char *vs, GLenum type) {
+    MFGL_ShaderId res;
+    res = glCreateShader(type);
     glShaderSource(res, 1, &vs, NULL);
     glCompileShader(res);
 
@@ -106,34 +99,27 @@ unsigned int mfgl_shader_vertex_create(const char *vs)
     if (!success)
     {
         glGetShaderInfoLog(res, 512, NULL, info);
-        printf("%s", info);
+        const char *shaderName = "UNKNOWN";
+        switch (type) {
+            case GL_FRAGMENT_SHADER:
+                shaderName = "Fragment";
+                break;
+            case GL_VERTEX_SHADER:
+                shaderName = "Vertex";
+                break;
+        }
+        fprintf(stderr, "ERROR compiling %s shader:\n%s", shaderName, info);
         exit(1);
     }
     return res;
 }
 
-unsigned int mfgl_shader_fragment_create(const char *fs)
-{
-    unsigned int res;
-    // Fragment shader
-    res = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(res, 1, &fs, NULL);
-    glCompileShader(res);
-    int success = 0;
-    char info[512];
-    glGetShaderiv(res, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(res, 512, NULL, info);
-        printf("%s", info);
-        exit(1);
-    }
-    return res;
+void MFGL_ShaderDelete(unsigned int id) {
+    glDeleteShader(id);
 }
 
-unsigned int mfgl_shader_program_create(unsigned int vs, unsigned int fs)
-{
-    unsigned int res;
+API MFGL_ProgramId MFGL_ProgramCreate(MFGL_ShaderId vs, MFGL_ShaderId fs) {
+    MFGL_ProgramId res;
     res = glCreateProgram();
     glAttachShader(res, vs);
     glAttachShader(res, fs);
@@ -142,43 +128,42 @@ unsigned int mfgl_shader_program_create(unsigned int vs, unsigned int fs)
     int success = 0;
     char info[512];
     glGetProgramiv(res, GL_LINK_STATUS, &success);
-    if (!success)
-    {
-        glGetShaderInfoLog(res, 512, NULL, info);
-        printf("%s", info);
+    if (!success) {
+        glGetProgramInfoLog(res, 512, NULL, info);
+        fprintf(stderr, "ERROR creating shader program:\n%s", info);
         exit(1);
     }
     return res;
 }
 
-void mfgl_shader_program_use(unsigned int program)
-{
+API MFGL_ProgramId MFGL_ProgramCreateVsFs(const char *vs, const char *fs) {
+    MFGL_ShaderId shaderVs = MFGL_ShaderCreate(vs, GL_VERTEX_SHADER);
+    MFGL_ShaderId shaderFs = MFGL_ShaderCreate(fs, GL_FRAGMENT_SHADER);
+    MFGL_ProgramId res = MFGL_ProgramCreate(shaderVs, shaderFs);
+    MFGL_ShaderDelete(shaderVs);
+    MFGL_ShaderDelete(shaderFs);
+    return res;
+}
+
+void MFGL_ProgramUse(unsigned int program) {
     glUseProgram(program);
 }
 
-void mfgl_shader_delete(unsigned int id)
-{
-    glDeleteShader(id);
+
+API unsigned int MFGL_ProgramUniformLocation(MFGL_ProgramId program, const char *name) {
+    return glGetUniformLocation(program, name);
 }
 
-unsigned int mfgl_shader_uniform_location(unsigned int shader, const char *name)
-{
-    return glGetUniformLocation(shader, name);
-}
-
-void mfgl_shader_uniform_4f(unsigned int location, float a, float b, float c, float d)
-{
-    glUniform4f(location, a, b, c, d);
-}
-
-void mfgl_shader_uniform_1i(unsigned int location, int a)
-{
+API void MFGL_ProgramSetUniform1i(unsigned int location, int a) {
     glUniform1i(location, a);
 }
 
-void mfgl_shader_uniform_4fv(unsigned int location, unsigned int count, float *data)
-{
-    glUniformMatrix4fv(location, count, GL_FALSE, data);
+API void MFGL_ProgramSetUniform4f(unsigned int location, float a, float b, float c, float d) {
+    glUniform4f(location, a, b, c, d);
+}
+
+API void MFGL_ProgramSetUniform4fv(unsigned int location, unsigned int count, bool transpose, float *data) {
+    glUniformMatrix4fv(location, count, transpose, data);
 }
 
 void mfgl_vertex_attrib_link(unsigned int location, int size, int start, int stride)
@@ -194,49 +179,15 @@ void mfgl_vertex_buffer_draw(unsigned int vbo, int n)
     glDrawArrays(GL_TRIANGLES, 0, n);
 }
 
-unsigned int mfgl_texture_create_argb(int width, int height, unsigned char *data)
-{
-    unsigned int id;
-    glGenTextures(1, &id);
-    //glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, id);
-    //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8,
-                 width, height, 0, GL_BGRA,
-                 GL_UNSIGNED_BYTE, data);
-
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    return id;
+API MFGL_TextureId MFGL_TextureCreate(int width, int height, GLenum targetFormat, GLenum sourceFormat, unsigned char *data) {
+    unsigned int res;
+    glGenTextures(1, &res);
+    glBindTexture(GL_TEXTURE_2D, res);
+    glTexImage2D(GL_TEXTURE_2D, 0, targetFormat, width, height, 0, sourceFormat, GL_UNSIGNED_BYTE, data);
+    return res;
 }
 
-unsigned int mfgl_texture_create_alpha(int width, int height, unsigned char *data)
-{
-    unsigned int id = 0;
-    //glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, id);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA,
-                 width, height, 0, GL_ALPHA,
-                 GL_UNSIGNED_BYTE, data);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    return id;
-}
-
-void mfgl_texture_bind(unsigned int id)
-{
+API void MFGL_TextureBind(MFGL_TextureId id) {
     glBindTexture(GL_TEXTURE_2D, id);
 }
 

@@ -1,6 +1,7 @@
 #ifndef MF_FONT_H
 #define MF_FONT_H
 
+#if 0
 #include <assert.h>
 #include "mf.h"
 #ifdef _WIN32
@@ -173,5 +174,5 @@ void mffo__font_load_chars(mffo_font *font, FT_Face &face) {
 #endif // _WIN32
 
 #endif // MF_FONT_IMPLEMENTATION
-
+#endif
 #endif // MF_FONT_H

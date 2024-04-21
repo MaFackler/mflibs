@@ -14,6 +14,8 @@
 #include <dirent.h>
 #endif
 
+#define API static inline
+
 // {{{ Macros
 #define MF_PATH_SEPARATOR_WINDOWS '\\'
 #define MF_PATH_SEPARATOR_UNIX '/'
@@ -28,27 +30,27 @@
 // {{{ Declarations
 
 // -- {{{ General
-bool mff_is_file(const char *filename);
+API bool MFF_IsFile(const char *filename);
 // -- }}}
 
 // -- {{{ Path
-char* mff_path_join_create(const char *a, const char *b, char separator);
+API char* MFF_PathJoinCreate(const char *a, const char *b, char separator);
 // -- }}}
 
 // -- {{{ File
-char* mff_file_read(const char *path, const char *mode, size_t *size);
-void mff_file_copy(const char *src, const char *dest);
-long unsigned int mff_file_get_last_write_time(const char *filename);
+API char* MFF_FileRead(const char *path, const char *mode, size_t *size);
+API void MFF_FileCopy(const char *src, const char *dest);
+API long unsigned int MFF_FileGetWriteTime(const char *filename);
 // -- }}}
 
 // -- {{{ Directory
 typedef struct MFF_PathItem MFF_PathItem;
 typedef struct MFF_Directory MFF_Directory;
-bool mff_directory_open(MFF_Directory *dir, const char* name, bool recursive);
-bool mff_directory_next(MFF_Directory *dir, MFF_PathItem *item);
-void mff_directory_close(MFF_Directory *dir);
-bool mff_path_item_is_directory(MFF_PathItem *item);
-bool mff_path_item_is_file(MFF_PathItem *item);
+API bool MFF_DirectoryOpen(MFF_Directory *dir, const char* name, bool recursive);
+API bool MFF_DirectoryNext(MFF_Directory *dir, MFF_PathItem *item);
+API void MFF_DirectoryClose(MFF_Directory *dir);
+API bool MFF_PathItemIsDirectory(MFF_PathItem *item);
+API bool MFF_PathItemIsFile(MFF_PathItem *item);
 // -- }}}
 
 // }}}
@@ -58,7 +60,7 @@ bool mff_path_item_is_file(MFF_PathItem *item);
 // {{{ Definitions
 
 // -- {{{ General
-bool mff_is_file(const char *filename) {
+API bool MFF_IsFile(const char *filename) {
     bool res = false;
 #ifdef WIN32
     WIN32_FIND_DATA data;
@@ -87,7 +89,7 @@ bool mff_is_file(const char *filename) {
 // -- }}}
 
 // -- {{{ Path
-char* mff_path_join_create(const char *a, const char *b, char separator) {
+API char* MFF_PathJoinCreate(const char *a, const char *b, char separator) {
     char *res = (char *) malloc(strlen(a) + strlen(b) + 2);
     sprintf(res, "%s%c%s", a, separator, b);
     return res;
@@ -95,7 +97,7 @@ char* mff_path_join_create(const char *a, const char *b, char separator) {
 // -- }}}
 
 // -- {{{ File
-char* mff_file_read(const char *path, const char *mode, size_t *size) {
+API char* MFF_FileRead(const char *path, const char *mode, size_t *size) {
     FILE *file = fopen(path, mode);
     size_t bytesToRead = 0;
     fseek(file, 0, SEEK_END);
@@ -113,7 +115,7 @@ char* mff_file_read(const char *path, const char *mode, size_t *size) {
     return res;
 }
 
-void mff_file_copy(const char *src, const char *dest) {
+API void MFF_FileCopy(const char *src, const char *dest) {
 #ifdef WIN32
     int res = CopyFile(src, dest, 0);
     assert(res != 0);
@@ -140,7 +142,7 @@ void mff_file_copy(const char *src, const char *dest) {
 }
 
 
-long unsigned int mff_file_get_last_write_time(const char *filename) {
+API long unsigned int MFF_FileGetWriteTime(const char *filename) {
     long unsigned int res = 0;
 #ifdef WIN32
     WIN32_FILE_ATTRIBUTE_DATA data;
@@ -186,7 +188,7 @@ struct MFF_Directory {
 
 
 
-bool mff_directory_open(MFF_Directory *dir, const char *name, bool recursive) {
+API bool MFF_DirectoryOpen(MFF_Directory *dir, const char *name, bool recursive) {
     bool res = false;
 #ifdef WIN32
     char buffer[256];
@@ -201,7 +203,7 @@ bool mff_directory_open(MFF_Directory *dir, const char *name, bool recursive) {
     return res;
 }
 
-bool mff_directory_next(MFF_Directory *dir, MFF_PathItem *item) {
+API bool MFF_DirectoryNext(MFF_Directory *dir, MFF_PathItem *item) {
     bool res = false;
 #ifdef WIN32
     if (dir->firstOne) {
@@ -246,7 +248,7 @@ bool mff_directory_next(MFF_Directory *dir, MFF_PathItem *item) {
     return res;
 }
 
-void mff_directory_close(MFF_Directory *dir) {
+API void MFF_DirectoryClose(MFF_Directory *dir) {
 #ifdef WIN32
     FindClose(dir->handle);
 #else
@@ -254,13 +256,11 @@ void mff_directory_close(MFF_Directory *dir) {
 #endif
 }
 
-inline
-bool mff_path_item_is_directory(MFF_PathItem *item) {
+API bool MFF_PathItemIsDirectory(MFF_PathItem *item) {
     return item->type == PATH_ITEM_DIRECTORY;
 }
 
-inline
-bool mff_path_item_is_file(MFF_PathItem *item) {
+API bool MFF_PathItemIsFile(MFF_PathItem *item) {
     return item->type == PATH_ITEM_FILE;
 }
 

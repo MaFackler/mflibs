@@ -1,123 +1,182 @@
+#define MF_IMPLEMENTATION
+#define MF_SHORT_NAMES
 #include "mf.h"
-#define MF_PLATFORM_USE_OPENGL
-#define MF_PLATFORM_IMPLEMENTATION
 #include "mf_platform.h"
-
-#define MF_OPENGL_IMPLEMENTATION
+#include "mf_platform_opengl.h"
 #include "mf_opengl.h"
-
-#define MF_MATH_IMPLEMENTATION
+#define MF_MATH_SHORT_NAMES
 #include "mf_math.h"
+#include "HandmadeMath.h"
 
-typedef mfm_v3<float> v3;
-typedef mfm_v4 v4;
-typedef unsigned int u32;
+#pragma comment(lib, "GL")
+#pragma comment(lib, "X11")
 
 const char *VS_SRC = R"(
-#version 460 core
+#version 330 core
 layout (location = 0) in vec3 aPosition;
 layout (location = 1) in vec4 aColor;
 out vec4 fColor;
-uniform mat4 transform;
-uniform mat4 perspective;
+uniform mat4 model;
 uniform mat4 view;
+uniform mat4 perspective;
 
 void main() {
     fColor = aColor;
-    gl_Position = perspective * view * (transform * vec4(aPosition, 1.0f));
+    gl_Position = perspective * view * model * vec4(aPosition, 1.0f);
 })";
 
 const char *FS_SRC = R"(
-#version 460 core
+#version 330 core
 out vec4 FragColor;
 
 in vec4 fColor;
 
 void main() {
-    FragColor = fColor;
+    // FragColor = fColor;
+    FragColor = vec4(0.0f, 1.0, 0.0f, 1.0f);
 })";
 
 
-struct Vertex {
-    v3 pos;
-    v4 color;
-};
+typedef struct Vertex {
+    Vec3 pos;
+    Vec4 color;
+} Vertex;
+
 
 int main() {
-    mfp_platform p = {};
+    MFP_Platform p = {};
 
-    const int width = 1280;
-    const int height = 720;
+    const int width = 800;
+    const int height = 800;
     const char *title = "Craft";
-    mfp_init(&p);
-    mfp_window_open(&p, title, 0, 0, width, height);
+    MFP_Init(&p);
+    MFP_InitOpengl(&p);
+    MFP_WindowOpen(&p, title, 300, 50, width, height);
     //glViewport(0, 0, width, height);
 
 
-    float z = 10.0f;
+    float z = -5.0f;
+    float y = 1.0f;
     Vertex data[] = {
-        {v3{-0.5f, -0.5f, z}, v4{0.9f, 0.8f, 0.2f, 1.0f}},
-        {v3{-0.5f, 0.5f, z}, v4{0.2f, 0.9f, 0.8f, 1.0f}},
-        {v3{0.5f, -0.5f, z}, v4{0.9f, 0.2f, 0.8f, 1.0f}},
-        {v3{0.5f, 0.5f, z}, v4{0.9f, 0.2f, 0.8f, 1.0f}},
+        (Vertex) {(Vec3) {-0.5f, -y, z}, (Vec4) {0.9f, 0.8f, 0.2f, 1.0f}},
+        (Vertex) {(Vec3) {-0.5f, y, z}, (Vec4) {0.2f, 0.9f, 0.8f, 1.0f}},
+        (Vertex) {(Vec3) {0.5f, -y, z}, (Vec4) {0.9f, 0.2f, 0.8f, 1.0f}},
+        // (Vertex) {(v3) {0.5f, 0.5f, z}, (v4) {0.9f, 0.2f, 0.8f, 1.0f}},
     };
+#if 0
     u32 vao = mfgl_vertex_array_create();
-    mfgl_vertex_buffer_bind(vao);
+    mfgl_vertex_array_bind(vao);
     u32 vb = mfgl_vertex_buffer_create((float *) &data[0], 3 * 4 * 3);
     mfgl_vertex_buffer_bind(vb);
     mfgl_vertex_attrib_link(0, 3, 0, 7);
     mfgl_vertex_attrib_link(1, 4, 3, 7);
-    mfgl_vertex_buffer_bind(0);
+    mfgl_vertex_buffer_bin0);
 
     u32 indices[] = {0, 1, 2, 1, 3, 2};
     u32 ib = mfgl_element_buffer_create(&indices[0], MF_ArrayLength(indices));
 
-    u32 vs = mfgl_shader_vertex_create(VS_SRC);
-    u32 fs = mfgl_shader_fragment_create(FS_SRC);
-    u32 program = mfgl_shader_program_create(vs, fs);
-    mfgl_shader_delete(vs);
-    mfgl_shader_delete(fs);
-    mfgl_shader_program_use(program);
+#endif
+    MFGL_ProgramId program = MFGL_ProgramCreateVsFs(VS_SRC, FS_SRC);
+    MFGL_ProgramUse(program);
 
-    u32 location_transform = mfgl_shader_uniform_location(program, "transform");
-    mfm_m4 transform = mfm_m4_identity();
-    mfgl_shader_uniform_4fv(location_transform, 1, &transform.m[0]);
+    Mat4 identity = MFM_Mat4Identity();
+    // debug_sendbegin("loop");
+    u32 locationModel = MFGL_ProgramUniformLocation(program, "model");
+    u32 locationView = MFGL_ProgramUniformLocation(program, "view");
+    u32 locationPerspective = MFGL_ProgramUniformLocation(program, "perspective");
+    
 
-    u32 location_perspective = mfgl_shader_uniform_location(program, "perspective");
-    mfm_m4 perspective = mfm_m4_perspective(60.0f, 16.0f/9.0f, 0.0001f, 100);
-    mfgl_shader_uniform_4fv(location_perspective, 1, (float *) &perspective.m);
+    MFGL_ProgramSetUniform4fv(locationModel, 1, true, &identity.m[0]);
 
-    mfm_m4 view = mfm_m4_look_at<float>({0.0f, 0.0f, 20.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f});
-    u32 location_view = mfgl_shader_uniform_location(program, "view");
-    mfgl_shader_uniform_4fv(location_view, 1, (float *) view.m);
+#if 1
+    // Mat4 perspective = MFM_Mat4Ortho(-1.0f, 1.0f,
+    //                                  -1.0f, 1.0f,
+    //                                  0.01, 100.0f);
+    Mat4 perspective = MFM_Mat4PerspectiveFov(90, width/height, 0.01, 100.0f);
+    MFGL_ProgramSetUniform4fv(locationPerspective, 1, true, (float *) &perspective.m[0]);
+    Vec3 eye = {0, 0, 0};
+    Vec3 at = {0, 0, -10};
+    Vec3 up = {0, 1, 0};
+    Mat4 camera = MFM_Mat4LookAt(eye, at, up);
+    MFGL_ProgramSetUniform4fv(locationView, 1, true, (float *) &camera.m);
+#else
+    HMM_Vec3 eye = {0.0f, 0.0f, 0.0f};
+    HMM_Vec3 at = {0.0f, 0.0f, -100.0f};
+    HMM_Vec3 up = {0.0f, 1.0f, 0.0f};
+    HMM_Mat4 ident = HMM_M4D(1.0f);
+    HMM_Mat4 camera = HMM_LookAt_RH(eye, at, up);
+    mfgl_shader_uniform_4fv(locationView, 1, false, (float *) &camera.Elements[0][0]);
+    // HMM_Mat4 perspective = HMM_Perspective_RH_NO(90, width/height, 1.0f, 10.0f);
+    HMM_Mat4 perspective = HMM_Orthographic_RH_NO(-1.0f, 1.0f,
+                                            -1.0f, 1.0f,
+                                            0.01, 100.0f);
+    mfgl_shader_uniform_4fv(locationPerspective, 1, false, (float *) &perspective.Elements[0]);
+#endif
+
+
     mfgl_error_check();
 
     bool running = true;
     while (running && p.window.isOpen) {
-        mfp_begin(&p);
+        MFP_Begin(&p);
 
         if (p.input.keys[MF_KEY_ESCAPE].pressed) {
             running = false;
         }
 
         if (p.input.keys['1'].pressed) {
-            mfp_window_toggle_fullscreen(&p);
+            MFP_WindowToggleFullscreen(&p);
         }
 
-        if (p.input.mouseX > 50) {
-            //printf("Mouse is greather that 50.\n");
+        float cameraSpeed = 0.01f;
+#if 1
+        if (p.input.keys[MF_KEY_LEFT].down) {
+            eye.x -= cameraSpeed;
+        } 
+        if (p.input.keys[MF_KEY_RIGHT].down) {
+            eye.x += cameraSpeed;
         }
+        if (p.input.keys[MF_KEY_UP].down) {
+            eye.y += cameraSpeed;
+        } 
+        if (p.input.keys[MF_KEY_DOWN].down) {
+            eye.y -= cameraSpeed;
+        }
+        if (p.input.keys['w'].down) {
+            eye.z -= cameraSpeed;
+            printf("Camera z %f\n", eye.z);
+        }
+        if (p.input.keys['s'].down) {
+            eye.z += cameraSpeed;
+            printf("Camera z %f\n", eye.z);
+        }
+#endif
 
-        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+
+        glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        mfgl_shader_program_use(program);
-        //glDrawArrays(GL_TRIANGLES, 0, 3);
-        glDrawElements(GL_TRIANGLES, MF_ArrayLength(indices), GL_UNSIGNED_INT, 0);
+        camera = MFM_Mat4LookAt(eye, at, up);
+        MFGL_ProgramSetUniform4fv(locationView, 1, true, (float *) &camera.m[0]);
 
-        mfp_end(&p, true);
+        glBegin(GL_TRIANGLES);
+        for (int i = 0; i < MF_ArrayLength(data); ++i) {
+            Vertex *vertex = &data[i];
+            glVertex3f(vertex->pos.x, vertex->pos.y, vertex->pos.z);
+            glColor3f(1.0f, 0.0f, 0.0f);
+        }
+        glEnd();
+
+#if 0
+        mfgl_shader_program_use(program);
+        // glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, MF_ArrayLength(indices), GL_UNSIGNED_INT, 0);
+#endif
+
+        MFP_End(&p, true);
     }
 
-    mfp_window_close(&p);
-    mfp_destroy(&p);
+    MFP_WindowClose(&p);
+    MFP_Destroy(&p);
 }

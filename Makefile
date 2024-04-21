@@ -2,7 +2,7 @@
 OUTDIR=build
 CC=g++
 CFLAGS=-g -Isrc `pkg-config --cflags freetype2`
-LIBS=-lX11 -lGL `pkg-config --libs freetype2` 
+LIBS=-lX11 -lGL `pkg-config --libs freetype2` -lm
 OUTPUT=-o 
 objects=
 
@@ -18,50 +18,43 @@ define grep_libs
 	grep 'pragma comment(lib' $(1) | sed -r 's/#pragma comment\(lib, "(.*)"\)/ -l\1/' | tr -d '\n'
 endef
 
+define compile
+	@echo "Compile $(1) -> $(2)"
+	@libs=`$(call grep_libs, $(1))` \
+	&& gcc -ggdb -DMFT_WITH_MAIN -I./src/ $(1) -o $(2) -lc -lm $$libs
+endef
+
+
 HEADERS=$(wildcard src/*.h)
+IGNORE_SINGLE_COMPILE=src/mf_platform_opengl.h
+
+EXAMPLES=$(wildcard examples/*.c)
+EXAMPLES_BIN=$(subst examples/,build/,$(basename $(EXAMPLES)))
+
 TEST_SOURCES=$(wildcard tests/*.c)
-TESTS_BIN=$(basename $(TEST_SOURCES))
 TESTS_BIN=$(subst tests/,build/,$(basename $(TEST_SOURCES)))
 
 $(info TESTS=$(TESTS_BIN))
+$(info EXAMPLES=$(EXAMPLES_BIN))
 
-top: runtests
 
-all:  build runtests examples
+all: $(EXAMPLES_BIN) | build
 
+.PHONY: test
+test: $(TESTS_BIN)
+	@for t in $(TESTS_BIN); do ./$$t; done
+tdd:
+	ag -l | entr -c -s "make test"
+
+
+# Compiles all headers to check if they compile individually
 compile_headers: $(HEADERS)
-	for header in $(HEADERS); do \
-		gcc -c $$header; \
+	@for header in $(filter-out $(IGNORE_SINGLE_COMPILE),$(HEADERS)); do \
+		gcc -c $$header -o build/single.gch; \
 	done
 
 build:
-	mkdir build
-
-examples: $(OUTDIR)/example-platform $(OUTDIR)/example-platform-opengl
-
-$(OUTDIR)/craft: examples/craft.c $(HEADERS)
-	gcc $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
-
-$(OUTDIR)/debug: examples/debug.c $(HEADERS)
-	gcc $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
-
-$(OUTDIR)/example-platform: examples/example_platform.c $(HEADERS)
-	gcc $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
-
-$(OUTDIR)/example-platform-opengl: examples/example_platform_opengl.c $(HEADERS)
-	gcc $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
-
-$(OUTDIR)/example-renderer: examples/example_renderer.c $(HEADERS)
-	gcc $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
-
-$(OUTDIR)/tetris: examples/tetris.c $(HEADERS)
-	gcc $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS)
-
-$(OUTDIR)/gui: examples/gui.c $(HEADERS)
-	gcc $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $< $(LIBS) `pkg-config --libs freetype2`
-
-$(OUTDIR)/ray: examples/ray.c $(HEADERS)
-	gcc $(OUTPUT)$@ $(call objects, $@) $(CFLAGS) $<
+	@mkdir build
 
 
 .PHONY: runtests
@@ -72,31 +65,14 @@ runtests: $(TESTS_BIN)
 	done
 
 
-
 $(TESTS_BIN): $(TESTS)
 
 build/%: tests/%.c $(HEADERS)
 	@libs=`$(call grep_libs, $<)` \
 	&& gcc -ggdb -DMFT_WITH_MAIN -I./src/ $< -o $@ -lc -lm $$libs
 
-.PHONY: test
-test: $(TESTS_BIN)
-	@for t in $(TESTS_BIN); do ./$$t; done
-
-tdd:
-	ag -l | entr -c -s "make test"
-
-.PHONY: run
-run:
-	$(OUTDIR)/craft
-
-
-# NOTE: this is just to check that the header files will also compile with c99
-# TODO: c99 support?
-$(OUTDIR)/all-in-c: examples/all_in_c.c
-ifneq ($(OS),Windows_NT)
-	gcc $(CFLAGS) -std=c99 $< $(LIBS) -o $@
-endif
+build/%: examples/%.c $(HEADERS)
+	$(call compile,$<,$@) 
 
 clean:
 ifeq ($(OS),Windows_NT)
@@ -104,4 +80,7 @@ ifeq ($(OS),Windows_NT)
 else
 	rm $(OUTDIR)/*
 endif
+
+run:
+	./build/GL05_transforms
 
