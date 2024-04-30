@@ -30,6 +30,8 @@
 // {{{ Declarations
 
 // -- {{{ General
+// TODO: rename to mf_filesystem
+API bool MFF_Exists(const char *target);
 API bool MFF_IsFile(const char *filename);
 // -- }}}
 
@@ -60,6 +62,11 @@ API bool MFF_PathItemIsFile(MFF_PathItem *item);
 // {{{ Definitions
 
 // -- {{{ General
+API bool MFF_Exists(const char *target) {
+    bool res = access(target, F_OK) == 0;
+    return res;
+}
+
 API bool MFF_IsFile(const char *filename) {
     bool res = false;
 #ifdef WIN32

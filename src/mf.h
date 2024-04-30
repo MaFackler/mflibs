@@ -53,6 +53,7 @@ typedef uint64_t u64;
 #define MF_Error(msg, ...) fprintf(stderr, msg, __VA_ARGS__); *(int *) 0 = 0
 #define MF_ErrorIfNull(obj, msg) if (obj == NULL) { MF_Error(msg); }
 #define MF_ArrayLength(arr) (sizeof(arr) / sizeof(arr[0]))
+#define MF_ArrayFor(arr) for (__typeof__(arr[0]) *it = &arr[0]; it != NULL && (it < (arr) + MF_ArrayLength(arr)); ++it)
 #define MF_ArrayZeroOut(arr) (memset(&arr[0], 0, sizeof(arr[0]) * MF_ArrayLength(arr)))
 #define MF_Min(a,b) (((a)<(b))?(a):(b))
 #define MF_Max(a,b) (((a)>(b))?(a):(b))

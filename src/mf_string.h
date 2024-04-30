@@ -35,7 +35,7 @@ API size_t MF_StringCapacity(MF_String s);
 API void MF_StringAppend(MF_String *s, const char *b);
 
 
-#ifdef MF_STRING_IMPLEMENTATION
+#if defined(MF_STRING_IMPLEMENTATION) || defined(MF_IMPLEMENTATION)
 
 
 API MF_String MF__StringFromHeader(MF_StringHeader *header) {

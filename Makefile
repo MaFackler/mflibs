@@ -28,6 +28,9 @@ endef
 HEADERS=$(wildcard src/*.h)
 IGNORE_SINGLE_COMPILE=src/mf_platform_opengl.h
 
+TOOLS=$(wildcard tools/*.c)
+TOOLS_BIN=$(subst tools/,build/,$(basename $(TOOLS)))
+
 EXAMPLES=$(wildcard examples/*.c)
 EXAMPLES_BIN=$(subst examples/,build/,$(basename $(EXAMPLES)))
 
@@ -38,7 +41,9 @@ $(info TESTS=$(TESTS_BIN))
 $(info EXAMPLES=$(EXAMPLES_BIN))
 
 
-all: $(EXAMPLES_BIN) | build
+examples: $(EXAMPLES_BIN)
+tools: $(TOOLS_BIN)
+all: tools example | build
 
 .PHONY: test
 test: $(TESTS_BIN)
@@ -71,7 +76,7 @@ build/%: tests/%.c $(HEADERS)
 	@libs=`$(call grep_libs, $<)` \
 	&& gcc -ggdb -DMFT_WITH_MAIN -I./src/ $< -o $@ -lc -lm $$libs
 
-build/%: examples/%.c $(HEADERS)
+build/%: ./**/%.c $(HEADERS)
 	$(call compile,$<,$@) 
 
 clean:
