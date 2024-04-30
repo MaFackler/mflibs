@@ -41,9 +41,9 @@ $(info TESTS=$(TESTS_BIN))
 $(info EXAMPLES=$(EXAMPLES_BIN))
 
 
+all: build tools examples
 examples: $(EXAMPLES_BIN)
 tools: $(TOOLS_BIN)
-all: tools example | build
 
 .PHONY: test
 test: $(TESTS_BIN)
@@ -58,8 +58,6 @@ compile_headers: $(HEADERS)
 		gcc -c $$header -o build/single.gch; \
 	done
 
-build:
-	@mkdir build
 
 
 .PHONY: runtests
@@ -68,6 +66,9 @@ runtests: $(TESTS_BIN)
 		# echo "RUN TESTS OF " $$test; \
 		./$$test; \
 	done
+
+build:
+	@mkdir -p build
 
 
 $(TESTS_BIN): $(TESTS)

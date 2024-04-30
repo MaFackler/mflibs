@@ -6,7 +6,6 @@
 #include "mf_opengl.h"
 #define MF_MATH_SHORT_NAMES
 #include "mf_math.h"
-#include "HandmadeMath.h"
 
 #pragma comment(lib, "GL")
 #pragma comment(lib, "X11")

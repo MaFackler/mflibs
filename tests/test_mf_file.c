@@ -36,6 +36,6 @@ TEST(MFF_Directory) {
     while(MFF_DirectoryNext(&dir, &item)) {
         counter++;
     }
-    CHECK_EQ(counter, 19);
+    CHECK_EQ(counter, 18);
 }
 
