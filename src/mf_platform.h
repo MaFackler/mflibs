@@ -294,7 +294,7 @@ API void MFP_Init(MFP_Platform *platform) {
     plat->depth = XDefaultDepth(plat->display, plat->screen);
     plat->visual = XDefaultVisual(plat->display, plat->screen);
     plat->colormap = XDefaultColormap(plat->display, plat->screen);
-    XWarpPointer(plat->display, None, plat->root, 0, 0, 0, 0, 0, 0);
+    // XWarpPointer(plat->display, None, plat->root, 0, 0, 0, 0, 0, 0);
     XUngrabPointer(plat->display, CurrentTime);
     XFlush(plat->display);
 }
