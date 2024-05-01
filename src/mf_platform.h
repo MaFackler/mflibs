@@ -51,6 +51,7 @@ API bool MFP_IsKeyPressed(MFP_Platform *platform, char c);
 API bool MFP_IsKeyDown(MFP_Platform *platform, char c);
 API bool MFP_IsKeyReleased(MFP_Platform *platform, char c);
 API float MFP_GetDeltaSec(MFP_Platform *platform);
+API double MFP_GetTimeSec(MFP_Platform *platform);
 API void MFP_SleepMs(long ms);
 
 API void MFP__End(MFP_Platform *platform);
@@ -99,6 +100,7 @@ struct MFP_Window {
 
 struct MFP_Timer {
     unsigned long int ticks;
+    float timeSec;
     float deltaSec;
     float fps;
 };
@@ -163,6 +165,7 @@ API void MFP__End(MFP_Platform *platform) {
 #else
     timer->deltaSec = (float) (ticks - timer->ticks) / 1000.0f;
 #endif
+    timer->timeSec += timer->deltaSec;
     timer->ticks = ticks;
     float targetFrameTime = 1.0f / platform->targetFps;
     if (timer->deltaSec < targetFrameTime) {
@@ -471,6 +474,10 @@ API bool MFP_IsKeyReleased(MFP_Platform *platform, char c) {
 
 API float MFP_GetDeltaSec(MFP_Platform *platform) {
     return platform->timer.deltaSec;
+}
+
+API double MFP_GetTimeSec(MFP_Platform *platform) {
+    return platform->timer.timeSec;
 }
 
 API void MFP_SleepMs(long ms) {

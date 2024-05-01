@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
         }
 
         transform = identity;
-        Mat4 translate = MFM_Mat4Translate(pos);
+        Mat4 translate = MFM_Mat4TranslateV(pos);
         scaleFactor = MFM_Sin(scaleTime) + 1;
         scale = MFM_Mat4Scale(MFM_Vec3All(scaleFactor));
         rotationX = MFM_Mat4RotateX(angleX);

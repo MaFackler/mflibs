@@ -55,7 +55,6 @@ TEST(MFM_Vec2Add) {
     CHECK_NEAR(res.y, 6.0f);
 }
 
-
 TEST(MFM_Mat4Identity) {
     Mat4 identity = MFM_Mat4Identity();
     Vec3 pos = {1.0f, 0.0f};
@@ -94,4 +93,31 @@ TEST(MFM_Mat4LookAt) {
     CHECK_EQ(res.x, 0.0f);
     CHECK_EQ(res.y, 0.0f);
     CHECK_EQ(res.z, 0.0f);
+}
+
+TEST(MFM_Mat4Mul) {
+    Mat4 a = {
+        4.0f, 2.0f, 0.0f, 0.0f,
+        0.0f, 8.0f, 1.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 0.0f,
+    };
+    Mat4 b = {
+        4.0f, 2.0f, 1.0f, 0.0f,
+        2.0f, 0.0f, 4.0f, 0.0f,
+        9.0f, 4.0f, 2.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 0.0f,
+    };
+    Mat4 res = MFM_Mat4Mul(a, b);
+    CHECK_NEAR(res.rows[0].m[0], 20.0f);
+    CHECK_NEAR(res.rows[0].m[1], 8.0f);
+    CHECK_NEAR(res.rows[0].m[2], 12.0f);
+
+    CHECK_NEAR(res.rows[1].m[0], 25.0f);
+    CHECK_NEAR(res.rows[1].m[1], 4.0f);
+    CHECK_NEAR(res.rows[1].m[2], 34.0f);
+
+    CHECK_NEAR(res.rows[2].m[0], 2.0f);
+    CHECK_NEAR(res.rows[2].m[1], 0.0f);
+    CHECK_NEAR(res.rows[2].m[2], 4.0f);
 }

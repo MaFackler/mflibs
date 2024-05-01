@@ -113,7 +113,7 @@ int main() {
 #endif
 
 
-    mfgl_error_check();
+    MFGL_ErrorCheck();
 
     bool running = true;
     while (running && p.window.isOpen) {

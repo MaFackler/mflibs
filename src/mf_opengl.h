@@ -30,10 +30,12 @@ API void MFGL_ProgramSetUniform1i(unsigned int location, int a);
 API void MFGL_ProgramSetUniform4f(unsigned int location, float a, float b, float c, float d);
 API void MFGL_ProgramSetUniform4fv(unsigned int location, unsigned int count, bool transpose, float *data);
 
-
 // Textures
 API MFGL_TextureId MFGL_TextureCreate(int width, int height, GLenum targetFormat, GLenum sourceFormat, unsigned char *data);
 API void MFGL_TextureBind(MFGL_TextureId id);
+
+// Error
+API void MFGL_ErrorCheck();
 
 // Vertex Buffer
 unsigned int mfgl_vertex_buffer_create(float *vertices, int n);
@@ -54,8 +56,6 @@ void mfgl_vertex_array_bind(unsigned int vao);
 
 
 
-// Error
-void mfgl_error_check();
 
 
 #if defined(MF_OPENGL_IMPLEMENTATION) || defined(MF_IMPLEMENTATION)
@@ -166,10 +166,27 @@ API void MFGL_ProgramSetUniform4fv(unsigned int location, unsigned int count, bo
     glUniformMatrix4fv(location, count, transpose, data);
 }
 
+API void MFGL_ErrorCheck() {
+    GLenum code;
+    code = glGetError();
+    if (code != GL_NO_ERROR) {
+        switch (code) {
+            case 1282:
+                fprintf(stderr, "Opengl invalid operation error: %d\n", code);
+                break;
+            default:
+                fprintf(stderr, "Opengl error: %d\n", code);
+
+        }
+        exit(1);
+    }
+}
+
+
 void mfgl_vertex_attrib_link(unsigned int location, int size, int start, int stride)
 {
     glVertexAttribPointer(location, size, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void *) (start * sizeof(float)));
-    mfgl_error_check();
+    MFGL_ErrorCheck();
     glEnableVertexAttribArray(location);
 }
 
@@ -257,25 +274,6 @@ unsigned int mfgl_vertex_array_create()
 void mfgl_vertex_array_bind(unsigned int vao)
 {
     glBindVertexArray(vao);
-}
-
-void mfgl_error_check()
-{
-    GLenum code;
-    code = glGetError();
-    if (code != GL_NO_ERROR)
-    {
-        switch (code)
-        {
-            case 1282:
-                fprintf(stderr, "Opengl invalid operation error: %d\n", code);
-                break;
-            default:
-                fprintf(stderr, "Opengl error: %d\n", code);
-
-        }
-        exit(1);
-    }
 }
 
 

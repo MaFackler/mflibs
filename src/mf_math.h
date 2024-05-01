@@ -161,6 +161,9 @@ typedef union MFM_Vec4 {
         float z;
         float w;
     };
+    struct {
+        float m[4];
+    };
 } MFM_Vec4;
 
 // }}}
@@ -170,10 +173,14 @@ typedef union MFM_Mat4 {
     struct {
         float m[16];
     };
+    struct {
+        MFM_Vec4 rows[4];
+    };
 } MFM_Mat4;
 
 API MFM_Mat4 MFM_Mat4Identity();
-API MFM_Mat4 MFM_Mat4Translate(MFM_Vec3 offset);
+API MFM_Mat4 MFM_Mat4Translate(float x, float y, float z);
+API MFM_Mat4 MFM_Mat4TranslateV(MFM_Vec3 offset);
 API MFM_Mat4 MFM_Mat4RotateX(float angle);
 API MFM_Mat4 MFM_Mat4RotateY(float angle);
 API MFM_Mat4 MFM_Mat4RotateZ(float angle);
@@ -298,11 +305,42 @@ API MFM_Mat4 MFM_Mat4Identity() {
     return res;
 }
 
-API MFM_Mat4 MFM_Mat4Translate(MFM_Vec3 offset) {
+API MFM_Mat4 MFM_Mat4Translate(float x, float y, float z) {
     MFM_Mat4 res = MFM_Mat4Identity();
-    res.m[0 * 4 + 3] = offset.x;
-    res.m[1 * 4 + 3] = offset.y;
-    res.m[2 * 4 + 3] = offset.z;
+    res.m[0 * 4 + 3] = x;
+    res.m[1 * 4 + 3] = y;
+    res.m[2 * 4 + 3] = z;
+    return res;
+}
+
+API MFM_Mat4 MFM_Mat4TranslateV(MFM_Vec3 offset) {
+    MFM_Mat4 res = MFM_Mat4Translate(offset.x,
+                                     offset.y,
+                                     offset.z);
+    return res;
+}
+
+API MFM_Mat4 MFM_Mat4RotateAxis(MFM_Vec3 axis, float angle) {
+    MFM_Mat4 res = MFM_Mat4Identity();
+
+    axis = MFM_Vec3Normalize(axis);
+
+    float sinv = MFM_Sin(angle);
+    float cosv = MFM_Cos(angle);
+    float cosi = 1.0f - cosv;
+
+    res.rows[0].m[0] = cosv + (axis.x * axis.x * cosi);
+    res.rows[0].m[1] = (axis.x * axis.y * cosi) - (axis.z * sinv);
+    res.rows[0].m[2] = (axis.x * axis.z * cosi) + (axis.y * sinv);
+
+    res.rows[1].m[0] = (axis.y * axis.x * cosi) + (axis.z * sinv);
+    res.rows[1].m[1] = cosv + (axis.y * axis.y * cosi);
+    res.rows[1].m[2] = (axis.y * axis.z * cosi) - (axis.x * sinv);
+
+    res.rows[2].m[0] = (axis.z * axis.x * cosi) - (axis.y * sinv);
+    res.rows[2].m[1] = (axis.z * axis.y * cosi) + (axis.x * sinv);
+    res.rows[2].m[2] = cosv + (axis.z * axis.z * cosi);
+
     return res;
 }
 
@@ -389,8 +427,8 @@ API MFM_Mat4 MFM_Mat4PerspectiveFov(float fov, float aspectRatio, float zNear, f
     res.m[0 * 4 + 0] = c / aspectRatio;
     res.m[1 * 4 + 1] = c;
 
-    res.m[2 * 4 + 2] = -(zNear + zFar) / (zNear - zFar);
-    res.m[2 * 4 + 3] = -(2.0f * zNear * zFar) / (zNear - zFar);
+    res.m[2 * 4 + 2] = (zNear + zFar) / (zNear - zFar);
+    res.m[2 * 4 + 3] = (2.0f * zNear * zFar) / (zNear - zFar);
 
     res.m[3 * 4 + 2] = -1.0f;
 
