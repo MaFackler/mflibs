@@ -439,13 +439,11 @@ API MFM_Mat4 MFM_Mat4LookAt(MFM_Vec3 eye, MFM_Vec3 at, MFM_Vec3 up) {
     MFM_Vec3 zaxis = MFM_Vec3Normalize(MFM_Vec3Sub(at, eye));
     MFM_Vec3 xaxis = MFM_Vec3Normalize(MFM_Vec3Cross(zaxis, up));
     MFM_Vec3 yaxis = MFM_Vec3Normalize(MFM_Vec3Cross(xaxis, zaxis));
-    // NOTE: negate because Opengl zaxis
-    zaxis = MFM_Vec3Negate(zaxis);
 
     MFM_Mat4 res = {
         xaxis.x, xaxis.y, xaxis.z, -MFM_Vec3Dot(xaxis, eye),
         yaxis.x, yaxis.y, yaxis.z, -MFM_Vec3Dot(yaxis, eye),
-        zaxis.x, zaxis.y, zaxis.z, -MFM_Vec3Dot(zaxis, eye),
+        -zaxis.x, -zaxis.y, -zaxis.z, MFM_Vec3Dot(zaxis, eye),
         0.0f, 0.0f, 0.0f, 1.0f,
     };
     return res;

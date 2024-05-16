@@ -89,5 +89,5 @@ endif
 
 # NOTE: this is just for my VIM setup <F5> will execute :make run
 run:
-	./build/GL06_CoordinateSystems
+	./build/GL10_materials
 

@@ -27,6 +27,8 @@ API MFGL_ProgramId MFGL_ProgramCreateVsFs(const char *vs, const char *fs);
 API void MFGL_ProgramUse(MFGL_ProgramId program);
 API unsigned int MFGL_ProgramUniformLocation(MFGL_ProgramId program, const char *name);
 API void MFGL_ProgramSetUniform1i(unsigned int location, int a);
+API void MFGL_ProgramSetUniform1f(unsigned int location, float a);
+API void MFGL_ProgramSetUniform3f(unsigned int location, float a, float b, float c);
 API void MFGL_ProgramSetUniform4f(unsigned int location, float a, float b, float c, float d);
 API void MFGL_ProgramSetUniform4fv(unsigned int location, unsigned int count, bool transpose, float *data);
 
@@ -156,6 +158,14 @@ API unsigned int MFGL_ProgramUniformLocation(MFGL_ProgramId program, const char 
 
 API void MFGL_ProgramSetUniform1i(unsigned int location, int a) {
     glUniform1i(location, a);
+}
+
+API void MFGL_ProgramSetUniform1f(unsigned int location, float a) {
+    glUniform1f(location, a);
+}
+
+API void MFGL_ProgramSetUniform3f(unsigned int location, float a, float b, float c) {
+    glUniform3f(location, a, b, c);
 }
 
 API void MFGL_ProgramSetUniform4f(unsigned int location, float a, float b, float c, float d) {
