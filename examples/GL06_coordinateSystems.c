@@ -1,5 +1,9 @@
-#pragma comment(lib, "GL")
-#pragma comment(lib, "X11")
+#include "mf_lib.h"
+MF_LIB_LINUX("GL")
+MF_LIB_LINUX("X11")
+MF_LIB_LINUX("m")
+MF_LIB_WINDOWS("opengl32")
+MF_LIB_WINDOWS("gdi32")
 #define MF_IMPLEMENTATION
 #include <mf.h>
 #include <mf_platform.h>
@@ -44,7 +48,6 @@ int main() {
     MFP_WindowOpen(&platform, "Coordinate Systems",
                    MFP_WINDOWPOS_CENTER, MFP_WINDOWPOS_CENTER,
                    WIDTH, HEIGHT);
-    float s = 0.5f;
     u32 nvertices = 0;
     u32 nindices = 0;
     MFV_VertexF3F2 *vertices = MFV_VertexF3F2CubeCreate(&nvertices);
@@ -99,8 +102,8 @@ int main() {
         MF_Error("Could not read file '%s'\n", wood);
     }
     MFI_Image image = MFI_ImageCreate(wood);
-    u32 texture = MFGL_TextureCreate(image.width, image.height,
-                                     GL_RGB, GL_RGB, image.data);
+    // u32 texture = MFGL_TextureCreate(image.width, image.height,
+    //                                  GL_RGB, GL_RGB, image.data);
     glGenerateMipmap(GL_TEXTURE_2D);
     MFI_ImageFree(&image);
 

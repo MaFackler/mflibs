@@ -1,44 +1,51 @@
-# TODO: On windows make aways recompiles?
 OUTDIR=build
-CC=g++
-CFLAGS=-g -Isrc `pkg-config --cflags freetype2`
-LIBS=-lX11 -lGL `pkg-config --libs freetype2` -lm
+CFLAGS=-g -Wall -Wno-missing-braces -Wno-parentheses -Werror -Wno-unused-value
 OUTPUT=-o 
 objects=
-
-ifeq ($(OS),Windows_NT)
-	CC=cl
-	CFLAGS=/Zi /EHsc /Isrc
-	LIBS=/link /DEBUG:full kernel32.lib user32.lib winmm.lib opengl32.lib Gdi32.lib
-	OUTPUT=/Fe:
-	objects=/Fd$(OUTDIR)/ /Fo:$(addsuffix .obj, $(1))
+LIB_MACRO=MF_LIB_LINUX
+POSTFIX=
+ifeq ($(PLATFORM),WINDOWS)
+LIB_MACRO=MF_LIB_WINDOWS
+CC=x86_64-w64-mingw32-gcc
+POSTFIX=.exe
 endif
-
-define grep_libs
-	grep 'pragma comment(lib' $(1) | sed -r 's/#pragma comment\(lib, "(.*)"\)/ -l\1/' | tr -d '\n'
-endef
-
-define compile
-	@echo "Compile $(1) -> $(2)"
-	@libs=`$(call grep_libs, $(1))` \
-	&& gcc -ggdb -DMFT_WITH_MAIN -I./src/ $(1) -o $(2) -lc -lm $$libs
-endef
-
 
 HEADERS=$(wildcard src/*.h)
 IGNORE_SINGLE_COMPILE=src/mf_platform_opengl.h
 
 TOOLS=$(wildcard tools/*.c)
-TOOLS_BIN=$(subst tools/,build/,$(basename $(TOOLS)))
+TESTS_BIN=$(patsubst tools/%.c,build/%$(POSTFIX),$(TOOLS))
 
 EXAMPLES=$(wildcard examples/*.c)
-EXAMPLES_BIN=$(subst examples/,build/,$(basename $(EXAMPLES)))
+EXAMPLES_BIN=$(patsubst examples/%.c,build/%$(POSTFIX),$(EXAMPLES))
 
 TEST_SOURCES=$(wildcard tests/*.c)
-TESTS_BIN=$(subst tests/,build/,$(basename $(TEST_SOURCES)))
+# TESTS_BIN=$(subst tests/,build/,$(basename $(TEST_SOURCES)))
+TESTS_BIN=$(patsubst tests/%.c,build/%$(POSTFIX),$(TEST_SOURCES))
 
 $(info TESTS=$(TESTS_BIN))
 $(info EXAMPLES=$(EXAMPLES_BIN))
+
+
+
+# ifeq ($(OS),Windows_NT)
+# 	CFLAGS=/Zi /EHsc /Isrc
+# 	LIBS=/link /DEBUG:full kernel32.lib user32.lib winmm.lib opengl32.lib Gdi32.lib
+# 	OUTPUT=/Fe:
+# 	objects=/Fd$(OUTDIR)/ /Fo:$(addsuffix .obj, $(1))
+# endif
+
+define grep_libs
+	grep '$(LIB_MACRO)' $(1) | sed -r 's/$(LIB_MACRO)\("(.*)"\)/ -l\1/' | tr -d '\n'
+endef
+
+define compile
+	@echo "Compile $(1) -> $(2)"
+	@libs=`$(call grep_libs, $(1))` \
+	&& $(CC) $(CFLAGS) -DMFT_WITH_MAIN -I./src/ $(1) -o $(2) $$libs
+endef
+
+
 
 
 all: build tools examples
@@ -55,7 +62,7 @@ tdd:
 # Compiles all headers to check if they compile individually
 compile_headers: $(HEADERS)
 	@for header in $(filter-out $(IGNORE_SINGLE_COMPILE),$(HEADERS)); do \
-		gcc -c $$header -o build/single.gch; \
+		$(CC) -c $$header -o build/single.gch; \
 	done
 
 
@@ -73,11 +80,11 @@ build:
 
 $(TESTS_BIN): $(TESTS)
 
-build/%: tests/%.c $(HEADERS)
+build/%$(POSTFIX): tests/%.c $(HEADERS)
 	@libs=`$(call grep_libs, $<)` \
-	&& gcc -ggdb -DMFT_WITH_MAIN -I./src/ $< -o $@ -lc -lm $$libs
+	&& $(CC) -ggdb -DMFT_WITH_MAIN -I./src/ $< -o $@ -lc -lm $$libs
 
-build/%: ./**/%.c $(HEADERS)
+build/%$(POSTFIX): ./**/%.c $(HEADERS)
 	$(call compile,$<,$@) 
 
 clean:

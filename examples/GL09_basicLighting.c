@@ -1,5 +1,9 @@
-#pragma comment(lib, "GL")
-#pragma comment(lib, "X11")
+#include "mf_lib.h"
+MF_LIB_LINUX("GL")
+MF_LIB_LINUX("X11")
+MF_LIB_LINUX("m")
+MF_LIB_WINDOWS("opengl32")
+MF_LIB_WINDOWS("gdi32")
 #define MF_IMPLEMENTATION
 #include <mf.h>
 #include <mf_platform.h>

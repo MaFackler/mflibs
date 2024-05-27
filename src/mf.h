@@ -4,6 +4,7 @@
 
 #include <stdbool.h>
 
+
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
@@ -16,6 +17,7 @@
     #ifndef _GNU_SOURCE
         #define _GNU_SOURCE
     #endif // _GNU_SOURCE
+    #define MF_LIB(name)
 #endif // _WIN32
 
 #include <fcntl.h>

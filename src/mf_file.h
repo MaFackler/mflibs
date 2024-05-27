@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>
+#include <stdint.h>
 
 #if defined(WIN32) || defined(_WIN32)
 #else
@@ -42,7 +43,7 @@ API char* MFF_PathJoinCreate(const char *a, const char *b, char separator);
 // -- {{{ File
 API char* MFF_FileRead(const char *path, const char *mode, size_t *size);
 API void MFF_FileCopy(const char *src, const char *dest);
-API long unsigned int MFF_FileGetWriteTime(const char *filename);
+API uint64_t MFF_FileGetWriteTime(const char *filename);
 // -- }}}
 
 // -- {{{ Directory
@@ -149,14 +150,14 @@ API void MFF_FileCopy(const char *src, const char *dest) {
 }
 
 
-API long unsigned int MFF_FileGetWriteTime(const char *filename) {
-    long unsigned int res = 0;
+API uint64_t MFF_FileGetWriteTime(const char *filename) {
+    uint64_t res = 0;
 #ifdef WIN32
     WIN32_FILE_ATTRIBUTE_DATA data;
     if (GetFileAttributesEx(filename, GetFileExInfoStandard, &data)) {
         res = data.ftLastWriteTime.dwHighDateTime;
         res = (res << 32);
-        res += data.ftLastWriteTime.dwLowDateTime;
+        res = data.ftLastWriteTime.dwLowDateTime + res;
     }
 #else
     struct stat st = {};

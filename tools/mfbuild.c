@@ -1,9 +1,11 @@
+#include <mf_lib.h>
+MF_LIB_LINUX("m")
 #define MF_IMPLEMENTATION
 #include <mf.h>
 #include <mf_file.h>
 #include <mf_string.h>
 
-#define OUT "./a.out"
+#define DEFAULT_OUT "./a.out"
 
 typedef struct SourceDef {
     const char *cc;
@@ -18,11 +20,11 @@ SourceDef defaultSources[] = {
 void compile(SourceDef *def) {
     MF_String cmd = MF_StringNewFormat("%s %s", def->cc, def->source);
     system(cmd);
-    printf("Compiled %s\n", OUT);
+    printf("Compiled %s\n", DEFAULT_OUT);
 }
 
 void run(SourceDef *def) {
-    system(OUT);
+    system(DEFAULT_OUT);
 }
 
 int main(int argc, char **argv) {
@@ -51,8 +53,8 @@ int main(int argc, char **argv) {
     if (strcmp(action, "build") == 0) {
         compile(def);
     } else if (strcmp(action, "run") == 0) {
-        if (MFF_IsFile(OUT)) {
-            u64 binTime = MFF_FileGetWriteTime(OUT);
+        if (MFF_IsFile(DEFAULT_OUT)) {
+            u64 binTime = MFF_FileGetWriteTime(DEFAULT_OUT);
             u64 srcTime = MFF_FileGetWriteTime(def->source);
             if (srcTime > binTime) {
                 compile(def);

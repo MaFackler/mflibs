@@ -56,6 +56,7 @@ API void MFP_SleepMs(long ms);
 
 API void MFP__End(MFP_Platform *platform);
 API unsigned long int MFP__GetTicks();
+API unsigned long int MFP__GetFrequency(MFP_Platform *platform);
 
 struct MFP_ButtonState {
     bool down;
@@ -159,12 +160,7 @@ API void MFP__End(MFP_Platform *platform) {
     MFP_Timer *timer = &platform->timer;
     unsigned long int ticks = MFP__GetTicks();
 
-    // TODO: deltaSec returns inf if target fps is not set????
-#ifdef _WIN32
-    timer->deltaSec = ((float) ticks - (float) timer->ticks) / (float) frequency.QuadPart;
-#else
-    timer->deltaSec = (float) (ticks - timer->ticks) / 1000.0f;
-#endif
+    timer->deltaSec = ((float) ticks - (float) timer->ticks) / MFP__GetFrequency(platform);
     timer->timeSec += timer->deltaSec;
     timer->ticks = ticks;
     float targetFrameTime = 1.0f / platform->targetFps;
@@ -174,6 +170,34 @@ API void MFP__End(MFP_Platform *platform) {
         timer->deltaSec = targetFrameTime;
     }
     timer->fps = (1.0f / timer->deltaSec);
+}
+
+API void MFP_SetTargetFps(MFP_Platform *platform, int fps) {
+    platform->targetFps = fps;
+}
+
+API bool MFP_WindowShouldClose(MFP_Platform *platform) {
+    return !platform->window.isOpen;
+}
+
+API bool MFP_IsKeyPressed(MFP_Platform *platform, char c) {
+    return platform->input.keys[(int) c].pressed;
+}
+
+API bool MFP_IsKeyDown(MFP_Platform *platform, char c) {
+    return platform->input.keys[(int) c].down;
+}
+
+API bool MFP_IsKeyReleased(MFP_Platform *platform, char c) {
+    return platform->input.keys[(int) c].released;
+}
+
+API float MFP_GetDeltaSec(MFP_Platform *platform) {
+    return platform->timer.deltaSec;
+}
+
+API double MFP_GetTimeSec(MFP_Platform *platform) {
+    return platform->timer.timeSec;
 }
 
 
@@ -198,6 +222,10 @@ typedef struct MFP_Linux {
 
 API MFP_Linux* MFP__GetLinux(MFP_Platform *platform) {
     return (MFP_Linux *) platform->os; 
+}
+
+API unsigned long int MFP__GetFrequency(MFP_Platform *platform) {
+    return 1000;
 }
 
 API void MFP__LinuxDispatchKey(MFP_Input *input, MFP_ButtonState *state, bool down) {
@@ -300,10 +328,6 @@ API void MFP_Init(MFP_Platform *platform) {
     // XWarpPointer(plat->display, None, plat->root, 0, 0, 0, 0, 0, 0);
     XUngrabPointer(plat->display, CurrentTime);
     XFlush(plat->display);
-}
-
-API void MFP_SetTargetFps(MFP_Platform *platform, int fps) {
-    platform->targetFps = fps;
 }
 
 API void MFP_Begin(MFP_Platform *platform) {
@@ -441,9 +465,6 @@ API void MFP_WindowClose(MFP_Platform *platform) {
     window->isOpen = false;
 }
 
-API bool MFP_WindowShouldClose(MFP_Platform *platform) {
-    return !platform->window.isOpen;
-}
 
 API void MFP_WindowToggleFullscreen(MFP_Platform *platform) {
     MFP_Linux *oslinux = MFP__GetLinux(platform);
@@ -460,30 +481,12 @@ API void MFP_WindowToggleFullscreen(MFP_Platform *platform) {
     XSendEvent(oslinux->display, oslinux->root, False, SubstructureRedirectMask | SubstructureNotifyMask, &e);
 }
 
-API bool MFP_IsKeyPressed(MFP_Platform *platform, char c) {
-    return platform->input.keys[c].pressed;
-}
-
-API bool MFP_IsKeyDown(MFP_Platform *platform, char c) {
-    return platform->input.keys[c].down;
-}
-
-API bool MFP_IsKeyReleased(MFP_Platform *platform, char c) {
-    return platform->input.keys[c].released;
-}
-
-API float MFP_GetDeltaSec(MFP_Platform *platform) {
-    return platform->timer.deltaSec;
-}
-
-API double MFP_GetTimeSec(MFP_Platform *platform) {
-    return platform->timer.timeSec;
-}
 
 API void MFP_SleepMs(long ms) {
     struct timespec ts;
     ts.tv_sec = ms / 1000;
     ts.tv_nsec = (ms / 1000) * 1000000;
+    nanosleep(&ts, NULL);
 }
 
 API void MFP_Destroy(MFP_Platform *platform) {
@@ -510,13 +513,20 @@ API unsigned long int MFP__GetTicks() {
     return counter.QuadPart;
 }
 
+
 API MFP_Win32 *MFP_GetWin32(MFP_Platform *platform) {
     return (MFP_Win32 *) platform->os; 
 }
 
+API unsigned long int MFP__GetFrequency(MFP_Platform *platform) {
+    MFP_Win32 *win32 = MFP_GetWin32(platform);
+    return win32->frequency.QuadPart;
+}
+
 API void MFP_Init(MFP_Platform *platform) {
     platform->os = malloc(sizeof(MFP_Win32));
-    QueryPerformanceFrequency(&platform->os.frequency);
+    MFP_Win32 *win32 = MFP_GetWin32(platform);
+    QueryPerformanceFrequency(&win32->frequency);
 }
 
 API void MFP_Begin(MFP_Platform *platform) {
@@ -541,7 +551,7 @@ API void MFP_Begin(MFP_Platform *platform) {
     }
 }
 
-API void MFP_End(MFP_Platform *platform, bool swapBuffers=true) {
+API void MFP_End(MFP_Platform *platform, bool swapBuffers) {
     MFP__End(platform);
 }
 
@@ -643,18 +653,9 @@ LRESULT CALLBACK MFP__Win32Proc(HWND wnd, UINT message, WPARAM wParam, LPARAM lP
     LRESULT res = 0;
     //Platform *platform = (Platform *) GetWindowLongPtr(wnd, GWLP_USERDATA);
     assert(g_platform != NULL);
-    MFP_Win32 *os = MFP_GetWin32(g_platform);
+    MFP_Win32 *win32 = MFP_GetWin32(g_platform);
     switch (message) {
         case WM_SIZE: {
-            if (g_platform->callback) {
-                MFP_Window *window = &g_platform->window;
-                MFP__GetClientRect(os->window,
-                                   &window->x,
-                                   &window->y,
-                                   &window->width,
-                                   &window->height);
-                g_platform->callback(MFP_MESSAGE_WINDOW_SIZE);
-            }
             break;
         }
         case WM_LBUTTONDOWN: {
@@ -677,7 +678,6 @@ LRESULT CALLBACK MFP__Win32Proc(HWND wnd, UINT message, WPARAM wParam, LPARAM lP
             break;
         }
         case WM_SYSKEYDOWN: {
-            printf("WM_SYSKEYDOWN %d\n", (size_t) wParam);
             break;
         }
         case WM_KEYDOWN: {
@@ -697,7 +697,7 @@ LRESULT CALLBACK MFP__Win32Proc(HWND wnd, UINT message, WPARAM wParam, LPARAM lP
         case WM_EXITSIZEMOVE: {
             int x, y;
             size_t width, height;
-            mfp__get_client_rect(os->window, &x, &y, &width, &height);
+            MFP__GetClientRect(win32->window, &x, &y, &width, &height);
             MFP_Window *window = &g_platform->window;
             if (x != window->x ||
                 y != window->y ||
@@ -718,7 +718,6 @@ LRESULT CALLBACK MFP__Win32Proc(HWND wnd, UINT message, WPARAM wParam, LPARAM lP
         }
         case WM_CHAR: {
             WCHAR utfChar = (WCHAR) wParam;
-            int shifted = ((int) lParam >> 16) & 0x0F;
             char asciiChar;
             int length = WideCharToMultiByte(CP_ACP, 0, &utfChar, 1, &asciiChar, 1, 0, 0);
             MFP_Input *input = &g_platform->input;
@@ -752,7 +751,7 @@ API void MFP_WindowOpen(MFP_Platform *platform, const char *title, int x, int y,
     g_platform = platform;
 
 
-    MFP_Win32 *os = MFP_GetWin32(platform);
+    MFP_Win32 *win32 = MFP_GetWin32(platform);
     MFP_Window *window = &platform->window;
     window->x = x;
     window->y = y;
@@ -765,15 +764,15 @@ API void MFP_WindowOpen(MFP_Platform *platform, const char *title, int x, int y,
     sizeToRequest.bottom = height;
     DWORD style = (WS_OVERLAPPEDWINDOW | WS_VISIBLE) & ~WS_THICKFRAME;
     AdjustWindowRect(&sizeToRequest, style, false);
-    os->window = CreateWindowA(wc.lpszClassName,
+    win32->window = CreateWindowA(wc.lpszClassName,
                                window->title,
                                style,
                                window->x, window->y,
                                sizeToRequest.right - sizeToRequest.left,
                                sizeToRequest.bottom - sizeToRequest.top,
                                0, 0, 0, 0);
-    assert(os->window);
-    os->dc = GetDC(os->window);
+    assert(win32->window);
+    win32->dc = GetDC(win32->window);
 
     PIXELFORMATDESCRIPTOR desiredPixelFormat = {};
     desiredPixelFormat.nSize = sizeof(desiredPixelFormat);
@@ -784,19 +783,25 @@ API void MFP_WindowOpen(MFP_Platform *platform, const char *title, int x, int y,
     desiredPixelFormat.iLayerType = PFD_MAIN_PLANE;
 
     // TODO: pixelformat always needed??
-    int pixelFormatIndex = ChoosePixelFormat(os->dc, &desiredPixelFormat);
+    int pixelFormatIndex = ChoosePixelFormat(win32->dc, &desiredPixelFormat);
     PIXELFORMATDESCRIPTOR suggestedPixelFormat;
-    DescribePixelFormat(os->dc, pixelFormatIndex, sizeof(suggestedPixelFormat), &suggestedPixelFormat);
-    SetPixelFormat(os->dc, pixelFormatIndex, &suggestedPixelFormat);
+    DescribePixelFormat(win32->dc, pixelFormatIndex, sizeof(suggestedPixelFormat), &suggestedPixelFormat);
+    SetPixelFormat(win32->dc, pixelFormatIndex, &suggestedPixelFormat);
 
     // TODO: client rect
 
-    mfp__get_client_rect(os->window, &window->x, &window->y, &window->width, &window->height);
+    MFP__GetClientRect(win32->window, &window->x, &window->y, &window->width, &window->height);
+    if (platform->graphicsAfterWindow) {
+        platform->graphicsAfterWindow(platform);
+    }
     window->isOpen = true;
 }
 
 API void MFP_WindowClose(MFP_Platform *platform) {
     assert(platform);
+}
+
+API void MFP_SleepMs(long ms) {
 }
 
 #endif

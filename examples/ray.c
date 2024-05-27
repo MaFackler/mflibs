@@ -1,3 +1,6 @@
+#include "mf_lib.h"
+MF_LIB_LINUX("m")
+
 #include <assert.h>
 #include <mf.h>
 #define MF_IMPLEMENTATION
@@ -239,9 +242,9 @@ void write_color_old(Vec3 c, int samples_per_pixel) {
     g *= scale;
     b *= scale;
 
-    int out_r = 256 * MFM_Clamp(r, 0.0, 0.999);
-    int out_g = 256 * MFM_Clamp(g, 0.0, 0.999);
-    int out_b = 256 * MFM_Clamp(b, 0.0, 0.999);
+    // int out_r = 256 * MFM_Clamp(r, 0.0, 0.999);
+    // int out_g = 256 * MFM_Clamp(g, 0.0, 0.999);
+    // int out_b = 256 * MFM_Clamp(b, 0.0, 0.999);
     // printf("%d %d %d\n", out_r, out_g, out_b);
 }
 

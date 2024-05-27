@@ -88,11 +88,14 @@ GL_FUNC_DEF(void, glGenBuffers, GLsizei n, GLuint *buffers);
 GL_FUNC_DEF(void, glGenVertexArrays, GLsizei n, GLuint *arrays);
 GL_FUNC_DEF(void, glGenerateMipmap, GLenum target);
 GL_FUNC_DEF(void, glGetProgramiv, GLuint program, GLenum pname, GLint *params);
+GL_FUNC_DEF(void, glGetProgramInfoLog, GLuint program, GLsizei maxLength, GLsizei *length, char *infoLog);
 GL_FUNC_DEF(void, glGetShaderInfoLog, GLuint shader, GLsizei bufSIze, GLsizei *length, char *infoLog);
 GL_FUNC_DEF(void, glGetShaderiv, GLuint shader, GLenum pname, GLint *params);
 GL_FUNC_DEF(void, glLinkProgram, GLuint program);
 GL_FUNC_DEF(void, glShaderSource, GLuint shader, GLsizei count, const char **string, GLint *length);
 GL_FUNC_DEF(void, glUniform1i, GLint location, GLint v0);
+GL_FUNC_DEF(void, glUniform1f, GLint location, GLfloat v0);
+GL_FUNC_DEF(void, glUniform3f, GLint location, GLfloat v0, GLfloat v1, GLfloat v2);
 GL_FUNC_DEF(void, glUniform4f, GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
 GL_FUNC_DEF(void, glUniformMatrix4fv, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
 GL_FUNC_DEF(void, glUseProgram, GLuint program);
@@ -200,23 +203,31 @@ API void MFP_EndOpengl(MFP_Platform *platform) {
 // {{{ Windows
 #else
 
+static inline void MFP_InitOpenglWindow(MFP_Platform *platform);
+
 API void MFP_InitOpengl(MFP_Platform *platform) {
-    MFP_Win32 *os = mfp__get_win32(platform);
+    platform->graphicsAfterWindow = MFP_InitOpenglWindow;
+    platform->graphicsBegin = MFP_BeginOpengl;
+    platform->graphicsEnd = MFP_EndOpengl;
+}
+
+static inline void MFP_InitOpenglWindow(MFP_Platform *platform) {
+    MFP_Win32 *win32 = MFP_GetWin32(platform);
     PIXELFORMATDESCRIPTOR pf = {};
     pf.nSize = sizeof(pf);
     pf.nVersion = 1;
     pf.dwFlags = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER;
     pf.cColorBits = 24;
     pf.cAlphaBits = 8;
-    int suggestedIndex = ChoosePixelFormat(os->dc, &pf);
+    int suggestedIndex = ChoosePixelFormat(win32->dc, &pf);
     PIXELFORMATDESCRIPTOR spf;
-    DescribePixelFormat(os->dc, suggestedIndex, sizeof(spf), &spf);
-    SetPixelFormat(os->dc, suggestedIndex, &spf);
+    DescribePixelFormat(win32->dc, suggestedIndex, sizeof(spf), &spf);
+    SetPixelFormat(win32->dc, suggestedIndex, &spf);
 
-    os->graphicHandle = malloc(sizeof(HGLRC));
-    HGLRC *hgl = (HGLRC *) os->graphicHandle;
-    HGLRC basicContext = wglCreateContext(os->dc);
-    if (wglMakeCurrent(os->dc, basicContext)) {
+    win32->graphicHandle = malloc(sizeof(HGLRC));
+    HGLRC *hgl = (HGLRC *) win32->graphicHandle;
+    HGLRC basicContext = wglCreateContext(win32->dc);
+    if (wglMakeCurrent(win32->dc, basicContext)) {
 #define GL_FUNC_LOAD(name)\
     name = (name##Proc) wglGetProcAddress(#name);
         wglCreateContextAttribsARB = (wglCreateContextAttribsARBProc) wglGetProcAddress("wglCreateContextAttribsARB");
@@ -226,9 +237,9 @@ API void MFP_InitOpengl(MFP_Platform *platform) {
             WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB,
             0
         };
-        HGLRC modernContext = wglCreateContextAttribsARB(os->dc, 0, &attribs[0]);
+        HGLRC modernContext = wglCreateContextAttribsARB(win32->dc, 0, &attribs[0]);
         if (modernContext) {
-            wglMakeCurrent(os->dc, modernContext);
+            wglMakeCurrent(win32->dc, modernContext);
             wglDeleteContext(basicContext);
             *hgl = modernContext;
         } else {
@@ -250,6 +261,7 @@ API void MFP_InitOpengl(MFP_Platform *platform) {
         GL_FUNC_LOAD(glGenVertexArrays);
         GL_FUNC_LOAD(glGenerateMipmap);
         GL_FUNC_LOAD(glGetProgramiv);
+        GL_FUNC_LOAD(glGetProgramInfoLog);
         GL_FUNC_LOAD(glGetShaderInfoLog);
         GL_FUNC_LOAD(glGetShaderiv);
         GL_FUNC_LOAD(glGetUniformLocation);
@@ -257,6 +269,8 @@ API void MFP_InitOpengl(MFP_Platform *platform) {
         GL_FUNC_LOAD(glMapBuffer);
         GL_FUNC_LOAD(glShaderSource);
         GL_FUNC_LOAD(glUniform1i);
+        GL_FUNC_LOAD(glUniform1f);
+        GL_FUNC_LOAD(glUniform3f);
         GL_FUNC_LOAD(glUniform4f);
         GL_FUNC_LOAD(glUniformMatrix4fv);
         GL_FUNC_LOAD(glUseProgram);
@@ -265,7 +279,8 @@ API void MFP_InitOpengl(MFP_Platform *platform) {
 }
 
 API void MFP_DestroyOpengl(MFP_Platform *platform) {
-    HGLRC *hgl = (HGLRC *) os->graphicHandle;
+    MFP_Win32 *win32 = MFP_GetWin32(platform);
+    HGLRC *hgl = (HGLRC *) win32->graphicHandle;
     wglDeleteContext(*hgl);
 }
 
@@ -273,8 +288,8 @@ API void MFP_BeginOpengl(MFP_Platform *platform) {
 }
 
 API void MFP_EndOpengl(MFP_Platform *platform) {
-    MFP_Win32 *os = mfp__get_win32(platform);
-    SwapBuffers(os->dc);
+    MFP_Win32 *win32 = MFP_GetWin32(platform);
+    SwapBuffers(win32->dc);
 }
 
 // }}}

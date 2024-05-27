@@ -1,5 +1,6 @@
 #define MF_IMPLEMENTATION
 #define MF_SHORT_NAMES
+#include "mf_lib.h"
 #include "mf.h"
 #include "mf_platform.h"
 #include "mf_platform_opengl.h"
@@ -7,8 +8,11 @@
 #define MF_MATH_SHORT_NAMES
 #include "mf_math.h"
 
-#pragma comment(lib, "GL")
-#pragma comment(lib, "X11")
+MF_LIB_LINUX("GL")
+MF_LIB_LINUX("X11")
+MF_LIB_LINUX("m")
+MF_LIB_WINDOWS("opengl32")
+MF_LIB_WINDOWS("gdi32")
 
 const char *VS_SRC = R"(
 #version 330 core
@@ -51,8 +55,6 @@ int main() {
     MFP_Init(&p);
     MFP_InitOpengl(&p);
     MFP_WindowOpen(&p, title, 300, 50, width, height);
-    //glViewport(0, 0, width, height);
-
 
     float z = -5.0f;
     float y = 1.0f;

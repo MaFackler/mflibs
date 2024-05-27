@@ -51,7 +51,7 @@ typedef union MFM_Vec2 {
    };
 } MFM_Vec2;
 
-API bool MFM_EqualV2(MFM_Vec2 a, MFM_Vec2 b);
+// API bool MFM_EqualV2(MFM_Vec2 a, MFM_Vec2 b);
 API MFM_Vec2 MFM_Vec2Add(MFM_Vec2 a, MFM_Vec2 b);
 
 API float MFM_Vec2Distance(MFM_Vec2 a, MFM_Vec2 b);
@@ -440,7 +440,7 @@ API MFM_Mat4 MFM_Mat4LookAt(MFM_Vec3 eye, MFM_Vec3 at, MFM_Vec3 up) {
     MFM_Vec3 xaxis = MFM_Vec3Normalize(MFM_Vec3Cross(zaxis, up));
     MFM_Vec3 yaxis = MFM_Vec3Normalize(MFM_Vec3Cross(xaxis, zaxis));
 
-    MFM_Mat4 res = {
+    MFM_Mat4 res = (MFM_Mat4) {
         xaxis.x, xaxis.y, xaxis.z, -MFM_Vec3Dot(xaxis, eye),
         yaxis.x, yaxis.y, yaxis.z, -MFM_Vec3Dot(yaxis, eye),
         -zaxis.x, -zaxis.y, -zaxis.z, MFM_Vec3Dot(zaxis, eye),
