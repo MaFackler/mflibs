@@ -1,11 +1,13 @@
+#include <mf_lib.h>
+MF_LIB_LINUX("X11")
+MF_LIB_LINUX("GL")
+MF_LIB_WINDOWS("gdi32")
 #define MF_PLATFORM_USE_OPENGL
 #define MF_IMPLEMENTATION
 #include <mf.h>
 #include <mf_test.h>
 #include <mf_platform.h>
 #include <mf_platform_opengl.h>
-#pragma comment(lib, "X11")
-#pragma comment(lib, "GL")
 
 TEST(MFP_Platform) {
     MFP_Platform platform = {};

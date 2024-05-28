@@ -31,6 +31,9 @@
 
 #define API static inline
 #define MFP_WINDOWPOS_CENTER -1
+#define FUNC_CROSS
+#define FUNC_LINUX
+#define FUNC_WIN32
 
 typedef struct MFP_ButtonState MFP_ButtonState;
 typedef struct MFP_Platform MFP_Platform;
@@ -38,25 +41,24 @@ typedef struct MFP_Input MFP_Input;
 typedef struct MFP_Timer MFP_Timer;
 typedef struct MFP_Window MFP_Window;
 
-API void MFP_Init(MFP_Platform *platform);
-API void MFP_SetTargetFps(MFP_Platform *platform, int fps);
-API void MFP_Destroy(MFP_Platform *platform);
-API void MFP_Begin(MFP_Platform *platform);
-API void MFP_End(MFP_Platform *platform, bool swapBuffers);
-API void MFP_WindowOpen(MFP_Platform *platform, const char *title, int x, int y, int width, int height);
-API void MFP_WindowClose(MFP_Platform *platform);
-API bool MFP_WindowShouldClose(MFP_Platform *platform);
-API void MFP_WindowToggleFullscreen(MFP_Platform *platform);
-API bool MFP_IsKeyPressed(MFP_Platform *platform, char c);
-API bool MFP_IsKeyDown(MFP_Platform *platform, char c);
-API bool MFP_IsKeyReleased(MFP_Platform *platform, char c);
-API float MFP_GetDeltaSec(MFP_Platform *platform);
-API double MFP_GetTimeSec(MFP_Platform *platform);
-API void MFP_SleepMs(long ms);
+FUNC_CROSS API void MFP_Init(MFP_Platform *platform);
+           API void MFP_SetTargetFps(MFP_Platform *platform, int fps);
+FUNC_CROSS API void MFP_Destroy(MFP_Platform *platform);
+FUNC_CROSS API void MFP_Begin(MFP_Platform *platform);
+           API void MFP_End(MFP_Platform *platform, bool swapBuffers);
+FUNC_CROSS API void MFP_WindowOpen(MFP_Platform *platform, const char *title, int x, int y, int width, int height);
+FUNC_CROSS API void MFP_WindowClose(MFP_Platform *platform);
+           API bool MFP_WindowShouldClose(MFP_Platform *platform);
+FUNC_CROSS API void MFP_WindowToggleFullscreen(MFP_Platform *platform);
+           API bool MFP_IsKeyPressed(MFP_Platform *platform, char c);
+           API bool MFP_IsKeyDown(MFP_Platform *platform, char c);
+           API bool MFP_IsKeyReleased(MFP_Platform *platform, char c);
+           API float MFP_GetDeltaSec(MFP_Platform *platform);
+           API double MFP_GetTimeSec(MFP_Platform *platform);
+FUNC_CROSS API void MFP_SleepMs(long ms);
 
-API void MFP__End(MFP_Platform *platform);
-API unsigned long int MFP__GetTicks();
-API unsigned long int MFP__GetFrequency(MFP_Platform *platform);
+FUNC_CROSS API unsigned long int MFP__GetTicks();
+FUNC_CROSS API unsigned long int MFP__GetFrequency(MFP_Platform *platform);
 
 struct MFP_ButtonState {
     bool down;
@@ -142,7 +144,7 @@ typedef enum MFP_Keys {
 #define MFP_ArrayLength(arr) (sizeof(arr) / sizeof(arr[0]))
 
 #include <stdio.h>
-API void MFP__End(MFP_Platform *platform) {
+API void MFP_End(MFP_Platform *platform, bool swap) {
     if (platform->graphicsEnd) {
         platform->graphicsEnd(platform);
     }
@@ -220,21 +222,21 @@ typedef struct MFP_Linux {
     void *graphicHandle;
 } MFP_Linux;
 
-API MFP_Linux* MFP__GetLinux(MFP_Platform *platform) {
+FUNC_LINUX API MFP_Linux* MFP__GetLinux(MFP_Platform *platform) {
     return (MFP_Linux *) platform->os; 
 }
 
-API unsigned long int MFP__GetFrequency(MFP_Platform *platform) {
+FUNC_LINUX API unsigned long int MFP__GetFrequency(MFP_Platform *platform) {
     return 1000;
 }
 
-API void MFP__LinuxDispatchKey(MFP_Input *input, MFP_ButtonState *state, bool down) {
+FUNC_LINUX API void MFP__LinuxDispatchKey(MFP_Input *input, MFP_ButtonState *state, bool down) {
     state->pressed = !state->down && down;
     state->released = state->down && !down;
     state->down = down;
 }
 
-API void MFP__LinuxDispatchXKey(MFP_Input *input, XKeyEvent *event, bool down) {
+FUNC_LINUX API void MFP__LinuxDispatchXKey(MFP_Input *input, XKeyEvent *event, bool down) {
     KeySym sym = XLookupKeysym(event, 0);
     if (sym >= XK_space && sym <= XK_asciitilde) {
         MFP_ButtonState *state = &input->keys[sym];
@@ -308,14 +310,14 @@ API void MFP__LinuxDispatchXKey(MFP_Input *input, XKeyEvent *event, bool down) {
     }
 }
 
-API unsigned long int MFP__GetTicks() {
+FUNC_LINUX API unsigned long int MFP__GetTicks() {
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC_RAW, &now);
     unsigned long int res = ((unsigned long int) now.tv_sec * 1000) + ((unsigned long int) now.tv_nsec / 1000000);
     return res;
 }
 
-API void MFP_Init(MFP_Platform *platform) {
+FUNC_LINUX API void MFP_Init(MFP_Platform *platform) {
     platform->os = malloc(sizeof(MFP_Linux));
     MFP_Linux *plat = (MFP_Linux *) platform->os;
     plat->display = XOpenDisplay(NULL);
@@ -330,7 +332,7 @@ API void MFP_Init(MFP_Platform *platform) {
     XFlush(plat->display);
 }
 
-API void MFP_Begin(MFP_Platform *platform) {
+FUNC_LINUX API void MFP_Begin(MFP_Platform *platform) {
     if (platform->timer.ticks == 0) {
         platform->timer.ticks = MFP__GetTicks();
     }
@@ -401,11 +403,8 @@ API void MFP_Begin(MFP_Platform *platform) {
     }
 }
 
-API void MFP_End(MFP_Platform *platform, bool swapBuffers) {
-    MFP__End(platform);
-}
 
-API void MFP_WindowOpen(MFP_Platform *platform, const char *title, int x, int y, int width, int height) {
+FUNC_LINUX API void MFP_WindowOpen(MFP_Platform *platform, const char *title, int x, int y, int width, int height) {
     assert(!platform->window.isOpen);
     MFP_Linux *oslinux = MFP__GetLinux(platform);
     int screen = XDefaultScreen(oslinux->display);
@@ -457,7 +456,7 @@ API void MFP_WindowOpen(MFP_Platform *platform, const char *title, int x, int y,
     platform->window.isOpen = true;
 }
 
-API void MFP_WindowClose(MFP_Platform *platform) {
+FUNC_LINUX API void MFP_WindowClose(MFP_Platform *platform) {
     MFP_Window *window = &platform->window;
     MFP_Linux *oslinux = MFP__GetLinux(platform);
     XDestroyWindow(oslinux->display, oslinux->window);
@@ -466,7 +465,7 @@ API void MFP_WindowClose(MFP_Platform *platform) {
 }
 
 
-API void MFP_WindowToggleFullscreen(MFP_Platform *platform) {
+FUNC_LINUX API void MFP_WindowToggleFullscreen(MFP_Platform *platform) {
     MFP_Linux *oslinux = MFP__GetLinux(platform);
     XEvent e;
     e.xclient.type = ClientMessage;
@@ -482,14 +481,14 @@ API void MFP_WindowToggleFullscreen(MFP_Platform *platform) {
 }
 
 
-API void MFP_SleepMs(long ms) {
+FUNC_LINUX API void MFP_SleepMs(long ms) {
     struct timespec ts;
     ts.tv_sec = ms / 1000;
     ts.tv_nsec = (ms / 1000) * 1000000;
     nanosleep(&ts, NULL);
 }
 
-API void MFP_Destroy(MFP_Platform *platform) {
+FUNC_LINUX API void MFP_Destroy(MFP_Platform *platform) {
     // TODO:
 }
 
@@ -507,29 +506,29 @@ typedef struct MFP_Win32 {
     void *graphicHandle;
 } MFP_Win32;
 
-API unsigned long int MFP__GetTicks() {
+FUNC_WIN32 API unsigned long int MFP__GetTicks() {
     LARGE_INTEGER counter;
     QueryPerformanceCounter(&counter);
     return counter.QuadPart;
 }
 
 
-API MFP_Win32 *MFP_GetWin32(MFP_Platform *platform) {
+FUNC_WIN32 API MFP_Win32 *MFP_GetWin32(MFP_Platform *platform) {
     return (MFP_Win32 *) platform->os; 
 }
 
-API unsigned long int MFP__GetFrequency(MFP_Platform *platform) {
+FUNC_WIN32 API unsigned long int MFP__GetFrequency(MFP_Platform *platform) {
     MFP_Win32 *win32 = MFP_GetWin32(platform);
     return win32->frequency.QuadPart;
 }
 
-API void MFP_Init(MFP_Platform *platform) {
+FUNC_WIN32 API void MFP_Init(MFP_Platform *platform) {
     platform->os = malloc(sizeof(MFP_Win32));
     MFP_Win32 *win32 = MFP_GetWin32(platform);
     QueryPerformanceFrequency(&win32->frequency);
 }
 
-API void MFP_Begin(MFP_Platform *platform) {
+FUNC_WIN32 API void MFP_Begin(MFP_Platform *platform) {
     if (platform->timer.ticks == 0) {
         platform->timer.ticks = MFP__GetTicks();
     }
@@ -551,22 +550,18 @@ API void MFP_Begin(MFP_Platform *platform) {
     }
 }
 
-API void MFP_End(MFP_Platform *platform, bool swapBuffers) {
-    MFP__End(platform);
-}
-
-API void MFP_Destroy(MFP_Platform *platform) {
+FUNC_WIN32 API void MFP_Destroy(MFP_Platform *platform) {
     MFP_Win32 *os = MFP_GetWin32(platform);
     DestroyWindow(os->window);
     DeleteObject(os->dc);
 }
 
-API void MFP_WindowToggleFullscreen(MFP_Platform *platform) {
+FUNC_WIN32 API void MFP_WindowToggleFullscreen(MFP_Platform *platform) {
     void *dummy = platform;
     assert(dummy);
 }
 
-API void MFP__GetClientRect(HWND window, int *x, int *y, size_t *width, size_t *height) {
+FUNC_WIN32 API void MFP__GetClientRect(HWND window, int *x, int *y, size_t *width, size_t *height) {
     RECT clientRect;
     GetClientRect(window, &clientRect);
 
@@ -576,14 +571,14 @@ API void MFP__GetClientRect(HWND window, int *x, int *y, size_t *width, size_t *
     *height = clientRect.bottom - clientRect.top;
 }
 
-void MFP__Win32SetMousePos(MFP_Platform *platform, LPARAM lParam) {
+FUNC_WIN32 void MFP__Win32SetMousePos(MFP_Platform *platform, LPARAM lParam) {
     int x = LOWORD(lParam);
     int y = platform->window.height - HIWORD(lParam);
     platform->input.mouseX = x;
     platform->input.mouseY = y;
 }
 
-void MFP__Win32DispatchKeyToInput(MFP_Input *input, MFP_ButtonState *state, bool down) {
+FUNC_WIN32 void MFP__Win32DispatchKeyToInput(MFP_Input *input, MFP_ButtonState *state, bool down) {
     state->pressed = !state->down && down;
     state->released = state->down && !down;
     if (input->enableKeyRepeat && state->down && down)
@@ -594,7 +589,7 @@ void MFP__Win32DispatchKeyToInput(MFP_Input *input, MFP_ButtonState *state, bool
     state->down = down;
 }
 
-void MFP__Win32DispatchKey(MFP_Input *input, size_t keycode, bool down) {
+FUNC_WIN32 void MFP__Win32DispatchKey(MFP_Input *input, size_t keycode, bool down) {
     int keyIndex = keycode;
     char buf[1024] = {};
     OutputDebugString(buf);
@@ -649,7 +644,7 @@ void MFP__Win32DispatchKey(MFP_Input *input, size_t keycode, bool down) {
     return;
 }
 
-LRESULT CALLBACK MFP__Win32Proc(HWND wnd, UINT message, WPARAM wParam, LPARAM lParam) {
+FUNC_WIN32 LRESULT CALLBACK MFP__Win32Proc(HWND wnd, UINT message, WPARAM wParam, LPARAM lParam) {
     LRESULT res = 0;
     //Platform *platform = (Platform *) GetWindowLongPtr(wnd, GWLP_USERDATA);
     assert(g_platform != NULL);
@@ -738,7 +733,7 @@ LRESULT CALLBACK MFP__Win32Proc(HWND wnd, UINT message, WPARAM wParam, LPARAM lP
     return res;
 }
 
-API void MFP_WindowOpen(MFP_Platform *platform, const char *title, int x, int y, int width, int height) {
+FUNC_WIN32 API void MFP_WindowOpen(MFP_Platform *platform, const char *title, int x, int y, int width, int height) {
     WNDCLASS wc = {};
 
     wc.style = CS_HREDRAW | CS_VREDRAW;
@@ -797,11 +792,11 @@ API void MFP_WindowOpen(MFP_Platform *platform, const char *title, int x, int y,
     window->isOpen = true;
 }
 
-API void MFP_WindowClose(MFP_Platform *platform) {
+FUNC_WIN32 API void MFP_WindowClose(MFP_Platform *platform) {
     assert(platform);
 }
 
-API void MFP_SleepMs(long ms) {
+FUNC_WIN32 API void MFP_SleepMs(long ms) {
 }
 
 #endif

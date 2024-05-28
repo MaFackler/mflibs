@@ -6,14 +6,17 @@
 #endif
 
 #define API static inline
+#define FUNC_CROSS
+#define FUNC_WIN32
+#define FUNC_LINUX
 
 
 // {{{ Definitions
 
-API void MFP_InitOpengl(MFP_Platform *platform);
-
-API void MFP_BeginOpengl(MFP_Platform *platform);
-API void MFP_EndOpengl(MFP_Platform *platform);
+FUNC_CROSS API void MFP_InitOpengl(MFP_Platform *platform);
+FUNC_CROSS API void MFP_BeginOpengl(MFP_Platform *platform);
+FUNC_CROSS API void MFP_EndOpengl(MFP_Platform *platform);
+FUNC_CROSS API void MFP_DestroyOpengl(MFP_Platform *platform);
 
 #define GL_GLEXT_PROTOTYPES
 //#define GLX_GLEXT_PROTOTYPES
@@ -110,7 +113,7 @@ GL_FUNC_DEF(void, glVertexAttribPointer, GLuint index, GLint size, GLenum type, 
 
 static inline void MFP_InitOpenglWindow(MFP_Platform *platform);
 
-API void MFP_InitOpengl(MFP_Platform *platform) {
+FUNC_LINUX API void MFP_InitOpengl(MFP_Platform *platform) {
     platform->graphicsAfterWindow = MFP_InitOpenglWindow;
     platform->graphicsBegin = MFP_BeginOpengl;
     platform->graphicsEnd = MFP_EndOpengl;
@@ -191,12 +194,16 @@ static inline void MFP_InitOpenglWindow(MFP_Platform *platform) {
     // assert(minor >= 3);
 }
 
-API void MFP_BeginOpengl(MFP_Platform *platform) {
+FUNC_LINUX API void MFP_BeginOpengl(MFP_Platform *platform) {
 }
 
-API void MFP_EndOpengl(MFP_Platform *platform) {
+FUNC_LINUX API void MFP_EndOpengl(MFP_Platform *platform) {
     MFP_Linux *oslinux = MFP__GetLinux(platform);
     glXSwapBuffers(oslinux->display, oslinux->window);
+}
+
+FUNC_LINUX API void MFP_DestroyOpengl(MFP_Platform *platform) {
+    // TODO:
 }
 
 // }}}
@@ -205,7 +212,7 @@ API void MFP_EndOpengl(MFP_Platform *platform) {
 
 static inline void MFP_InitOpenglWindow(MFP_Platform *platform);
 
-API void MFP_InitOpengl(MFP_Platform *platform) {
+FUNC_WIN32 API void MFP_InitOpengl(MFP_Platform *platform) {
     platform->graphicsAfterWindow = MFP_InitOpenglWindow;
     platform->graphicsBegin = MFP_BeginOpengl;
     platform->graphicsEnd = MFP_EndOpengl;
@@ -278,16 +285,16 @@ static inline void MFP_InitOpenglWindow(MFP_Platform *platform) {
     }
 }
 
-API void MFP_DestroyOpengl(MFP_Platform *platform) {
+FUNC_WIN32 API void MFP_DestroyOpengl(MFP_Platform *platform) {
     MFP_Win32 *win32 = MFP_GetWin32(platform);
     HGLRC *hgl = (HGLRC *) win32->graphicHandle;
     wglDeleteContext(*hgl);
 }
 
-API void MFP_BeginOpengl(MFP_Platform *platform) {
+FUNC_WIN32 API void MFP_BeginOpengl(MFP_Platform *platform) {
 }
 
-API void MFP_EndOpengl(MFP_Platform *platform) {
+FUNC_WIN32 API void MFP_EndOpengl(MFP_Platform *platform) {
     MFP_Win32 *win32 = MFP_GetWin32(platform);
     SwapBuffers(win32->dc);
 }

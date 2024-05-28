@@ -1,3 +1,5 @@
+#include <mf_lib.h>
+MF_LIB_LINUX("m")
 #define MF_MATH_IMPLEMENTATION
 #include <mf_test.h>
 #define MF_MATH_SHORT_NAMES

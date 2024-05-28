@@ -82,7 +82,7 @@ $(TESTS_BIN): $(TESTS)
 
 build/%$(POSTFIX): tests/%.c $(HEADERS)
 	@libs=`$(call grep_libs, $<)` \
-	&& $(CC) -ggdb -DMFT_WITH_MAIN -I./src/ $< -o $@ -lc -lm $$libs
+	&& $(CC) -ggdb -DMFT_WITH_MAIN -I./src/ $< -o $@ $$libs
 
 build/%$(POSTFIX): ./**/%.c $(HEADERS)
 	$(call compile,$<,$@) 

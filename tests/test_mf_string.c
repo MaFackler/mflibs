@@ -1,3 +1,5 @@
+#include <mf_lib.h>
+MF_LIB_LINUX("m")
 #define MF_STRING_IMPLEMENTATION
 #define MF_STRING_DEFAULT_SIZE 16
 #include <mf_string.h>

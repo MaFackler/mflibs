@@ -75,18 +75,23 @@ extern MftState state;
 #define MFT_ANSI_ESCAPE_RESET "\033[0m" 
 #define MFT_ANSI_ESCAPE_COLOR "\033[1;%dm"
 
+#ifdef __linux__
+
 void _mft_on_segfault(int signal, siginfo_t *si, void *arg) {
     printf(MFT_ANSI_ESCAPE_COLOR, 91);
     printf("GOT SEGFAULT\n");
     printf(MFT_ANSI_ESCAPE_RESET);
     exit(1);
 }
+#endif
 
 void mft_main(int argc, char **argv) {
+#ifdef __linux__
     struct sigaction sa = {0};
     sigemptyset(&sa.sa_mask);
     sa.sa_sigaction = _mft_on_segfault;
     sa.sa_flags = SA_SIGINFO;
+#endif
 
     for (unsigned int i = 0; i < state.count; ++i) {
         state.current_testcase = i;
@@ -110,6 +115,7 @@ void mft_main(int argc, char **argv) {
     char*: printf("%s", t), \
     char: printf("%c", t), \
     long unsigned int: printf("%lu", t), \
+    long long unsigned int: printf("%llu", t), \
     _Bool: printf("%s", t ? "true" : "false"))
 
 #define MFT_COMPARE(a, b, condition) \
