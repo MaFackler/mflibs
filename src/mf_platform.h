@@ -783,8 +783,6 @@ FUNC_WIN32 API void MFP_WindowOpen(MFP_Platform *platform, const char *title, in
     DescribePixelFormat(win32->dc, pixelFormatIndex, sizeof(suggestedPixelFormat), &suggestedPixelFormat);
     SetPixelFormat(win32->dc, pixelFormatIndex, &suggestedPixelFormat);
 
-    // TODO: client rect
-
     MFP__GetClientRect(win32->window, &window->x, &window->y, &window->width, &window->height);
     if (platform->graphicsAfterWindow) {
         platform->graphicsAfterWindow(platform);

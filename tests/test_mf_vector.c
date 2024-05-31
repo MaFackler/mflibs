@@ -1,5 +1,4 @@
 #include <mf_test.h>
-
 #include <mf_vector.h>
 
 TEST(MF_Vec) {

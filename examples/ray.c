@@ -395,7 +395,7 @@ void init_random_world(World *myworld) {
 
 int main() {
     const float aspect_ratio = 16.0f / 9.0f;
-    const u32 image_width = 1920;
+    const u32 image_width = 900;
     const u32 image_height = image_width / aspect_ratio;
     const int samples_per_pixel = 2;
     const int max_depth = 50;
@@ -431,7 +431,7 @@ int main() {
 
     printf("P3\n%d %d\n255\n", image_width, image_height);
     for (i32 y = image_height - 1; y >= 0; --y) {
-        fprintf(stderr, "\rRemaining: %d", y);
+        fprintf(stderr, "\rRemaining: %d       ", y);
         fflush(stderr);
         for (i32 x = 0; x < image_width; ++x) {
             Vec3 color = (Vec3) {0.0, 0.0, 0.0};
