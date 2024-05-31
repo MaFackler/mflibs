@@ -1,0 +1,8 @@
+build/
+!build/.gitkeep
+
+misc
+
+.gdb_history
+*.rdbg
+*.ppm
